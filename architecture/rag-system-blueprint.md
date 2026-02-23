@@ -10,6 +10,15 @@
 - COMPLEXITY: Production-Grade
 <!-- AI-PARSEABLE-METADATA-END -->
 
+> **實作差異注意**（2026-02-24 更新）：本文件為設計參考藍圖，實際實作參數已依資安法規文件特性調優。主要差異：
+> - Chunk 大小：Blueprint 建議 1000 字元 → 實作 Child 800 / Parent 3500（含 overlap 150/500）
+> - 檢索模式：實作新增 `hybrid_hierarchical` 模式（BM25 + Vector 搜 child → 回傳 parent）
+> - 預設行為：`hybrid` 預設 `True`（BM25 始終啟用），NestJS Chatbot 預設 `hierarchical: true`
+> - 新增 `DocumentPreprocessor`（頁首頁尾移除、浮水印去除、doc_type/doc_title 擷取）
+> - Chunk model 新增 `level` 欄位（parent/child/standalone）
+>
+> 實際參數請參考 `config.py` 與 `docs/architecture/rag-pipeline.md`。
+
 ---
 
 ## 目錄

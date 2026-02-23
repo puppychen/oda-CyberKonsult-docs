@@ -369,18 +369,19 @@ data: {"type":"done","messageId":"msg-uuid","conversationId":"conv-uuid","source
 ChatController → ChatService → RagProxyService → FastAPI (localhost:8000)
 ```
 
-### RAG Query Request (Internal)
+### RAG Retrieve Request (Internal)
+
+NestJS ChatService 呼叫 Python RAG `/api/v1/rag/retrieve` 端點時的請求格式：
 
 ```typescript
 {
   question: string;
   top_k?: number;        // 預設 5
   hybrid?: boolean;      // 預設 true
-  hierarchical?: boolean;
+  hierarchical?: boolean; // 預設 true（ChatService 固定帶入）
   rerank?: boolean;
   source_filter?: string | null;
   tag_filter?: string | null;
-  mode?: string;         // 回應模式：beginner / standard / expert
 }
 ```
 
@@ -402,6 +403,8 @@ ChatController → ChatService → RagProxyService → FastAPI (localhost:8000)
   };
 }
 ```
+
+> **檢索模式**：ChatService 預設使用 `hybrid: true, hierarchical: true`，即 Hybrid Hierarchical 模式（BM25 + 向量搜尋 child chunks → 回傳 parent chunks），兼顧法規條文編號的精確匹配與完整章節上下文。
 
 #### source_type 說明
 

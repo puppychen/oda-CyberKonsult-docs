@@ -26,11 +26,13 @@ Base URL: `http://localhost:8000/api/v1`
 |------|------|------|------|------|
 | `question` | string | Y | - | 使用者問題 |
 | `top_k` | integer | N | 5 | 檢索結果數量 (1-20) |
-| `hybrid` | boolean | N | false | 啟用混合搜尋 (向量 + BM25 + RRF) |
+| `hybrid` | boolean | N | true | 啟用混合搜尋 (向量 + BM25 + RRF) |
 | `hierarchical` | boolean | N | false | 啟用階層式檢索 (搜 child 回傳 parent) |
 | `rerank` | boolean | N | false | 啟用 LLM 重排 |
 | `source_filter` | string | N | null | 按來源文件路徑過濾 |
 | `tag_filter` | string | N | null | 按標籤過濾 |
+
+> **模式組合**：`hybrid` 與 `hierarchical` 可同時啟用，系統會自動使用 `hybrid_hierarchical` 模式（BM25 + 向量搜尋 child → 回傳 parent）。
 
 **Request Example:**
 
@@ -39,6 +41,7 @@ Base URL: `http://localhost:8000/api/v1`
   "question": "什麼是 PII？",
   "top_k": 5,
   "hybrid": true,
+  "hierarchical": true,
   "rerank": false
 }
 ```
@@ -51,12 +54,18 @@ Base URL: `http://localhost:8000/api/v1`
     {
       "source": "/data/documents/pii-guide.pdf",
       "content_preview": "PII（個人可識別資訊）是指...",
-      "score": 0.89
+      "score": 0.89,
+      "content": "PII（個人可識別資訊）是指可單獨或結合其他資訊用於識別特定個人的資訊。常見的 PII 包括...",
+      "doc_title": "PII 保護實務指南",
+      "doc_type": "regulation"
     },
     {
       "source": "/data/documents/data-protection.pdf",
       "content_preview": "保護 PII 的方式包括加密...",
-      "score": 0.82
+      "score": 0.82,
+      "content": "保護 PII 的方式包括加密、存取控制、去識別化等技術手段...",
+      "doc_title": "資料保護標準作業程序",
+      "doc_type": "procedure"
     }
   ],
   "metadata": {
@@ -64,6 +73,20 @@ Base URL: `http://localhost:8000/api/v1`
     "best_score": 0.89
   }
 }
+```
+
+**Response 欄位說明：**
+
+| 欄位 | 類型 | 說明 |
+|------|------|------|
+| `source` | string | 文件來源路徑 |
+| `content_preview` | string | 內容前 200 字摘要（供前端顯示） |
+| `score` | float | 相關度分數（hybrid 模式為 RRF 分數，vector 模式為 cosine similarity） |
+| `content` | string | 完整 chunk 內容（供 LLM context 使用） |
+| `doc_title` | string | 文件標題（由 DocumentPreprocessor 擷取） |
+| `doc_type` | string | 文件類型（regulation/procedure/standard/guideline/other） |
+
+> **分數量級**：hybrid 模式使用 RRF 分數（最大約 0.033），與 vector 模式 cosine similarity (0-1) 量級不同。NestJS 端會依模式使用不同門檻過濾低分結果。
 ```
 
 ### POST `/rag/query`
@@ -78,11 +101,13 @@ Base URL: `http://localhost:8000/api/v1`
 |------|------|------|------|------|
 | `question` | string | Y | - | 使用者問題 |
 | `top_k` | integer | N | 5 | 檢索結果數量 (1-20) |
-| `hybrid` | boolean | N | false | 啟用混合搜尋 (向量 + BM25 + RRF) |
+| `hybrid` | boolean | N | true | 啟用混合搜尋 (向量 + BM25 + RRF) |
 | `hierarchical` | boolean | N | false | 啟用階層式檢索 (搜 child 回傳 parent) |
 | `rerank` | boolean | N | false | 啟用 LLM 重排 |
 | `source_filter` | string | N | null | 按來源文件路徑過濾 |
 | `tag_filter` | string | N | null | 按標籤過濾 |
+
+> **模式組合**：`hybrid` 與 `hierarchical` 可同時啟用，系統會自動使用 `hybrid_hierarchical` 模式。
 
 **Request Example:**
 
@@ -91,6 +116,7 @@ Base URL: `http://localhost:8000/api/v1`
   "question": "什麼是 PII？如何保護個人資料？",
   "top_k": 5,
   "hybrid": true,
+  "hierarchical": true,
   "rerank": false
 }
 ```
@@ -278,10 +304,13 @@ oda-rag bm25 build
 
 | 模式 | 參數 | 說明 |
 |------|------|------|
-| **Vector** | 預設 | 純向量相似度搜尋 (Cosine) |
-| **Hybrid** | `hybrid: true` | 向量 + BM25 關鍵字搜尋，使用 RRF (Reciprocal Rank Fusion) 融合 |
-| **Hierarchical** | `hierarchical: true` | 搜尋 Child chunks，回傳 Parent chunks（更多上下文） |
+| **Vector** | `hybrid: false` | 純向量相似度搜尋 (Cosine) |
+| **Hybrid** | `hybrid: true`（預設） | 向量 + BM25 關鍵字搜尋，使用 RRF (Reciprocal Rank Fusion) 融合 |
+| **Hierarchical** | `hierarchical: true, hybrid: false` | 純向量搜尋 Child chunks，回傳 Parent chunks（更多上下文） |
+| **Hybrid Hierarchical** | `hybrid: true, hierarchical: true` | BM25 + 向量搜尋 Child chunks → 回傳 Parent chunks（推薦模式） |
 | **Rerank** | `rerank: true` | 可與任何模式搭配，LLM 對結果重新評分 |
+
+> **NestJS Chatbot 預設模式**：NestJS ChatService 預設使用 `hybrid: true, hierarchical: true`，即 Hybrid Hierarchical 模式，兼顧精確關鍵字匹配與完整上下文。
 
 ---
 
@@ -310,8 +339,10 @@ oda-rag bm25 build
 | `RAG_EMBEDDING_DIMENSION` | `768` | 向量維度 |
 | `RAG_LLM_PROVIDER` | `gemini` | LLM 提供者 (`gemini` / `openai`) |
 | `RAG_LLM_TEMPERATURE` | `0.1` | 生成溫度 |
-| `RAG_CHUNK_SIZE` | `500` | Chunk 大小 (字元) |
-| `RAG_CHUNK_OVERLAP` | `50` | Chunk 重疊 (字元) |
+| `RAG_CHUNK_SIZE` | `800` | Child Chunk 大小 (字元，~400 中文字) |
+| `RAG_CHUNK_OVERLAP` | `150` | Child Chunk 重疊 (字元，~75 中文字) |
+| `RAG_PARENT_CHUNK_SIZE` | `3500` | Parent Chunk 大小 (字元，~1750 中文字) |
+| `RAG_PARENT_CHUNK_OVERLAP` | `500` | Parent Chunk 重疊 (字元，~250 中文字) |
 | `RAG_BM25_ENABLED` | `true` | 啟用 BM25 索引 |
 | `RAG_RETRIEVAL_TOP_K` | `5` | 預設檢索數量 |
 
