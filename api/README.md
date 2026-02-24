@@ -49,6 +49,11 @@ sequenceDiagram
     NestJS->>DB: 驗證帳密
     NestJS-->>Client: { accessToken, refreshToken }
 
+    Note over Client,NestJS: 若 requirePasswordChange = true
+    Client->>NestJS: POST /api/auth/change-password (Bearer token)
+    NestJS->>DB: 驗證舊密碼 + 更新密碼
+    NestJS-->>Client: { accessToken, refreshToken }
+
     Client->>NestJS: GET /api/chat/modes (Bearer token)
     NestJS-->>Client: { modes, defaultMode }
 ```
@@ -237,6 +242,7 @@ API 版本管理策略：
 
 ## 變更紀錄
 
+- **2026-02-24**：安全強化 — Auth API 新增密碼變更端點、資通安全「普」級密碼政策、NestJS→FastAPI 內部 API 認證
 - **2026-02-13**：LLM 生成遷移至 NestJS、新增 SearXNG 網路搜尋整合、新增 WebSearch Config API
 - **2026-02-11**：新增審核工作流 API 與資料分析 API 文件
 - **2026-02-11**：新增 Google Drive DataSource API 文件
