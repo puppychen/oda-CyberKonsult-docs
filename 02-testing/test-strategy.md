@@ -10,7 +10,7 @@
 
 ## 1. 測試目標
 
-確保系統在功能正確性、效能、安全性三個維度達到 [SRS_TECHNICAL.md](../specs/SRS_TECHNICAL.md) 第 11 章定義的驗收標準，同時建立可持續的測試回歸機制。
+確保系統在功能正確性、效能、安全性三個維度達到 [SRS_TECHNICAL.md](../01-specs/SRS_TECHNICAL.md) 第 11 章定義的驗收標準，同時建立可持續的測試回歸機制。
 
 ---
 
@@ -246,8 +246,8 @@ Git Push → Lint → Unit Tests → Integration Tests → Build → E2E Tests �
 |------|------|------|
 | 測試指南 | 系統啟動與手動測試案例 | [testing/test-guide.md](./test-guide.md) |
 | E2E 測試說明 | E2E 測試架構與 Mock 策略 | [testing/api-e2e-testing.md](./api-e2e-testing.md) |
-| 驗收標準 | 功能/效能/安全驗收 | [specs/SRS_TECHNICAL.md §11](../specs/SRS_TECHNICAL.md) |
-| PRD | User Story 與 AC | [specs/PRD.md](../specs/PRD.md) |
+| 驗收標準 | 功能/效能/安全驗收 | [specs/SRS_TECHNICAL.md §11](../01-specs/SRS_TECHNICAL.md) |
+| PRD | User Story 與 AC | [specs/PRD.md](../01-specs/PRD.md) |
 
 ---
 

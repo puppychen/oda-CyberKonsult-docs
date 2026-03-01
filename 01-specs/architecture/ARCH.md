@@ -24,7 +24,7 @@
 
 - 系統架構概述：[architecture/system-overview.md](./system-overview.md)
 - RAG 系統藍圖：[architecture/rag-system-blueprint.md](./rag-system-blueprint.md)
-- 技術規格書：[specs/SRS_TECHNICAL.md](../specs/SRS_TECHNICAL.md)
+- 技術規格書：[specs/SRS_TECHNICAL.md](../SRS_TECHNICAL.md)
 
 ---
 

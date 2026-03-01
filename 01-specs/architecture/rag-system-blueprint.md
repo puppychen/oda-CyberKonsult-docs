@@ -17,7 +17,7 @@
 > - 新增 `DocumentPreprocessor`（頁首頁尾移除、浮水印去除、doc_type/doc_title 擷取）
 > - Chunk model 新增 `level` 欄位（parent/child/standalone）
 >
-> 實際參數請參考 `config.py` 與 `docs/architecture/rag-pipeline.md`。
+> 實際參數請參考 `config.py` 與 `docs/01-specs/architecture/rag-pipeline.md`。
 
 ---
 

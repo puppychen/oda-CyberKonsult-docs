@@ -82,10 +82,10 @@
 | 文件名稱 | 位置 | 說明 |
 |----------|------|------|
 | PROJECT_CONTEXT.md | `/PROJECT_CONTEXT.md` | 專案全貌與技術架構 |
-| SRS_BUSINESS.md | `/docs/specs/SRS_BUSINESS.md` | 商業需求規格書 |
-| cleaning-api.md | `/docs/api/cleaning-api.md` | 去識別化 API 完整規格 |
-| rag-api.md | `/docs/api/rag-api.md` | RAG 服務 API 完整規格 |
-| gdrive-api.md | `/docs/api/gdrive-api.md` | Google Drive 整合 API 規格 |
+| SRS_BUSINESS.md | `/docs/01-specs/SRS_BUSINESS.md` | 商業需求規格書 |
+| cleaning-api.md | `/docs/01-specs/api/cleaning-api.md` | 去識別化 API 完整規格 |
+| rag-api.md | `/docs/01-specs/api/rag-api.md` | RAG 服務 API 完整規格 |
+| gdrive-api.md | `/docs/01-specs/api/gdrive-api.md` | Google Drive 整合 API 規格 |
 
 ---
 

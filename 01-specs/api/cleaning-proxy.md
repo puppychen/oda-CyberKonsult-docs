@@ -366,6 +366,6 @@ NestJS 代理層路徑必須與 FastAPI 完全一致：
 
 ## 相關文件
 
-- [Cleaning API 完整規範](/docs/api/cleaning-api.md)
-- [Cleaning Proxy 使用說明](/docs/api/cleaning-proxy.md)
-- [安裝與設定指南](/docs/setup/cleaning-proxy-setup.md)
+- [Cleaning API 完整規範](/docs/01-specs/api/cleaning-api.md)
+- [Cleaning Proxy 使用說明](/docs/01-specs/api/cleaning-proxy.md)
+- [安裝與設定指南](/docs/03-operations/cleaning-proxy-setup.md)

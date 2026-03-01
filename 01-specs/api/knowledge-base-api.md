@@ -186,6 +186,6 @@ http://localhost:4000/api/v1/knowledge-base
 ---
 
 > **相關文件**
-> - 清洗 API: `docs/api/cleaning-api.md`
-> - RAG API: `docs/api/rag-api.md`
-> - Google Drive API: `docs/api/gdrive-api.md`
+> - 清洗 API: `docs/01-specs/api/cleaning-api.md`
+> - RAG API: `docs/01-specs/api/rag-api.md`
+> - Google Drive API: `docs/01-specs/api/gdrive-api.md`

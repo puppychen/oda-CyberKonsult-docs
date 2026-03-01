@@ -127,7 +127,7 @@ flowchart TD
 
 | 文件 | 路徑 |
 |------|------|
-| 清洗 API 文件 | `docs/api/cleaning-api.md` |
-| 知識庫 API 文件 | `docs/api/knowledge-base-api.md` |
-| RAG API 文件 | `docs/api/rag-api.md` |
-| 系統架構概述 | `docs/architecture/system-overview.md` |
+| 清洗 API 文件 | `docs/01-specs/api/cleaning-api.md` |
+| 知識庫 API 文件 | `docs/01-specs/api/knowledge-base-api.md` |
+| RAG API 文件 | `docs/01-specs/api/rag-api.md` |
+| 系統架構概述 | `docs/01-specs/architecture/system-overview.md` |

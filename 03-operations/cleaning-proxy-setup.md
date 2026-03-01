@@ -17,7 +17,7 @@
 - `/apps/api/src/modules/cleaning/cleaning.module.ts`
 
 ### 4. 文件
-- `/docs/api/cleaning-proxy.md`
+- `/docs/01-specs/api/cleaning-proxy.md`
 
 ## 已修改的檔案
 
@@ -182,5 +182,5 @@ UPDATE users SET role = 'admin' WHERE email = 'admin@example.com';
 
 ## 相關文件
 
-- [Cleaning API 完整文件](/docs/api/cleaning-api.md)
-- [Cleaning Proxy 架構說明](/docs/api/cleaning-proxy.md)
+- [Cleaning API 完整文件](/docs/01-specs/api/cleaning-api.md)
+- [Cleaning Proxy 架構說明](/docs/01-specs/api/cleaning-proxy.md)

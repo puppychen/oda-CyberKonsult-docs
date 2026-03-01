@@ -419,7 +419,7 @@ curl -X DELETE "http://localhost:8000/api/v1/rag/documents/by-source/<source>" \
 
 ## 8. 環境變數參考
 
-> 完整設定請參閱 [setup/deployment.md](../setup/deployment.md)
+> 完整設定請參閱 [setup/deployment.md](./deployment.md)
 
 | 變數 | 說明 | 關鍵性 |
 |------|------|--------|
@@ -438,11 +438,11 @@ curl -X DELETE "http://localhost:8000/api/v1/rag/documents/by-source/<source>" \
 
 | 文件 | 說明 | 路徑 |
 |------|------|------|
-| 部署指南 | 編譯、部署方式、Nginx 設定 | [setup/deployment.md](../setup/deployment.md) |
-| 開發環境 | 開發環境完整說明 | [setup/development.md](../setup/development.md) |
-| 測試指南 | 服務啟動與測試驗證 | [testing/test-guide.md](../testing/test-guide.md) |
-| Health API | 健康檢查端點規格 | [api/health-api.md](../api/health-api.md) |
-| 系統架構 | 服務拓撲與通訊 | [architecture/system-overview.md](../architecture/system-overview.md) |
+| 部署指南 | 編譯、部署方式、Nginx 設定 | [setup/deployment.md](./deployment.md) |
+| 開發環境 | 開發環境完整說明 | [setup/development.md](./development.md) |
+| 測試指南 | 服務啟動與測試驗證 | [testing/test-guide.md](../02-testing/test-guide.md) |
+| Health API | 健康檢查端點規格 | [api/health-api.md](../01-specs/api/health-api.md) |
+| 系統架構 | 服務拓撲與通訊 | [architecture/system-overview.md](../01-specs/architecture/system-overview.md) |
 
 ---
 

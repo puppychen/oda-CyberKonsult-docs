@@ -1,0 +1,297 @@
+# 威脅模型 (Threat Model)
+
+> **ODA Cyber Konsult - 資安助手 RAG 系統**
+>
+> 文件版本：1.0.0
+> 建立日期：2026-03-01
+> 文件類型：威脅模型（Threat Model）
+
+---
+
+## 1. 文件目的
+
+本文件以 STRIDE 方法論分析系統面臨的安全威脅，識別攻擊面與風險等級，並追蹤緩解措施的實作狀態。適用對象為安全審查人員、架構師與運維團隊。
+
+---
+
+## 2. 資料分類
+
+### 2.1 PII 資料流
+
+使用者上傳的文件可能包含個人可識別資訊（PII），系統透過去識別化管線處理。
+
+```
+文件上傳 → 格式解析（PDF/DOCX/XLSX）
+         → Presidio + spaCy 偵測（20 種 PII 實體）
+         → 去識別化策略套用（mask/partial_mask/pseudonymize/generalize/keep_labeled/encrypt）
+         → 清洗後輸出（審核 → 批准 → 可選送入 RAG 知識庫）
+```
+
+| 資料類型 | 敏感等級 | 儲存位置 | 保護措施 |
+|----------|---------|---------|---------|
+| 原始上傳檔案 | 高 | 檔案系統 uploads/ | 存取控制 + RBAC |
+| PII 偵測結果 | 高 | PostgreSQL (tasks/task_files) | 資料庫存取控制 |
+| 去識別化後檔案 | 中 | 檔案系統 outputs/ | 審核流程把關 |
+| 知識庫向量 | 低 | Qdrant | 僅含去識別化後內容 |
+
+### 2.2 對話資料流
+
+使用者透過 Chatbot UI 進行資安諮詢，系統整合 RAG 檢索與 LLM 生成回應。
+
+```
+使用者查詢 → Query 改寫（多輪歷史注入）
+           → RAG 檢索（Qdrant 向量 + BM25 關鍵字）
+           → 分數過濾（RRF < 0.005 / cosine < 0.3 過濾）
+           → 可選 SearXNG 網路搜尋補充
+           → LLM 生成（Gemini / OpenAI）
+           → SSE 串流回應
+```
+
+| 資料類型 | 敏感等級 | 儲存位置 | 保護措施 |
+|----------|---------|---------|---------|
+| 使用者查詢 | 中 | PostgreSQL (messages) | JWT 認證 + 使用者隔離 |
+| 對話歷史 | 中 | PostgreSQL (conversations/messages) | RBAC + 使用者僅存取自身對話 |
+| LLM API 請求 | 中 | 外部 API（Google/OpenAI） | HTTPS 傳輸加密 |
+| 檢索結果 | 低 | 記憶體（不持久化） | 請求級生命週期 |
+
+### 2.3 認證資料
+
+| 資料類型 | 敏感等級 | 儲存位置 | 保護措施 |
+|----------|---------|---------|---------|
+| 密碼 hash | 極高 | PostgreSQL (users.password) | bcrypt 12 rounds |
+| JWT Access Token | 高 | 客戶端記憶體 | 短效期 + HTTPS Only |
+| JWT Refresh Token | 高 | 客戶端 / PostgreSQL | 單次使用 + 過期機制 |
+| 密碼歷史 hash | 高 | PostgreSQL (password_histories) | bcrypt 12 rounds + 僅存 2 代 |
+| X-Internal-Token | 高 | 環境變數 (.env) | HMAC 驗證 + 不對外暴露 |
+
+---
+
+## 3. STRIDE 威脅分析
+
+### 3.1 威脅矩陣
+
+| 威脅類別 | 威脅描述 | 攻擊情境 | 現有緩解措施 | 狀態 |
+|----------|---------|---------|-------------|------|
+| **Spoofing（偽冒）** | 攻擊者冒充合法使用者存取系統 | 竊取或偽造 JWT Token、暴力破解密碼 | JWT 認證（access + refresh token）、bcrypt 12 rounds 密碼雜湊、帳號鎖定（5 次失敗鎖 15 分鐘） | ✅ 已緩解 |
+| **Tampering（竄改）** | 攻擊者竄改請求資料或資料庫內容 | SQL Injection、XSS、API 參數竄改 | ValidationPipe + class-validator 輸入驗證、Prisma/SQLAlchemy 參數化查詢、HMAC 內部 API 簽章 | ✅ 已緩解 |
+| **Repudiation（否認）** | 使用者否認曾執行特定操作 | 刪除清洗任務後否認、修改審核結果後否認 | AuditLog Interceptor 全域攔截記錄、稽核日誌含使用者 ID + 時間戳 + 操作詳情、日誌不可刪除（僅 admin 可查詢匯出） | ✅ 已緩解 |
+| **Information Disclosure（資訊洩漏）** | 敏感資料未經授權被存取 | PII 外洩、未授權存取他人對話、內部 API Token 洩漏 | PII 去識別化管線（Presidio + 20 種實體）、RBAC Guard 角色存取控制、X-Internal-Token 內部 API 認證、使用者僅能存取自身對話 | ✅ 已緩解 |
+| **Denial of Service（阻斷服務）** | 攻擊者耗盡系統資源導致服務不可用 | 大量請求灌爆 API、上傳超大檔案、LLM API 配額耗盡 | ThrottlerModule 60 req/min 限流、50MB 檔案上傳大小限制、Nginx 反向代理層額外防護 | ✅ 已緩解 |
+| **Elevation of Privilege（權限提升）** | 低權限使用者存取高權限功能 | 一般使用者存取管理功能、繞過密碼變更要求 | RBAC Guard + @Roles 裝飾器強制角色檢查、PasswordChangeRequiredGuard 全域攔截過期密碼、前端路由守衛 + 後端雙重驗證 | ✅ 已緩解 |
+
+### 3.2 STRIDE 深度分析
+
+#### S — Spoofing（偽冒）
+
+| 攻擊向量 | 風險等級 | 緩解措施 | 實作位置 |
+|----------|---------|---------|---------|
+| JWT Token 竊取 | 高 | Access Token 短效期、Refresh Token 單次使用 | `apps/api/src/modules/auth/` |
+| 密碼暴力破解 | 中 | bcrypt 12 rounds + 帳號鎖定（5 次 / 15 分鐘） | `apps/api/src/modules/auth/auth.service.ts` |
+| Token 偽造 | 高 | JWT_SECRET >= 64 字元 + HS256 簽章驗證 | `apps/api/src/common/guards/jwt-auth.guard.ts` |
+| 密碼重複使用 | 中 | password_histories 2 代不重複檢查 | `apps/api/src/modules/auth/auth.service.ts` |
+
+#### T — Tampering（竄改）
+
+| 攻擊向量 | 風險等級 | 緩解措施 | 實作位置 |
+|----------|---------|---------|---------|
+| SQL Injection | 高 | Prisma + SQLAlchemy 參數化查詢 | ORM 層自動防護 |
+| API 參數竄改 | 中 | ValidationPipe + class-validator DTO 驗證 | `apps/api/src/common/` |
+| 內部 API 偽造 | 高 | X-Internal-Token HMAC 驗證 | `python/rag-service/middleware/` |
+| 檔案類型偽裝 | 中 | MIME type 檢查 + 副檔名白名單 | FastAPI upload 端點 |
+
+#### R — Repudiation（否認）
+
+| 攻擊向量 | 風險等級 | 緩解措施 | 實作位置 |
+|----------|---------|---------|---------|
+| 操作否認 | 中 | AuditLog Interceptor 自動記錄所有 API 操作 | `apps/api/src/common/interceptors/audit-log.interceptor.ts` |
+| 清洗結果篡改 | 中 | cleaning_audit_logs 記錄完整清洗歷程 | `python/data-pipeline/models/` |
+| 稽核日誌竄改 | 高 | 日誌為 append-only，無刪除 API | `apps/api/src/modules/audit/` |
+
+#### I — Information Disclosure（資訊洩漏）
+
+| 攻擊向量 | 風險等級 | 緩解措施 | 實作位置 |
+|----------|---------|---------|---------|
+| PII 原始資料外洩 | 極高 | Presidio 偵測 + 6 種去識別化策略 | `python/data-pipeline/anonymizer/` |
+| 跨使用者對話存取 | 高 | 查詢條件強制綁定 userId | `apps/api/src/modules/chat/chat.service.ts` |
+| 內部服務暴露 | 高 | FastAPI/Qdrant/SearXNG 僅內部存取 | Docker 網路隔離 + 防火牆 |
+| 錯誤訊息洩漏 | 低 | HttpExceptionFilter 統一格式化，不暴露 stack trace | `apps/api/src/common/filters/` |
+
+#### D — Denial of Service（阻斷服務）
+
+| 攻擊向量 | 風險等級 | 緩解措施 | 實作位置 |
+|----------|---------|---------|---------|
+| API 洪水攻擊 | 高 | ThrottlerModule 60 req/min | `apps/api/src/app.module.ts` |
+| 大檔案上傳 | 中 | 50MB 上傳限制 | NestJS MulterModule 設定 |
+| LLM API 耗盡 | 中 | 請求排隊 + 錯誤處理 + 配額監控 | `apps/api/src/modules/llm/` |
+| Qdrant 記憶體耗盡 | 低 | Collection 向量數量監控 | 運維監控（規劃中） |
+
+#### E — Elevation of Privilege（權限提升）
+
+| 攻擊向量 | 風險等級 | 緩解措施 | 實作位置 |
+|----------|---------|---------|---------|
+| 角色繞過 | 高 | RolesGuard + @Roles 裝飾器 | `apps/api/src/common/guards/roles.guard.ts` |
+| 密碼過期繞過 | 中 | PasswordChangeRequiredGuard 全域攔截 | `apps/api/src/common/guards/password-change-required.guard.ts` |
+| 前端路由繞過 | 低 | 前端守衛 + 後端 Guard 雙重驗證 | 前端 router + 後端 Guard |
+
+---
+
+## 4. 攻擊面分析
+
+### 4.1 NestJS API（Port 4000）
+
+| 項目 | 說明 |
+|------|------|
+| 暴露方式 | 對外（透過 Nginx 反向代理） |
+| 攻擊面 | REST API 端點（認證、聊天、管理、代理轉發） |
+| 認證機制 | JWT Bearer Token（全域 JwtAuthGuard） |
+| 主要威脅 | API 濫用、JWT 竊取、輸入注入 |
+| 緩解措施 | ThrottlerModule、ValidationPipe、JwtAuthGuard、RolesGuard |
+
+### 4.2 FastAPI RAG Service（Port 8000）
+
+| 項目 | 說明 |
+|------|------|
+| 暴露方式 | 僅內部（Docker 網路 / localhost） |
+| 攻擊面 | RAG 檢索、清洗管線、檔案解析 |
+| 認證機制 | X-Internal-Token HMAC 驗證 |
+| 主要威脅 | 內部 API 偽造、惡意檔案上傳、資源耗盡 |
+| 緩解措施 | 內部 Token 認證、檔案類型白名單、上傳大小限制 |
+
+### 4.3 Qdrant（Port 6333）
+
+| 項目 | 說明 |
+|------|------|
+| 暴露方式 | 僅內部（Docker 網路） |
+| 攻擊面 | 向量資料庫 REST API |
+| 認證機制 | 無（依賴網路隔離） |
+| 主要威脅 | 未授權存取向量資料、資料刪除 |
+| 緩解措施 | Docker 網路隔離、防火牆規則、正式環境不對外開放 |
+
+### 4.4 PostgreSQL（Port 5432）
+
+| 項目 | 說明 |
+|------|------|
+| 暴露方式 | 僅內部（Docker 網路） |
+| 攻擊面 | 資料庫連線 |
+| 認證機制 | 帳號密碼認證 |
+| 主要威脅 | 資料庫直接存取、資料外洩 |
+| 緩解措施 | 強密碼、網路隔離、ORM 參數化查詢 |
+
+### 4.5 SearXNG（Port 8080）
+
+| 項目 | 說明 |
+|------|------|
+| 暴露方式 | 僅 Docker 內部通訊 |
+| 攻擊面 | 元搜尋引擎 API |
+| 認證機制 | 無（僅內部存取） |
+| 主要威脅 | 搜尋結果注入、SSRF |
+| 緩解措施 | Docker 網路隔離、正式環境不對外開放 port |
+
+### 4.6 三個前端 React 應用
+
+| 應用 | Port (dev) | 暴露方式 | 主要威脅 |
+|------|-----------|---------|---------|
+| Admin Dashboard | 5173 | 對外（Nginx 靜態） | XSS、CSRF、未授權存取管理功能 |
+| Chatbot UI | 5174 | 對外（Nginx 靜態） | XSS、對話資料洩漏 |
+| Cleaner App | 5175 | 對外（Nginx 靜態） | XSS、清洗資料未授權存取 |
+
+**共通緩解措施**：
+- React 自動轉義防 XSS
+- Helmet HTTP headers
+- 前端路由守衛 + 後端 RBAC Guard 雙重驗證
+- Vite proxy 統一指向 NestJS API
+
+---
+
+## 5. 風險矩陣
+
+### 5.1 風險評估準則
+
+**可能性等級**：
+
+| 等級 | 說明 |
+|------|------|
+| 高 | 攻擊工具公開可用，攻擊門檻低 |
+| 中 | 需要特定知識或內部資訊 |
+| 低 | 需要高度專業或物理存取 |
+
+**影響等級**：
+
+| 等級 | 說明 |
+|------|------|
+| 嚴重 | PII 大量外洩、系統完全失控 |
+| 高 | 單一使用者資料外洩、服務中斷 > 1 小時 |
+| 中 | 功能受損、短暫服務降級 |
+| 低 | 資訊揭露有限、使用者體驗受影響 |
+
+### 5.2 風險矩陣圖
+
+|  | **可能性 — 低** | **可能性 — 中** | **可能性 — 高** |
+|--|-----------------|-----------------|-----------------|
+| **影響 — 嚴重** | 高風險 | 極高風險 | 極高風險 |
+| **影響 — 高** | 中風險 | 高風險 | 極高風險 |
+| **影響 — 中** | 低風險 | 中風險 | 高風險 |
+| **影響 — 低** | 可接受 | 低風險 | 中風險 |
+
+### 5.3 風險分布
+
+| 風險項目 | 影響 | 可能性 | 風險等級 | 緩解狀態 |
+|----------|------|--------|---------|---------|
+| PII 原始資料外洩 | 嚴重 | 低 | 高 | ✅ Presidio 去識別化 + RBAC |
+| JWT Token 洩漏 | 高 | 中 | 高 | ✅ 短效期 + Refresh 機制 |
+| SQL Injection | 高 | 低 | 中 | ✅ ORM 參數化查詢 |
+| API 洪水攻擊 | 中 | 高 | 高 | ✅ ThrottlerModule 60 req/min |
+| 密碼暴力破解 | 高 | 中 | 高 | ✅ bcrypt + 帳號鎖定 |
+| 內部 API 偽造 | 高 | 低 | 中 | ✅ X-Internal-Token HMAC |
+| Qdrant 未授權存取 | 中 | 低 | 低 | ✅ Docker 網路隔離 |
+| XSS 攻擊 | 中 | 中 | 中 | ✅ React 自動轉義 + Helmet |
+| 權限提升 | 高 | 低 | 中 | ✅ RBAC Guard 雙重驗證 |
+| LLM API 配額耗盡 | 中 | 中 | 中 | ⚠️ 部分緩解（需加強監控） |
+
+---
+
+## 6. 緩解措施追蹤表
+
+| 編號 | 威脅類別 | 緩解措施 | 實作狀態 | 負責模組 | 驗證方式 |
+|------|---------|---------|---------|---------|---------|
+| M-001 | Spoofing | JWT 認證（access + refresh token） | ✅ 已實作 | auth/ | auth.service.spec + E2E |
+| M-002 | Spoofing | bcrypt 12 rounds 密碼雜湊 | ✅ 已實作 | auth/ | auth.service.spec |
+| M-003 | Spoofing | 帳號鎖定（5 次失敗 / 15 分鐘） | ✅ 已實作 | auth/ | auth.service.spec |
+| M-004 | Spoofing | 密碼歷史 2 代不重複 | ✅ 已實作 | auth/ | auth.service.spec |
+| M-005 | Spoofing | 密碼複雜度（8 碼 + 大小寫 + 數字 + 特殊字元） | ✅ 已實作 | common/validators/ | password-strength.validator.spec |
+| M-006 | Tampering | ValidationPipe + class-validator | ✅ 已實作 | common/ | DTO spec（15+ 檔案） |
+| M-007 | Tampering | Prisma 參數化查詢 | ✅ 已實作 | prisma/ | ORM 內建防護 |
+| M-008 | Tampering | SQLAlchemy 參數化查詢 | ✅ 已實作 | Python ORM | ORM 內建防護 |
+| M-009 | Tampering | X-Internal-Token HMAC 驗證 | ✅ 已實作 | FastAPI middleware | test_internal_auth_middleware |
+| M-010 | Repudiation | AuditLog Interceptor | ✅ 已實作 | common/interceptors/ | audit-log.interceptor.spec |
+| M-011 | Repudiation | 稽核日誌查詢與匯出 | ✅ 已實作 | audit/ | audit-query.dto.spec |
+| M-012 | Info Disclosure | Presidio PII 偵測（20 種實體） | ✅ 已實作 | data-pipeline | test_detector, test_recognizers |
+| M-013 | Info Disclosure | 6 種去識別化策略 | ✅ 已實作 | data-pipeline | test_anonymizer, test_strategies |
+| M-014 | Info Disclosure | RBAC Guard 角色控制 | ✅ 已實作 | common/guards/ | roles.guard.spec |
+| M-015 | Info Disclosure | HttpExceptionFilter 統一錯誤格式 | ✅ 已實作 | common/filters/ | 不暴露 stack trace |
+| M-016 | DoS | ThrottlerModule 60 req/min | ✅ 已實作 | app.module.ts | E2E 驗證 |
+| M-017 | DoS | 50MB 檔案上傳限制 | ✅ 已實作 | NestJS MulterModule | 上傳測試 |
+| M-018 | EoP | RolesGuard + @Roles 裝飾器 | ✅ 已實作 | common/guards/ | roles.guard.spec |
+| M-019 | EoP | PasswordChangeRequiredGuard | ✅ 已實作 | common/guards/ | password-change-required.guard.spec |
+| M-020 | DoS | LLM API 配額監控 | ⚠️ 規劃中 | llm/ | Phase 2 |
+| M-021 | Multiple | Nginx WAF / 進階防護 | ⚠️ 規劃中 | 基礎設施 | Phase 2 |
+| M-022 | Spoofing | 2FA / MFA 雙因素認證 | 🔮 未來 | auth/ | Phase 3 |
+
+---
+
+## 相關文件
+
+| 文件 | 說明 | 路徑 |
+|------|------|------|
+| ARCH.md | 架構決策紀錄 | [architecture/ARCH.md](./architecture/ARCH.md) |
+| SRS_TECHNICAL.md | 技術需求規格書（§11 安全性驗收） | [SRS_TECHNICAL.md](./SRS_TECHNICAL.md) |
+| RTM.md | 需求追溯矩陣（§4.1 安全性需求） | [RTM.md](./RTM.md) |
+| runbook.md | 運維手冊（§6 安全事件應變） | [../03-operations/runbook.md](../03-operations/runbook.md) |
+| test-strategy.md | 測試策略（§6.3 安全性測試） | [../02-testing/test-strategy.md](../02-testing/test-strategy.md) |
+
+---
+
+> **文件結束**
+>
+> 本文件為 ODA Cyber Konsult 的威脅模型。
+> 新增威脅或緩解措施時，請同步更新 STRIDE 分析表與緩解措施追蹤表。

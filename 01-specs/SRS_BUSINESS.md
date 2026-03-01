@@ -742,9 +742,9 @@
 
 | 文件 | 說明 | 位置 |
 |------|------|------|
-| 完整技術 SRS | 詳細技術規格（含 API、資料模型） | `docs/specs/SRS_TECHNICAL.md` |
-| 清洗 API 文件 | 資料清洗 API 完整規格 | `docs/api/cleaning-api.md` |
-| RAG API 文件 | RAG 服務 API 完整規格 | `docs/api/rag-api.md` |
+| 完整技術 SRS | 詳細技術規格（含 API、資料模型） | `docs/01-specs/SRS_TECHNICAL.md` |
+| 清洗 API 文件 | 資料清洗 API 完整規格 | `docs/01-specs/api/cleaning-api.md` |
+| RAG API 文件 | RAG 服務 API 完整規格 | `docs/01-specs/api/rag-api.md` |
 | Google Drive 整合 | Google Drive 資料源整合指南 | `docs/GDRIVE_SETUP_GUIDE.md` |
 | 專案全貌 | 系統架構與技術選型 | `PROJECT_CONTEXT.md` |
 

@@ -142,7 +142,7 @@ model Message {
 | GET | `/api/chat/conversations/:id` | 取得單一對話 | JWT ✅ |
 | DELETE | `/api/chat/conversations/:id` | 刪除對話 | JWT ✅ |
 
-詳細 API 文件：[docs/api/chat-api.md](/docs/api/chat-api.md)
+詳細 API 文件：[docs/api/chat-api.md](/docs/01-specs/api/chat-api.md)
 
 ---
 
@@ -393,8 +393,8 @@ model SharedConversation {
 
 ## 相關文件
 
-- [Chat API 文件](/docs/api/chat-api.md)
-- [RAG API 文件](/docs/api/rag-api.md)
+- [Chat API 文件](/docs/01-specs/api/chat-api.md)
+- [RAG API 文件](/docs/01-specs/api/rag-api.md)
 - [Prisma Schema](/apps/api/prisma/schema.prisma)
 - [NestJS 官方文件](https://docs.nestjs.com/)
 
