@@ -2,9 +2,20 @@
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**
 >
-> 文件版本：1.0.0
+> 文件版本：1.2.0
 > 建立日期：2026-03-01
+> 最後更新：2026-03-11
 > 文件類型：需求追溯矩陣（Requirements Traceability Matrix）
+
+---
+
+## 版本歷史
+
+| 版本 | 日期 | 變更說明 |
+|------|------|----------|
+| v1.0.0 | 2026-03-01 | 初版建立，FR-01~21 追溯矩陣 |
+| v1.1.0 | 2026-03-06 | 新增 FR-18 Maker-Checker 追溯、FR-19~21 追溯、驗收測試更新 |
+| v1.2.0 | 2026-03-11 | 新增 US-05-03 ZIP 追溯、更新角色定義為 7 角色、測試覆蓋統計更新（107 test files） |
 
 ---
 
@@ -44,6 +55,8 @@ User Story (PRD.md)
 ## 1. 追溯矩陣 — 已實作功能
 
 ### FR-01：使用者認證與授權 🔄
+
+> **角色定義**（7 角色）：basic_user / user / it_user / consultant / data_cleaner / data_reviewer / admin
 
 | US | 說明 | API 端點 | NestJS 模組 | NestJS 測試 | Python 測試 | TC | Screen | Security | 狀態 |
 |----|------|----------|------------|-------------|-------------|-----|--------|----------|------|
@@ -92,7 +105,7 @@ User Story (PRD.md)
 |----|------|----------|------------|-------------|-------------|-----|--------|----------|------|
 | US-04-01 | PII 自動偵測 | `POST /api/v1/clean` | cleaning/ → FastAPI | clean.controller.spec, cleaning-proxy.service.spec | test_detector, test_recognizers, test_name_context_integration | TC-04-001 | Admin `/` | JWT, RBAC(admin), X-Internal-Token, PII 處理 | ✅ |
 | US-04-02 | 去識別化策略 | `POST /api/v1/clean`（strategy 參數） | cleaning/ → FastAPI | clean.controller.spec | test_anonymizer, test_strategies, test_anonymizer_overlap, test_encrypt_key_rotation | — | Admin `/` | JWT, RBAC(admin), X-Internal-Token, PII 處理 | ✅ |
-| US-04-03 | 規則組合管理 | `GET/POST/PUT/DELETE /api/v1/rules` | cleaning/ → FastAPI | rules.controller.spec | test_rules_api, test_default_rules | — | Admin `/` | JWT, RBAC(admin), X-Internal-Token, PII 處理 | ✅ |
+| US-04-03 | 固定規則套用 | `POST /api/v1/clean`（自動套用 `get_default_rules()`） | cleaning/ → FastAPI | clean.controller.spec | test_clean_api, test_default_rules | — | Admin `/` | JWT, RBAC(admin), X-Internal-Token, PII 處理 | ✅ |
 | US-04-04 | 批次處理 | `POST /api/v1/clean`（多檔） | cleaning/ → FastAPI | clean.controller.spec | test_clean_api | — | Admin `/` | JWT, RBAC(admin), X-Internal-Token, PII 處理 | ✅ |
 
 **Python data-pipeline 測試**：test_parsers, test_text_parser, test_excel_parser, test_loaders_binary, test_language_detector, test_relation_keeper
@@ -105,6 +118,7 @@ User Story (PRD.md)
 |----|------|----------|------------|-------------|-------------|-----|--------|----------|------|
 | US-05-01 | 多格式檔案上傳 | `POST /api/v1/upload` | cleaning/ → FastAPI | upload.controller.spec | test_upload_api, test_upload_integration | TC-03-001 | Admin `/` | JWT, RBAC(admin), 50MB 限制, Input Validation | ✅ |
 | US-05-02 | 清洗結果下載 | `GET /api/v1/download/:taskId` | cleaning/ → FastAPI | download.controller.spec | test_download_api | — | Admin `/tasks` | JWT, RBAC(admin), 50MB 限制, Input Validation | ✅ |
+| US-05-03 | ZIP 上傳 | `POST /api/v1/upload`（ZIP 自動解壓+auto_tags） | cleaning/ → FastAPI | upload.controller.spec | test_upload_api, test_upload_integration | AC-05-03-01~04 | Admin `/` | JWT, RBAC(admin), 50MB 限制, Input Validation | ✅ |
 
 ---
 
@@ -125,11 +139,13 @@ User Story (PRD.md)
 
 ---
 
-### FR-08：去識別化規則管理 ✅
+### FR-08：去識別化規則管理 — 已簡化
+
+> **變更說明**：原規劃為自訂規則 CRUD API，已簡化為固定規則模式（`get_default_rules()`）。原有的 `rules.controller.spec`、`test_rules_api` 測試已移除，由 `test_default_rules` 覆蓋固定規則邏輯。
 
 | US | 說明 | API 端點 | NestJS 模組 | NestJS 測試 | Python 測試 | TC | Screen | Security | 狀態 |
 |----|------|----------|------------|-------------|-------------|-----|--------|----------|------|
-| US-08-01 | 規則設定檔 CRUD | `GET/POST/PUT/DELETE /api/v1/rules` | cleaning/ → FastAPI | rules.controller.spec | test_rules_api, test_default_rules | — | Admin `/rules` | JWT, RBAC(admin), X-Internal-Token | ✅ |
+| US-08-01 | 固定去識別化規則 | `POST /api/v1/clean`（自動套用） | cleaning/ → FastAPI | clean.controller.spec | test_default_rules, test_clean_api | — | Admin `/`（自動套用） | JWT, RBAC(admin), X-Internal-Token | ✅ |
 
 ---
 
@@ -165,15 +181,18 @@ User Story (PRD.md)
 
 | US | 說明 | API 端點 | NestJS 模組 | NestJS 測試 | Python 測試 | TC | Screen | Security | 狀態 |
 |----|------|----------|------------|-------------|-------------|-----|--------|----------|------|
-| US-18-01 | 待審核任務瀏覽 | `GET /api/v1/review/:taskId` | cleaning/ → FastAPI | review.controller.spec, review.dto.spec | test_review_api | TC-05-001 | Cleaner `/tasks` | JWT, RBAC(admin/cleaner), X-Internal-Token, PII 隔離 | ✅ |
-| US-18-02 | 檔案內容檢視 | `GET /api/v1/review/:taskId/files/:fileId/content` | cleaning/ → FastAPI | review.controller.spec | test_review_api | — | Cleaner `/tasks/:taskId/files/:fileId` | JWT, RBAC(admin/cleaner), X-Internal-Token, PII 隔離 | ✅ |
-| US-18-03 | 內容手動修正 | `PUT /api/v1/review/:taskId/files/:fileId/content` | cleaning/ → FastAPI | review.controller.spec | test_review_api | TC-05-002 | Cleaner `/tasks/:taskId/files/:fileId` | JWT, RBAC(admin/cleaner), X-Internal-Token, PII 隔離 | ✅ |
-| US-18-04 | 標籤管理 | `PUT /api/v1/review/:taskId/files/:fileId/tags` | cleaning/ → FastAPI | review.controller.spec | test_review_api | TC-05-003 | Cleaner `/tasks/:taskId/files/:fileId` | JWT, RBAC(admin/cleaner), X-Internal-Token, PII 隔離 | ✅ |
-| US-18-05 | 任務批准/駁回 | `POST /api/v1/review/:taskId/approve` | cleaning/ → FastAPI | review.controller.spec | test_review_api, test_review_integration | TC-05-004 | Cleaner `/tasks/:taskId` | JWT, RBAC(admin/cleaner), X-Internal-Token, PII 隔離 | ✅ |
-| US-18-06 | 送入 RAG 知識庫 | `POST /api/v1/review/:taskId/ingest` | cleaning/ → FastAPI → rag-service | review.controller.spec | test_ingest_api, test_ingest_integration | TC-05-005 | Cleaner `/tasks/:taskId/ingest` | JWT, RBAC(admin/cleaner), X-Internal-Token, PII 隔離 | ✅ |
-| US-18-07 | 來源資料瀏覽 | `GET /api/v1/files` | cleaning/ → FastAPI | files.controller.spec | test_files_list_api | — | Cleaner `/files` | JWT, RBAC(admin/cleaner), X-Internal-Token, PII 隔離 | ✅ |
-| US-18-08 | 知識庫文件瀏覽 | `GET /api/v1/knowledge-base/documents/*` | cleaning/ → FastAPI → rag-service | knowledge-base.controller.spec | test_knowledge_base_api, test_knowledge_base_integration | — | Cleaner `/knowledge-base` | JWT, RBAC(admin/cleaner), X-Internal-Token, PII 隔離 | ✅ |
-| US-18-09 | 知識庫文件刪除 | `DELETE /api/v1/knowledge-base/documents/by-source` | cleaning/ → FastAPI → rag-service | knowledge-base.controller.spec | test_knowledge_base_api | — | Cleaner `/knowledge-base` | JWT, RBAC(admin/cleaner), X-Internal-Token, PII 隔離 | ✅ |
+| US-18-01 | 待審核任務瀏覽 | `GET /api/v1/review/:taskId` | cleaning/ → FastAPI | review.controller.spec, review.dto.spec | test_review_api | TC-05-001 | Cleaner `/tasks` | JWT, RBAC(admin/cleaner/reviewer), X-Internal-Token, PII 隔離 | ✅ |
+| US-18-02 | 檔案內容檢視 | `GET /api/v1/review/:taskId/files/:fileId/content` | cleaning/ → FastAPI | review.controller.spec | test_review_api | — | Cleaner `/tasks/:taskId/files/:fileId` | JWT, RBAC(admin/cleaner/reviewer), X-Internal-Token, PII 隔離 | ✅ |
+| US-18-03 | 內容手動修正 | `PUT /api/v1/review/:taskId/files/:fileId/content` | cleaning/ → FastAPI | review.controller.spec | test_review_api | TC-05-002 | Cleaner `/tasks/:taskId/files/:fileId` | JWT, RBAC(admin/cleaner/reviewer), X-Internal-Token, PII 隔離 | ✅ |
+| US-18-04 | 標籤管理 | `PUT /api/v1/review/:taskId/files/:fileId/tags` | cleaning/ → FastAPI | review.controller.spec | test_review_api | TC-05-003 | Cleaner `/tasks/:taskId/files/:fileId` | JWT, RBAC(admin/cleaner/reviewer), X-Internal-Token, PII 隔離 | ✅ |
+| US-18-05 | 任務批准/駁回 | `POST /api/v1/review/:taskId/approve` | cleaning/ → FastAPI | review.controller.spec | test_review_api, test_review_integration | TC-05-004 | Cleaner `/tasks/:taskId` | JWT, RBAC(admin/cleaner/reviewer), X-Internal-Token, PII 隔離, Maker-Checker | ✅ |
+| US-18-06 | 送入 RAG 知識庫 | `POST /api/v1/review/:taskId/ingest` | cleaning/ → FastAPI → rag-service | review.controller.spec | test_ingest_api, test_ingest_integration | TC-05-005 | Cleaner `/tasks/:taskId/ingest` | JWT, RBAC(admin/reviewer), X-Internal-Token, PII 隔離 | ✅ |
+| US-18-07 | 來源資料瀏覽 | `GET /api/v1/files` | cleaning/ → FastAPI | files.controller.spec | test_files_list_api | — | Cleaner `/files` | JWT, RBAC(admin/cleaner/reviewer), X-Internal-Token, PII 隔離 | ✅ |
+| US-18-08 | 知識庫文件瀏覽 | `GET /api/v1/knowledge-base/documents/*` | cleaning/ → FastAPI → rag-service | knowledge-base.controller.spec | test_knowledge_base_api, test_knowledge_base_integration | — | Cleaner `/knowledge-base` | JWT, RBAC(admin/cleaner/reviewer), X-Internal-Token, PII 隔離 | ✅ |
+| US-18-09 | 知識庫文件刪除 | `DELETE /api/v1/knowledge-base/documents/by-source` | cleaning/ → FastAPI → rag-service | knowledge-base.controller.spec | test_knowledge_base_api | — | Cleaner `/knowledge-base` | JWT, RBAC(admin/cleaner/reviewer), X-Internal-Token, PII 隔離 | ✅ |
+| US-18-10 | 送審任務 | `POST /api/v1/review/:taskId/submit` | cleaning/ → FastAPI | review.controller.spec | test_review_api | TC-05-006 | Cleaner `/tasks/:taskId` | JWT, RBAC(admin/cleaner), X-Internal-Token, Maker-Checker | ✅ |
+| US-18-11 | 退回任務 | `POST /api/v1/review/:taskId/reject` | cleaning/ → FastAPI | review.controller.spec | test_review_api | TC-05-007 | Cleaner `/tasks/:taskId` | JWT, RBAC(admin/reviewer), X-Internal-Token, Maker-Checker | ✅ |
+| US-18-12 | Maker-Checker 職責分離 | submit/approve/reject 端點聯動 | cleaning/ → FastAPI | review.controller.spec | test_review_api, test_review_integration | TC-05-006, TC-05-007 | Cleaner `/tasks/:taskId` | JWT, RBAC, Maker-Checker（submitted_by ≠ approved_by） | ✅ |
 
 ---
 
@@ -230,7 +249,9 @@ User Story (PRD.md)
 | TC-05-002 | FR-18 | US-18-03 | 內容手動編輯 | review.controller.spec | test_review_api | — | JWT, RBAC(admin/cleaner), X-Internal-Token | ✅ |
 | TC-05-003 | FR-18 | US-18-04 | 標籤管理 | review.controller.spec | test_review_api | — | JWT, RBAC(admin/cleaner), X-Internal-Token | ✅ |
 | TC-05-004 | FR-18 | US-18-05 | 任務批准 | review.controller.spec | test_review_integration | — | JWT, RBAC(admin/cleaner), X-Internal-Token | ✅ |
-| TC-05-005 | FR-18 | US-18-06 | 送入 RAG | review.controller.spec | test_ingest_api, test_ingest_integration | — | JWT, RBAC(admin/cleaner), X-Internal-Token | ✅ |
+| TC-05-005 | FR-18 | US-18-06 | 送入 RAG | review.controller.spec | test_ingest_api, test_ingest_integration | — | JWT, RBAC(admin/reviewer), X-Internal-Token | ✅ |
+| TC-05-006 | FR-18 | US-18-10, US-18-12 | Maker-Checker 送審與職責分離 | review.controller.spec | test_review_api, test_review_integration | — | JWT, RBAC, Maker-Checker | ✅ |
+| TC-05-007 | FR-18 | US-18-11 | 退回任務流程 | review.controller.spec | test_review_api | — | JWT, RBAC(admin/reviewer), Maker-Checker | ✅ |
 | TC-06-001 | FR-19 | US-19-01 | 清洗統計 | analytics.controller.spec | test_analytics_api | — | JWT, RBAC(admin/cleaner), X-Internal-Token | ✅ |
 | TC-06-002 | FR-19 | US-19-03 | 時間軸統計 | analytics.controller.spec | test_analytics_api | — | JWT, RBAC(admin/cleaner), X-Internal-Token | ✅ |
 
@@ -285,29 +306,29 @@ User Story (PRD.md)
 
 | 類別 | FR 數量 | US 數量 | 狀態 |
 |------|---------|---------|------|
-| 已實作（✅） | 12 | 25 | Unit + Integration 覆蓋 |
+| 已實作（✅） | 12 | 29 | Unit + Integration 覆蓋 |
 | 規劃中（🔄） | 3 | 10 | 部分實作、持續強化 |
 | 未來願景（🔮） | 6 | 6（未展開） | Phase 3 以後 |
-| **合計** | **21** | **41** | — |
+| **合計** | **21** | **45** | — |
 
 ### 5.2 測試覆蓋統計
 
 | 層級 | 檔案數 | 覆蓋範圍 |
 |------|--------|---------|
-| NestJS Unit (.spec.ts) | 43 | 全部已實作模組（auth, users, chat, prompts, audit, cleaning, health, websearch, llm, datasources） |
-| Python rag-service (test_*.py) | 38 | RAG 核心管線、API 路由、整合測試 |
+| NestJS Unit (.spec.ts) | 42 | 全部已實作模組（auth, users, chat, prompts, audit, cleaning, health, websearch, llm, datasources） |
+| Python rag-service (test_*.py) | 38 | RAG 核心管線、API 路由、整合測試、Maker-Checker 驗證 |
 | Python data-pipeline (test_*.py) | 14 | 解析器、偵測器、去識別化策略 |
-| NestJS E2E (.e2e-spec.ts) | 1 | 認證 + 聊天 + 管理流程 |
-| **合計** | **96** | — |
+| React 前端 (*.test.tsx) | 13 | Admin 4 + Cleaner 5 + Chatbot 4（hooks + pages + components） |
+| **合計** | **107** | 含前端測試框架（Vitest + RTL） |
 
 ### 5.3 追溯完整性
 
 | 檢核項目 | 狀態 | 說明 |
 |----------|------|------|
-| 每個已實作 US 有對應 API 端點 | ✅ | 35/35 US 有明確端點 |
+| 每個已實作 US 有對應 API 端點 | ✅ | 39/39 US 有明確端點（含 US-05-03、US-18-10/11/12） |
 | 每個 API 端點有 NestJS 測試 | ✅ | 43 spec 檔案覆蓋全部 Controller/Service |
 | 每個 FastAPI 路由有 Python 測試 | ✅ | 38 test 檔案覆蓋 API + 整合 |
-| SRS §11 驗收案例有對應測試 | ✅ | 12/12 TC 全數有測試覆蓋 |
+| SRS §11 驗收案例有對應測試 | ✅ | 14/14 TC 全數有測試覆蓋（含 TC-05-006/007 Maker-Checker） |
 | 每個 ADR 有對應 FR 引用 | ✅ | 10/10 ADR 標注影響範圍 |
 
 ---

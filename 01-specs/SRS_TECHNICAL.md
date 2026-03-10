@@ -2,8 +2,8 @@
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**
 >
-> 文件版本：1.6.0
-> 最後更新：2026-02-13
+> 文件版本：1.7.0
+> 最後更新：2026-03-11
 > 文件類型：完整技術 SRS（面向開發人員、系統架構師、QA 工程師）
 
 ---
@@ -258,10 +258,12 @@
 
 | 角色 | 代碼 | 狀態 | 說明 |
 |------|------|------|------|
+| 初級使用者 | `basic_user` | ✅ | 透過 Chatbot 以新手模式查詢資安問題（beginner only） |
 | 一般使用者 | `user` | ✅ | 透過 Chatbot 查詢資安問題 |
 | 資安 ISO 顧問 | `consultant` | ✅ | 透過專業化 AI 對話進行深入資安諮詢 |
 | IT 工程師 | `it_user` | 🔄 | IT/MIS 工程師或 SI 技術人員，取得實務技術建議 |
 | 資料清洗人員 | `data_cleaner` | ✅ | 清洗資料審核，僅存取 Cleaner App |
+| 資料審核人員 | `data_reviewer` | ✅ | 清洗資料審批，僅存取 Cleaner App（Maker-Checker 審批者） |
 | 系統管理員 | `admin` | ✅ | 系統設定與維護，可存取 Admin Dashboard + Cleaner App + Chatbot |
 | 平台管理員 | `platform_admin` | 🔮 | 整體平台管理 |
 
@@ -269,59 +271,59 @@
 
 ### 4.3 角色與應用程式存取矩陣
 
-| 應用程式 | `user` | `it_user` | `consultant` | `data_cleaner` | `admin` | `platform_admin` |
-|----------|:------:|:---------:|:------------:|:--------------:|:-------:|:-----------------:|
-| Chatbot UI (5174) | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ |
-| Admin Dashboard (5173) | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| Cleaner App (5175) | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| 應用程式 | `basic_user` | `user` | `it_user` | `consultant` | `data_cleaner` | `data_reviewer` | `admin` | `platform_admin` |
+|----------|:------------:|:------:|:---------:|:------------:|:--------------:|:---------------:|:-------:|:-----------------:|
+| Chatbot UI (5174) | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ |
+| Admin Dashboard (5173) | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| Cleaner App (5175) | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ |
 
 ### 4.2 詳細權限矩陣
 
-| 功能 | user | it_user | consultant | data_cleaner | admin | platform_admin |
-|------|:----:|:-------:|:----------:|:------------:|:-----:|:--------------:|
+| 功能 | basic_user | user | it_user | consultant | data_cleaner | data_reviewer | admin | platform_admin |
+|------|:----------:|:----:|:-------:|:----------:|:------------:|:-------------:|:-----:|:--------------:|
 | **Chatbot** |
-| Chatbot 對話 | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ |
-| 查看自己歷史對話 | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ |
-| 查看所有歷史對話 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| 查看自己對話使用紀錄 | ✗ | ✗ | ✓ | ✗ | ✓ | ✓ |
+| Chatbot 對話 | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ |
+| 查看自己歷史對話 | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ |
+| 查看所有歷史對話 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| 查看自己對話使用紀錄 | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✓ | ✓ |
 | **回應模式** |
-| 選擇回應模式 | ✗ | ✓ | ✓ | ✗ | ✓ | ✓ |
+| 選擇回應模式 | ✗ | ✓ | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ |
 | **去識別化功能（僅 Admin）** |
-| 上傳檔案 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| 執行去識別化任務 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| 下載去識別化結果 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| 上傳檔案 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| 執行去識別化任務 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| 下載去識別化結果 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
 | **規則管理（僅 Admin）** |
-| 查看規則 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| 建立規則 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| 修改規則 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| 刪除規則 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| 匯入/匯出規則 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| 查看規則 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| 建立規則 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| 修改規則 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| 刪除規則 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| 匯入/匯出規則 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
 | **清洗審核管理（Cleaner App）** |
-| 查看清洗任務審核資訊 | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| 檢視清洗後檔案內容 | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| 編輯清洗後內容 | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| 標記標籤 | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| 批准/駁回任務 | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| 送入 RAG 知識庫 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| 查看資料分析儀表板 | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| 瀏覽來源資料 | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| 瀏覽知識庫文件 | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| 按來源刪除知識庫文件 | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| 查看清洗任務審核資訊 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ |
+| 檢視清洗後檔案內容 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ |
+| 編輯清洗後內容 | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✓ | ✓ |
+| 標記標籤 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ |
+| 批准/駁回任務 | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| 送入 RAG 知識庫 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| 查看資料分析儀表板 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ |
+| 瀏覽來源資料 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ |
+| 瀏覽知識庫文件 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ |
+| 按來源刪除知識庫文件 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
 | **稽核日誌** |
-| 查看自己日誌 | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ |
-| 查看所有日誌 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| 查看自己日誌 | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| 查看所有日誌 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
 | **使用者管理** 🔄 |
-| 查看使用者列表 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| 建立使用者 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| 停用/啟用帳號 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| 指派角色 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| 查看使用者列表 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| 建立使用者 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| 停用/啟用帳號 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| 指派角色 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
 | **系統設定** 🔄 |
-| 提示詞管理 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| 系統參數設定 | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| 提示詞管理 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| 系統參數設定 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
 | **會員管理** 🔮 |
-| 查看會員列表 | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
-| 建立/管理會員 | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
-| 設定會員配額 | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| 查看會員列表 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| 建立/管理會員 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| 設定會員配額 | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
 
 ---
 
@@ -1070,7 +1072,11 @@ CREATE INDEX idx_task_files_file_id ON task_files(file_id);
 | Word | .docx, .doc | application/vnd.openxmlformats... | 50MB |
 | Excel | .xlsx, .xls | application/vnd.openxmlformats... | 50MB |
 | CSV | .csv | text/csv | 50MB |
-| 純文字 | .txt, .md | text/plain | 50MB |
+| 純文字 | .txt | text/plain | 50MB |
+| Markdown | .md | text/markdown | 50MB |
+| JSON | .json | application/json | 50MB |
+| HTML | .html, .htm | text/html | 50MB |
+| ZIP | .zip | application/zip | 200MB |
 
 #### 5.6.3 API 規格
 
@@ -1098,6 +1104,61 @@ Response 200:
     "message": "成功上傳 1 個檔案"
   }
 ```
+
+**POST /api/v1/upload — ZIP 上傳（同一端點）**
+
+ZIP 檔案透過既有 `POST /api/v1/upload` 端點上傳，伺服器依 MIME Type 自動識別並解壓處理。
+
+```yaml
+Request:
+  Content-Type: multipart/form-data
+  Body:
+    files: File (required, application/zip)
+
+ZIP 安全限制:
+  - 壓縮比上限: ≤ 20:1（防止 Zip Bomb）
+  - 單一 ZIP 內檔案數: ≤ 100
+  - 解壓後總大小: ≤ 200MB
+  - 路徑穿越防護: 禁止包含 `../` 或絕對路徑的條目
+  - 僅接受支援的內部檔案格式（PDF, DOCX, XLSX, CSV, TXT, MD, JSON, HTML）
+
+Response 200:
+  {
+    "success": true,
+    "data": [
+      {
+        "id": "file-uuid-1",
+        "filename": "a1b2c3d4_report.pdf",
+        "original_name": "report.pdf",
+        "size": 1048576,
+        "type": "application/pdf",
+        "source_zip": "upload_batch.zip",
+        "uploaded_at": "2026-03-11T10:30:00.000Z"
+      }
+    ],
+    "message": "成功從 ZIP 解壓並上傳 5 個檔案"
+  }
+
+Response 400 (ZIP 安全違規):
+  {
+    "success": false,
+    "error": {
+      "code": "ZIP_SECURITY_VIOLATION",
+      "message": "ZIP 壓縮比超過上限 (20:1)"
+    }
+  }
+
+Response 400 (路徑穿越):
+  {
+    "success": false,
+    "error": {
+      "code": "ZIP_PATH_TRAVERSAL",
+      "message": "ZIP 包含不合法的路徑條目"
+    }
+  }
+```
+
+> ZIP 上傳自動解壓後，各檔案獨立建立 `files` 記錄，並以 `source_zip` 欄位關聯原始 ZIP 檔名。不支援的內部檔案格式將被略過並記錄於回應的 `warnings` 欄位。
 
 **GET /api/v1/upload/{file_id} - 取得檔案資訊**
 
@@ -1837,9 +1898,12 @@ alert_rules:
 
 | 角色 | 預設模式 | 可切換範圍 |
 |------|---------|-----------|
-| user | beginner | beginner only |
+| basic_user | beginner | beginner only |
+| user | beginner | beginner, standard |
 | it_user | standard | beginner, standard |
 | consultant | expert | beginner, standard, expert |
+| data_cleaner | standard | standard only |
+| data_reviewer | standard | standard only |
 | admin | standard | beginner, standard, expert |
 
 #### 5.17.4 使用者故事
@@ -2256,6 +2320,8 @@ CREATE INDEX idx_task_files_review_status ON task_files(review_status);
 
 ```sql
 ALTER TABLE tasks ADD COLUMN approval_status VARCHAR(50) DEFAULT 'pending';
+ALTER TABLE tasks ADD COLUMN submitted_by UUID REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE tasks ADD COLUMN submitted_at TIMESTAMP;
 ALTER TABLE tasks ADD COLUMN approved_by UUID REFERENCES users(id) ON DELETE SET NULL;
 ALTER TABLE tasks ADD COLUMN approved_at TIMESTAMP;
 ALTER TABLE tasks ADD COLUMN ingested_at TIMESTAMP;
@@ -2275,10 +2341,37 @@ CREATE INDEX idx_tasks_approval_status ON tasks(approval_status);
 | task_files | reviewed_at | TIMESTAMP | 審核時間 |
 | task_files | review_note | TEXT | 審核備註 |
 | tasks | approval_status | VARCHAR(50) | 任務批准狀態：pending / approved / rejected / ingested |
-| tasks | approved_by | UUID | 批准人員 ID (FK → users) |
+| tasks | submitted_by | UUID | 送審提交者 ID (FK → users)，Maker-Checker 中的 Maker |
+| tasks | submitted_at | TIMESTAMP | 送審提交時間 |
+| tasks | approved_by | UUID | 批准人員 ID (FK → users)，Maker-Checker 中的 Checker |
 | tasks | approved_at | TIMESTAMP | 批准時間 |
 | tasks | ingested_at | TIMESTAMP | 送入 RAG 知識庫時間 |
 | tasks | ingest_result | JSONB | 送入結果，含 files_ingested / chunks_created / errors |
+
+**Maker-Checker 職責分離規則：**
+
+> 以下四個端點強制執行 Maker-Checker 規則：**送審者（submitted_by）不得為審批者（approved_by）**。
+> 操作者身份由 NestJS JWT `@CurrentUser` 注入，FastAPI 端透過 `X-User-Id` header 驗證。
+
+| 端點 | 動作 | Maker-Checker 驗證 |
+|------|------|-------------------|
+| `POST /api/v1/review/{task_id}/approve` | 批准任務 | `approved_by != submitted_by` |
+| `POST /api/v1/review/{task_id}/reject` | 駁回任務 | `rejected_by != submitted_by` |
+| `PUT /api/v1/review/{task_id}/files/{file_id}/status` | 檔案審核 | `reviewed_by != submitted_by` |
+| `POST /api/v1/review/{task_id}/ingest` | 送入 RAG | `ingested_by != submitted_by`（額外限制：僅 `admin` 角色） |
+
+違反 Maker-Checker 規則時回應：
+
+```yaml
+Response 403:
+  {
+    "success": false,
+    "error": {
+      "code": "MAKER_CHECKER_VIOLATION",
+      "message": "送審者不得為審批者（Maker-Checker 職責分離）"
+    }
+  }
+```
 
 ---
 
@@ -2573,10 +2666,12 @@ Response 200:
       ├───────────────┤            ├──────────────────┤
       │ approval_     │            │ tags (JSONB)     │
       │   status      │            │ edited_content   │
-      │ approved_by   │            │ review_status    │
-      │ approved_at   │            │ reviewed_by      │
-      │ ingested_at   │            │ reviewed_at      │
-      │ ingest_result │            │ review_note      │
+      │ submitted_by  │            │ review_status    │
+      │ submitted_at  │            │ reviewed_by      │
+      │ approved_by   │            │ reviewed_at      │
+      │ approved_at   │            │ review_note      │
+      │ ingested_at   │            │                  │
+      │ ingest_result │            │                  │
       └───────────────┘            └──────────────────┘
 
 ┌───────────────┐    ┌───────────────┐    ┌───────────────┐
@@ -3001,6 +3096,7 @@ Q1 2026   Q2 2026   Q3 2026   Q4 2026   Q1 2027   Q2 2027
 
 | 版本 | 日期 | 變更說明 |
 |------|------|----------|
+| 1.7.0 | 2026-03-11 | 新增 basic_user 角色（beginner only）與 data_reviewer 角色（Maker-Checker 審批者）；上傳格式新增 MD、JSON、HTML、ZIP；新增 ZIP 上傳 API 規格（安全限制：壓縮比≤20:1、檔案數≤100、總大小≤200MB、禁止路徑穿越）；新增 Maker-Checker 職責分離欄位（submitted_by/submitted_at）與四端點驗證規則（approve、reject、file_status、ingest）；更新三層模式角色對應表（7 角色） |
 | 1.6.0 | 2026-02-13 | 移除獨立 Cleaning Service :8001（已合併至 RAG Service :8000）；新增 5 支 API（analytics/pipeline、analytics/recent-activity、knowledge-base/documents/grouped、knowledge-base/documents/by-source、files pipeline_status 篩選）；重寫 Cleaner App 介面規格（管線漏斗、三 Tab 知識庫、檔案審核面板）；更新服務通訊矩陣與連線埠分配 |
 | 1.5.0 | 2026-02-12 | 新增 FR-20 來源資料瀏覽（GET /api/v1/files）；新增 FR-21 知識庫文件瀏覽（4 支 API）；更新功能權限矩陣；新增 US-18-07~09 使用者故事；更新 API 端點清單；更新介面設計規格（4 個側邊欄項目） |
 | 1.4.0 | 2026-02-11 | 新增 Cleaner App 獨立前端 (Port 5175)；新增 data_cleaner 角色與應用程式存取矩陣；新增 FR-18 清洗審核管理（含 7 支 Review API）；新增 FR-19 資料分析儀表板（含 3 支 Analytics API）；擴展 task_files/tasks 資料模型（審核欄位）；更新系統架構圖、連線埠分配、API 端點清單、ER 圖、資料字典、介面設計規格 |

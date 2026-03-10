@@ -2,8 +2,9 @@
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**
 >
-> 文件版本：1.0.0
+> 文件版本：1.2.0
 > 建立日期：2026-03-01
+> 最後更新：2026-03-11
 > 文件類型：威脅模型（Threat Model）
 
 ---
@@ -73,10 +74,10 @@
 | 威脅類別 | 威脅描述 | 攻擊情境 | 現有緩解措施 | 狀態 |
 |----------|---------|---------|-------------|------|
 | **Spoofing（偽冒）** | 攻擊者冒充合法使用者存取系統 | 竊取或偽造 JWT Token、暴力破解密碼 | JWT 認證（access + refresh token）、bcrypt 12 rounds 密碼雜湊、帳號鎖定（5 次失敗鎖 15 分鐘） | ✅ 已緩解 |
-| **Tampering（竄改）** | 攻擊者竄改請求資料或資料庫內容 | SQL Injection、XSS、API 參數竄改 | ValidationPipe + class-validator 輸入驗證、Prisma/SQLAlchemy 參數化查詢、HMAC 內部 API 簽章 | ✅ 已緩解 |
+| **Tampering（竄改）** | 攻擊者竄改請求資料或資料庫內容 | SQL Injection、XSS、API 參數竄改、ZIP 路徑穿越（Zip Slip） | ValidationPipe + class-validator 輸入驗證、Prisma/SQLAlchemy 參數化查詢、HMAC 內部 API 簽章、ZIP 路徑穿越驗證 | ✅ 已緩解 |
 | **Repudiation（否認）** | 使用者否認曾執行特定操作 | 刪除清洗任務後否認、修改審核結果後否認 | AuditLog Interceptor 全域攔截記錄、稽核日誌含使用者 ID + 時間戳 + 操作詳情、日誌不可刪除（僅 admin 可查詢匯出） | ✅ 已緩解 |
 | **Information Disclosure（資訊洩漏）** | 敏感資料未經授權被存取 | PII 外洩、未授權存取他人對話、內部 API Token 洩漏 | PII 去識別化管線（Presidio + 20 種實體）、RBAC Guard 角色存取控制、X-Internal-Token 內部 API 認證、使用者僅能存取自身對話 | ✅ 已緩解 |
-| **Denial of Service（阻斷服務）** | 攻擊者耗盡系統資源導致服務不可用 | 大量請求灌爆 API、上傳超大檔案、LLM API 配額耗盡 | ThrottlerModule 60 req/min 限流、50MB 檔案上傳大小限制、Nginx 反向代理層額外防護 | ✅ 已緩解 |
+| **Denial of Service（阻斷服務）** | 攻擊者耗盡系統資源導致服務不可用 | 大量請求灌爆 API、上傳超大檔案、LLM API 配額耗盡、ZIP bomb 壓縮炸彈 | ThrottlerModule 60 req/min 限流、50MB 檔案上傳大小限制、Nginx 反向代理層額外防護、ZIP 解壓縮安全驗證 | ✅ 已緩解 |
 | **Elevation of Privilege（權限提升）** | 低權限使用者存取高權限功能 | 一般使用者存取管理功能、繞過密碼變更要求 | RBAC Guard + @Roles 裝飾器強制角色檢查、PasswordChangeRequiredGuard 全域攔截過期密碼、前端路由守衛 + 後端雙重驗證 | ✅ 已緩解 |
 
 ### 3.2 STRIDE 深度分析
@@ -98,6 +99,7 @@
 | API 參數竄改 | 中 | ValidationPipe + class-validator DTO 驗證 | `apps/api/src/common/` |
 | 內部 API 偽造 | 高 | X-Internal-Token HMAC 驗證 | `python/rag-service/middleware/` |
 | 檔案類型偽裝 | 中 | MIME type 檢查 + 副檔名白名單 | FastAPI upload 端點 |
+| ZIP 路徑穿越（Zip Slip） | 高 | ZIP 內所有檔案路徑不得包含 `../` 等路徑穿越字元，違規直接拒絕解壓 | FastAPI ZIP 上傳處理 |
 
 #### R — Repudiation（否認）
 
@@ -124,6 +126,7 @@
 | 大檔案上傳 | 中 | 50MB 上傳限制 | NestJS MulterModule 設定 |
 | LLM API 耗盡 | 中 | 請求排隊 + 錯誤處理 + 配額監控 | `apps/api/src/modules/llm/` |
 | Qdrant 記憶體耗盡 | 低 | Collection 向量數量監控 | 運維監控（規劃中） |
+| ZIP bomb（壓縮炸彈） | 中 | ZIP 解壓縮前驗證壓縮比 ≤ 20:1、檔案數 ≤ 100、解壓後總大小 ≤ 200MB | FastAPI ZIP 上傳處理 |
 
 #### E — Elevation of Privilege（權限提升）
 
@@ -132,6 +135,18 @@
 | 角色繞過 | 高 | RolesGuard + @Roles 裝飾器 | `apps/api/src/common/guards/roles.guard.ts` |
 | 密碼過期繞過 | 中 | PasswordChangeRequiredGuard 全域攔截 | `apps/api/src/common/guards/password-change-required.guard.ts` |
 | 前端路由繞過 | 低 | 前端守衛 + 後端 Guard 雙重驗證 | 前端 router + 後端 Guard |
+
+### 3.3 Maker-Checker 審核流程 — STRIDE 分析
+
+Maker-Checker 職責分離機制引入獨立攻擊面，以下為各威脅類別的分析。
+
+| 威脅類別 | 攻擊向量 | 風險等級 | 緩解措施 | 實作位置 |
+|----------|---------|---------|---------|---------|
+| **Spoofing** | 送審者偽造身份繞過職責分離（如 cleaner 冒充 reviewer 批准自己的任務） | 高 | JWT `@CurrentUser` 由伺服器注入操作者 ID，不接受客戶端傳入；submitted_by / approved_by 皆由後端寫入 | `apps/api/src/modules/cleaning/controllers/review.controller.ts`、`python/rag-service/src/rag_service/api/v1/review.py` |
+| **Tampering** | 送審後篡改檔案內容（繞過審核結果） | 高 | `_FROZEN_STATUSES` 凍結機制：任務進入 `review_requested` / `approved` / `ingested` 狀態後，檔案內容不可編輯（API 回傳 400） | `python/rag-service/src/rag_service/api/v1/review.py` |
+| **Repudiation** | 操作者否認審核決定（批准或退回） | 中 | 完整稽核軌跡：`submitted_by/at`、`approved_by/at`、`edited_by/at`、`reviewed_by/at` 皆記錄於 task/task_files 表；cleaning_audit_logs 記錄所有操作 | `python/rag-service/src/rag_service/db/models.py` |
+| **Info Disclosure** | 透過 reject 理由洩漏 PII 資訊 | 低 | reject 理由由 reviewer 手動輸入，不含系統生成的 PII 內容；稽核日誌僅限 admin 存取 | 流程設計 + RBAC |
+| **Elevation** | cleaner 直接呼叫 approve/ingest API 繞過角色限制 | 高 | NestJS method-level `@Roles('admin', 'data_reviewer')` Guard 強制檢查；FastAPI 端同步驗證 `user_role` | `apps/api/src/modules/cleaning/controllers/review.controller.ts` |
 
 ---
 
@@ -247,6 +262,8 @@
 | XSS 攻擊 | 中 | 中 | 中 | ✅ React 自動轉義 + Helmet |
 | 權限提升 | 高 | 低 | 中 | ✅ RBAC Guard 雙重驗證 |
 | LLM API 配額耗盡 | 中 | 中 | 中 | ⚠️ 部分緩解（需加強監控） |
+| ZIP bomb 壓縮炸彈 | 高 | 中 | 高 | ✅ 壓縮比 / 檔案數 / 總大小三重驗證 |
+| ZIP 路徑穿越（Zip Slip） | 高 | 中 | 高 | ✅ 路徑穿越字元驗證 + 拒絕解壓 |
 
 ---
 
@@ -276,6 +293,12 @@
 | M-020 | DoS | LLM API 配額監控 | ⚠️ 規劃中 | llm/ | Phase 2 |
 | M-021 | Multiple | Nginx WAF / 進階防護 | ⚠️ 規劃中 | 基礎設施 | Phase 2 |
 | M-022 | Spoofing | 2FA / MFA 雙因素認證 | 🔮 未來 | auth/ | Phase 3 |
+| M-023 | Spoofing | Maker-Checker 職責分離（submitted_by ≠ approved_by） | ✅ 已實作 | cleaning/ review API | test_review_api, test_review_integration |
+| M-024 | Tampering | 送審後凍結機制（_FROZEN_STATUSES） | ✅ 已實作 | FastAPI review.py | test_review_api |
+| M-025 | Repudiation | Maker-Checker 完整稽核軌跡 | ✅ 已實作 | DB models (task/task_files) | test_review_integration |
+| M-026 | EoP | Maker-Checker method-level @Roles Guard | ✅ 已實作 | review.controller.ts | review.controller.spec |
+| M-027 | DoS | ZIP 解壓縮安全驗證（壓縮比 ≤ 20:1、檔案數 ≤ 100、解壓後總大小 ≤ 200MB） | ✅ 已實作 | FastAPI ZIP 上傳處理 | test_zip_bomb_protection |
+| M-028 | Tampering | ZIP 路徑穿越驗證（拒絕含 `../` 路徑的檔案） | ✅ 已實作 | FastAPI ZIP 上傳處理 | test_zip_slip_protection |
 
 ---
 
@@ -288,6 +311,16 @@
 | RTM.md | 需求追溯矩陣（§4.1 安全性需求） | [RTM.md](./RTM.md) |
 | runbook.md | 運維手冊（§6 安全事件應變） | [../03-operations/runbook.md](../03-operations/runbook.md) |
 | test-strategy.md | 測試策略（§6.3 安全性測試） | [../02-testing/test-strategy.md](../02-testing/test-strategy.md) |
+
+---
+
+## 版本歷史
+
+| 版本 | 日期 | 變更說明 |
+|------|------|---------|
+| v1.0.0 | 2026-03-01 | 初版：STRIDE 威脅分析、攻擊面分析、風險矩陣、緩解措施追蹤表 |
+| v1.1.0 | 2026-03-06 | 新增 Maker-Checker 審核流程 STRIDE 分析、M-023~M-026 緩解措施 |
+| v1.2.0 | 2026-03-11 | 新增 ZIP bomb 與 Zip Slip 威脅分析及緩解措施（M-027、M-028） |
 
 ---
 

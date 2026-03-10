@@ -110,6 +110,7 @@ curl -s http://localhost:6333/healthz
 | System Admin | admin@oda-cyber.com | OdaPoc2026! | admin | Admin + Chatbot + Cleaner |
 | Data Cleaner | cleaner@oda-cyber.com | OdaPoc2026! | data_cleaner | Chatbot + Cleaner |
 | Demo Consultant | consultant@oda-cyber.com | OdaPoc2026! | consultant | Chatbot |
+| Data Reviewer | reviewer@oda-cyber.com | OdaPoc2026! | data_reviewer | Chatbot + Cleaner |
 | Demo User | user@oda-cyber.com | OdaPoc2026! | user | Chatbot |
 
 > 帳號定義於 `apps/api/prisma/seed.ts`，密碼使用 bcrypt 12 rounds 雜湊。
@@ -123,7 +124,7 @@ curl -s http://localhost:6333/healthz
 | 1.1 | 登入頁載入 | 顯示「ODA CyberKonsult / 管理後台登入」 | PASS |
 | 1.2 | admin 帳號登入 | 右上角顯示「System Admin」，進入首頁 | PASS |
 | 1.3 | 首頁功能 | 四步驟流程（上傳→選規則→清洗→完成）+ 檔案拖放上傳區 | PASS |
-| 1.4 | 規則管理 `/rules` | 顯示 3 個規則設定檔（醫療研究用/學術研究用/完全合規用） | PASS |
+| 1.4 | 首頁清洗流程 | 自動套用固定規則（`get_default_rules()`），無需手動選擇規則 | PASS |
 | 1.5 | 任務中心 `/tasks` | 顯示清洗任務列表，含狀態、進度條、分頁 | PASS |
 | 1.6 | 使用者管理 `/users` | 顯示 5 個帳號，含角色下拉、狀態切換 | PASS |
 | 1.7 | 提示詞管理 `/prompts` | 顯示 6 筆 seed 模板（3 角色 x 2-3 模式） | PASS |
@@ -153,6 +154,17 @@ curl -s http://localhost:6333/healthz
 | 3.6 | 知識庫 `/knowledge-base` | 文件管理 + 語意搜尋 + 來源分析，向量總數 71 | PASS |
 | 3.7 | user 登入被拒 | user 帳號顯示「此帳號無清洗管理權限」 | PASS |
 
+### TC-3.5：Maker-Checker 審核流程（Cleaner App）
+
+| # | 測試項目 | 預期結果 | 驗證狀態 |
+|---|---------|---------|---------|
+| 3.8 | cleaner 送審任務 | 以 cleaner 登入 → 開啟已完成清洗任務 → 按「送審」→ 任務狀態變更為 `review_requested` | — |
+| 3.9 | reviewer 批准任務 | 以 reviewer 登入 → 開啟已送審任務 → 按「批准」→ 任務狀態變更為 `approved` | — |
+| 3.10 | reviewer 退回任務 | 以 reviewer 登入 → 開啟已送審任務 → 按「退回」→ 填入理由 → 任務狀態變回 `pending` | — |
+| 3.11 | 自審驗證（職責分離） | 以 cleaner 送審 → 同一 cleaner 嘗試批准 → API 回傳 403 Forbidden | — |
+| 3.12 | 凍結驗證 | 送審後 → 以 cleaner 嘗試編輯檔案 → API 回傳 400（檔案已凍結） | — |
+| 3.13 | reviewer 可登入 Cleaner App | 以 reviewer 登入 → 顯示「Data Reviewer」→ 可查看任務列表 | — |
+
 ### TC-4：角色權限交叉驗證
 
 | # | 測試項目 | 預期結果 | 驗證狀態 |
@@ -163,15 +175,28 @@ curl -s http://localhost:6333/healthz
 
 ## 9. 角色權限對照表
 
-| 應用 | admin | data_cleaner | consultant | user |
-|------|-------|-------------|------------|------|
-| Admin Dashboard (5173) | O | X | X | X |
-| Chatbot UI (5174) | O | O | O | O |
-| Cleaner App (5175) | O | O | X | X |
+| 應用 | admin | data_cleaner | data_reviewer | consultant | user |
+|------|-------|-------------|---------------|------------|------|
+| Admin Dashboard (5173) | O | X | X | X | X |
+| Chatbot UI (5174) | O | O | O | O | O |
+| Cleaner App (5175) | O | O | O | X | X |
 
 - **Admin Dashboard**：僅 `admin` 角色
-- **Cleaner App**：`admin` + `data_cleaner` 角色
+- **Cleaner App**：`admin` + `data_cleaner` + `data_reviewer` 角色（Maker-Checker 審核流程）
 - **Chatbot UI**：所有角色皆可登入
+
+### Maker-Checker 角色權限細分（Cleaner App）
+
+| 操作 | admin | data_cleaner | data_reviewer |
+|------|-------|-------------|---------------|
+| 檢視任務/檔案 | O | O | O |
+| 編輯檔案內容 | O | O | X |
+| 送審任務 | O | O | X |
+| 批准任務 | O | X | O |
+| 退回任務 | O | X | O |
+| 送入 RAG | O | X | O |
+
+> **職責分離**：送審者（submitted_by）不得為同一任務的審批者（approved_by），由伺服器端強制驗證。
 
 ## 10. Chatbot 模式差異
 

@@ -2,9 +2,16 @@
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**
 >
-> 文件版本：1.0.0
+> 文件版本：1.1.0
 > 建立日期：2026-03-01
 > 文件類型：測試策略（Test Strategy）
+
+### 版本歷史
+
+| 版本 | 日期 | 說明 |
+|------|------|------|
+| v1.0.0 | 2026-03-01 | 初版建立 |
+| v1.1.0 | 2026-03-11 | 更新測試覆蓋統計（107 test files） |
 
 ---
 
@@ -61,13 +68,15 @@
 
 | 工具 | 用途 | 狀態 |
 |------|------|------|
-| **Vitest** | 測試框架（規劃） | Phase 3 |
-| **React Testing Library** | 元件測試（規劃） | Phase 3 |
+| **Vitest** | 測試框架 | ✅ 已就位 |
+| **React Testing Library** | 元件測試 | ✅ 已就位 |
 | **Playwright** | E2E 瀏覽器測試（規劃） | Phase 3 |
 
 ---
 
 ## 4. 當前測試涵蓋率
+
+> **全專案測試檔案：107 test files**（NestJS 42 + rag-service 38 + data-pipeline 14 + 前端 13）
 
 ### 4.1 NestJS API
 
@@ -90,7 +99,7 @@ pnpm --filter @oda-cyber/api test:e2e
 
 | 指標 | 數值 | 說明 |
 |------|------|------|
-| Test Files | 21+ | 涵蓋核心服務 |
+| Test Files | 38 | 涵蓋核心服務 |
 | Internal Auth | 8 tests | X-Internal-Token 中介軟體 |
 | 涵蓋範圍 | RAG retrieve, cleaning pipeline, file loaders, PII analyzers, anonymizers, API routes | 核心管線覆蓋 |
 
@@ -103,7 +112,7 @@ cd python/rag-service && uv run pytest
 
 | 指標 | 數值 | 說明 |
 |------|------|------|
-| Test Files | 13 | 涵蓋各解析器與策略 |
+| Test Files | 14 | 涵蓋各解析器與策略 |
 | 涵蓋範圍 | PDF/DOCX/XLSX loaders, Presidio analyzers, 6 anonymization strategies, TW recognizers | 清洗管線覆蓋 |
 
 **執行指令**：
@@ -113,11 +122,11 @@ cd python/data-pipeline && uv run pytest
 
 ### 4.4 前端
 
-| 應用 | 測試覆蓋 | 狀態 |
-|------|---------|------|
-| Admin Dashboard | 0% | Phase 3 規劃 |
-| Chatbot UI | 0% | Phase 3 規劃 |
-| Cleaner App | 0% | Phase 3 規劃 |
+| 應用 | Test Files | 測試範圍 | 狀態 |
+|------|-----------|---------|------|
+| Admin Dashboard | 4 | App smoke、useAuth、HomePage、TasksPage | ✅ Vitest + RTL |
+| Chatbot UI | 4 | App smoke、MessageList、ChatInput、useAuth | ✅ Vitest + RTL |
+| Cleaner App | 5 | App smoke、useAuth、useRole、FileReviewPage、TaskReviewPage | ✅ Vitest + RTL |
 
 ---
 
@@ -127,7 +136,7 @@ cd python/data-pipeline && uv run pytest
 |------|------|------|------|
 | NestJS Unit | ~80% 模組覆蓋 | ≥80% 行覆蓋率 | 新增行覆蓋率量測 |
 | Python Unit | ~70% | ≥80% | 擴充邊界測試 |
-| 前端 Unit | 0% | ≥50% | 從 Cleaner App 開始 |
+| 前端 Unit | 13 test files | ≥50% | Vitest + RTL 已就位，持續擴充 |
 | E2E | 功能性 | 關鍵路徑 100% | 新增自動化 E2E |
 
 ---

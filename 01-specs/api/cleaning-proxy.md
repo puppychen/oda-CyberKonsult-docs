@@ -15,8 +15,11 @@ cleaning/
     ├── upload.controller.ts              # 檔案上傳 API
     ├── clean.controller.ts               # 清洗任務 API
     ├── tasks.controller.ts               # 任務管理 API
-    ├── rules.controller.ts               # 規則設定檔 API
-    └── download.controller.ts            # 檔案下載 API
+    ├── download.controller.ts            # 檔案下載 API
+    ├── review.controller.ts              # 審核流程 API
+    ├── analytics.controller.ts           # 統計分析 API
+    ├── files.controller.ts               # 檔案管理 API
+    └── knowledge-base.controller.ts      # 知識庫 API
 ```
 
 ## 設計模式
@@ -161,22 +164,7 @@ const { data } = await firstValueFrom(this.httpService.get(url, config));
 - `offset`: 偏移量
 - `status_filter`: 狀態篩選（pending/processing/completed/failed/cancelled）
 
-### 4. RulesController
-
-**路由前綴**: `/api/v1/rules`
-
-| 端點 | 方法 | 說明 |
-|------|------|------|
-| `/` | GET | 列出所有規則設定檔 |
-| `/` | POST | 建立新規則設定檔 |
-| `/:profileId` | GET | 取得單一規則設定檔 |
-| `/:profileId` | PUT | 更新規則設定檔 |
-| `/:profileId` | DELETE | 刪除規則設定檔 |
-| `/:profileId/export` | GET | 匯出單一規則為 JSON |
-| `/export` | POST | 批次匯出多個規則 |
-| `/import` | POST | 匯入規則 JSON |
-
-### 5. DownloadController
+### 4. DownloadController
 
 **路由前綴**: `/api/v1/download`
 
@@ -191,18 +179,41 @@ const { data } = await firstValueFrom(this.httpService.get(url, config));
 - 透過 `proxyDownload` 串流轉發
 - 自動設定正確的 Content-Type 和 Content-Disposition
 
+### 5. ReviewController（Maker-Checker 審核流程）
+
+**路由前綴**: `/api/v1/review`
+**Class-Level 角色**: `admin`, `data_cleaner`, `data_reviewer`
+
+| 端點 | 方法 | 角色覆蓋 | 說明 | User 注入 |
+|------|------|---------|------|-----------|
+| `/tags` | GET | all | 取得標籤列表 | — |
+| `/:taskId` | GET | all | 取得審核任務 | — |
+| `/:taskId/files/:fileId/content` | GET | all | 取得檔案內容 | — |
+| `/:taskId/files/:fileId/content` | PUT | cleaner, admin | 更新編輯內容 | `editor_id` |
+| `/:taskId/files/:fileId/tags` | PUT | cleaner, admin | 更新標籤 | `editor_id` |
+| `/:taskId/submit` | POST | cleaner, admin | 送審任務 | `submitter_id` |
+| `/:taskId/files/:fileId/status` | PUT | reviewer, admin | 審核檔案 | `reviewer_id` |
+| `/:taskId/approve` | POST | reviewer, admin | 批准任務 | `approver_id` |
+| `/:taskId/reject` | POST | reviewer, admin | 退回任務 | `reviewer_id` |
+| `/:taskId/ingest` | POST | reviewer, admin | 送入 RAG | `ingester_id` |
+
+**Maker-Checker 設計要點**：
+- 所有操作者身份由 `@CurrentUser()` 從 JWT 注入，不接受前端傳入
+- NestJS 端注入 user.id 至 proxy body，FastAPI 端驗證 `submitted_by != approver_id`
+- 方法級 `@Roles()` 覆蓋 class-level 設定，實現精細權限控制
+
 ## 安全性
 
 ### 1. 雙重驗證
 
 ```typescript
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+@Roles('admin', 'data_cleaner', 'data_reviewer')
 ```
 
 **流程**：
 1. `JwtAuthGuard` 驗證 JWT Token 有效性
-2. `RolesGuard` 檢查使用者角色是否為 `admin`
+2. `RolesGuard` 檢查使用者角色是否符合方法級或 class-level `@Roles`
 3. 若驗證失敗，返回 401 Unauthorized 或 403 Forbidden
 
 ### 2. 環境變數隔離
@@ -353,7 +364,7 @@ NestJS 代理層路徑必須與 FastAPI 完全一致：
    - 方便除錯與稽核
 
 3. **快取機制**
-   - 對靜態資料（如規則設定檔列表）實作快取
+   - 對靜態資料（如任務列表、知識庫統計）實作快取
    - 減少對 FastAPI 的重複請求
 
 4. **Rate Limiting**

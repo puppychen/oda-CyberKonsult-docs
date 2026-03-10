@@ -1,6 +1,6 @@
 # 資料去識別化系統 API 文件
 
-> 本文件涵蓋 RAG 資料去識別化子系統的完整 API 規格，包含檔案上傳、去識別化任務、規則管理、結果下載及 WebSocket 即時通知。
+> 本文件涵蓋 RAG 資料去識別化子系統的完整 API 規格，包含檔案上傳、去識別化任務、結果下載及 WebSocket 即時通知。去識別化規則由系統內建固定規則 `get_default_rules()` 提供，不可動態配置。
 >
 > **使用範圍**：本 API 僅供系統管理員使用，用於處理即將匯入 RAG 知識庫的訓練資料。
 
@@ -10,7 +10,7 @@
 - [Upload API - 檔案上傳](#upload-api---檔案上傳)
 - [Clean API - 清洗操作](#clean-api---清洗操作)
 - [Task API - 任務管理](#task-api---任務管理)
-- [Rule API - 規則設定](#rule-api---規則設定)
+- [Review API - 審核流程（Maker-Checker）](#review-api---審核流程maker-checker)
 - [Download API - 結果下載](#download-api---結果下載)
 - [WebSocket API - 即時通知](#websocket-api---即時通知)
 - [實體類型列表](#實體類型列表)
@@ -222,7 +222,7 @@ curl http://localhost:4000/api/v1/upload/a1b2c3d4-e5f6-7890-abcd-ef1234567890
 
 ### 啟動清洗任務
 
-提交檔案進行 PII（個人可識別資訊）偵測與去識別化處理。可指定規則設定檔或自訂規則。
+提交檔案進行 PII（個人可識別資訊）偵測與去識別化處理。系統使用內建固定規則，無需指定。
 
 - **方法**: `POST`
 - **路徑**: `/api/v1/clean`
@@ -233,16 +233,6 @@ curl http://localhost:4000/api/v1/upload/a1b2c3d4-e5f6-7890-abcd-ef1234567890
 | 欄位 | 型別 | 必填 | 說明 |
 |------|------|------|------|
 | `file_ids` | `UUID[]` | 是 | 待清洗檔案 ID 列表 |
-| `profile_id` | `UUID` | 否 | 規則設定檔 ID（與 rules 擇一使用） |
-| `rules` | `EntityRuleSchema[]` | 否 | 自訂去識別化規則列表（與 profile_id 擇一使用） |
-
-#### `EntityRuleSchema` 結構
-
-| 欄位 | 型別 | 必填 | 說明 |
-|------|------|------|------|
-| `entity_type` | `string` | 是 | 實體類型，參見[實體類型列表](#實體類型列表) |
-| `strategy` | `string` | 是 | 去識別化策略，參見[去識別化策略列表](#去識別化策略列表) |
-| `params` | `object` | 否 | 策略額外參數 |
 
 #### 請求範例
 
@@ -251,23 +241,6 @@ curl http://localhost:4000/api/v1/upload/a1b2c3d4-e5f6-7890-abcd-ef1234567890
   "file_ids": [
     "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "b2c3d4e5-f6a7-8901-bcde-f12345678901"
-  ],
-  "rules": [
-    {
-      "entity_type": "PERSON",
-      "strategy": "pseudonymize",
-      "params": {}
-    },
-    {
-      "entity_type": "TW_ID",
-      "strategy": "mask",
-      "params": { "mask_char": "*" }
-    },
-    {
-      "entity_type": "EMAIL_ADDRESS",
-      "strategy": "partial_mask",
-      "params": { "visible_chars": 3 }
-    }
   ]
 }
 ```
@@ -298,20 +271,14 @@ curl http://localhost:4000/api/v1/upload/a1b2c3d4-e5f6-7890-abcd-ef1234567890
 ```bash
 curl -X POST http://localhost:4000/api/v1/clean \
   -H "Content-Type: application/json" \
-  -d '{
-    "file_ids": ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"],
-    "rules": [
-      { "entity_type": "PERSON", "strategy": "pseudonymize" },
-      { "entity_type": "TW_ID", "strategy": "mask" }
-    ]
-  }'
+  -d '{"file_ids": ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]}'
 ```
 
 ---
 
 ### 預覽清洗結果
 
-針對單一檔案取樣預覽清洗效果，不會建立正式任務。適合在正式執行前確認規則是否符合預期。
+針對單一檔案取樣預覽清洗效果，不會建立正式任務。系統使用內建固定規則進行預覽，適合在正式執行前確認清洗結果。
 
 - **方法**: `POST`
 - **路徑**: `/api/v1/clean/preview`
@@ -322,7 +289,6 @@ curl -X POST http://localhost:4000/api/v1/clean \
 | 欄位 | 型別 | 必填 | 說明 |
 |------|------|------|------|
 | `file_id` | `UUID` | 是 | 預覽檔案 ID |
-| `rules` | `EntityRuleSchema[]` | 否 | 自訂去識別化規則（未指定則使用預設） |
 | `sample_size` | `int` | 否 | 取樣字元數（預設 1000） |
 
 #### 請求範例
@@ -330,10 +296,6 @@ curl -X POST http://localhost:4000/api/v1/clean \
 ```json
 {
   "file_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  "rules": [
-    { "entity_type": "PERSON", "strategy": "pseudonymize" },
-    { "entity_type": "EMAIL_ADDRESS", "strategy": "mask" }
-  ],
   "sample_size": 500
 }
 ```
@@ -400,9 +362,6 @@ curl -X POST http://localhost:4000/api/v1/clean/preview \
   -H "Content-Type: application/json" \
   -d '{
     "file_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "rules": [
-      { "entity_type": "PERSON", "strategy": "pseudonymize" }
-    ],
     "sample_size": 500
   }'
 ```
@@ -632,300 +591,90 @@ curl -X DELETE http://localhost:4000/api/v1/tasks/c3d4e5f6-a7b8-9012-cdef-123456
 
 ---
 
-## Rule API - 規則設定
+## Review API - 審核流程（Maker-Checker）
 
-規則設定檔（Rule Profile）用於保存常用的去識別化規則組合，方便重複使用。
+本區段涵蓋資料去識別化審核流程的 API，實作 Maker-Checker 職責分離原則。
 
-### 列出所有規則設定檔
+### 角色定義
 
-- **方法**: `GET`
-- **路徑**: `/api/v1/rules`
+| 角色 | 說明 | 可執行操作 |
+|------|------|-----------|
+| `data_cleaner` | 清洗人員 | 編輯內容、更新標籤、送審 |
+| `data_reviewer` | 審查人員 | 審核檔案、批准/退回任務、送入 RAG |
+| `admin` | 管理員 | 所有操作（但送審後不能自己批准） |
 
-#### 回應結構
+### 審批狀態流轉
 
-| 欄位 | 型別 | 說明 |
-|------|------|------|
-| `profiles` | `RuleProfile[]` | 規則設定檔列表 |
-
-#### `RuleProfile` 結構
-
-| 欄位 | 型別 | 說明 |
-|------|------|------|
-| `id` | `UUID` | 設定檔 ID |
-| `name` | `string` | 設定檔名稱 |
-| `description` | `string` | 描述說明 |
-| `rules` | `EntityRuleSchema[]` | 去識別化規則列表 |
-| `is_default` | `boolean` | 是否為預設設定檔 |
-| `created_at` | `ISO 8601` | 建立時間 |
-| `updated_at` | `ISO 8601` | 最後更新時間 |
-
-#### 回應範例
-
-```json
-{
-  "success": true,
-  "data": {
-    "profiles": [
-      {
-        "id": "d4e5f6a7-b8c9-0123-defa-234567890123",
-        "name": "標準台灣 PII 規則",
-        "description": "適用於台灣地區的標準個資去識別化規則",
-        "rules": [
-          { "entity_type": "PERSON", "strategy": "pseudonymize", "params": {} },
-          { "entity_type": "TW_ID", "strategy": "mask", "params": { "mask_char": "*" } },
-          { "entity_type": "TW_PHONE", "strategy": "partial_mask", "params": { "visible_chars": 4 } }
-        ],
-        "is_default": true,
-        "created_at": "2025-01-10T08:00:00.000Z",
-        "updated_at": "2025-01-10T08:00:00.000Z"
-      }
-    ]
-  }
-}
+```
+approval_status:
+  pending ──→ review_requested ──→ approved ──→ ingested
+     ↑              │
+     │              ▼
+     └─── rejected (cleaner 可重新編輯後再送審)
 ```
 
-#### curl 範例
+### Maker-Checker 規則
 
-```bash
-curl http://localhost:4000/api/v1/rules
-```
+- 送審者（`submitted_by`）不能是批准者（`approver_id`）
+- 送審者不能是檔案審核者（`reviewer_id`）
+- 所有操作者身份由伺服器 JWT 注入，不接受前端傳入
 
----
+### 端點列表
 
-### 取得單一規則設定檔
+| 端點 | 方法 | 角色 | 說明 |
+|------|------|------|------|
+| `/api/v1/review/tags` | GET | all | 取得標籤列表 |
+| `/api/v1/review/{taskId}` | GET | all | 取得審核任務 |
+| `/api/v1/review/{taskId}/files/{fileId}/content` | GET | all | 取得檔案內容 |
+| `/api/v1/review/{taskId}/files/{fileId}/content` | PUT | cleaner, admin | 更新編輯內容 |
+| `/api/v1/review/{taskId}/files/{fileId}/tags` | PUT | cleaner, admin | 更新標籤 |
+| `/api/v1/review/{taskId}/submit` | POST | cleaner, admin | 送審 |
+| `/api/v1/review/{taskId}/files/{fileId}/status` | PUT | reviewer, admin | 審核檔案 |
+| `/api/v1/review/{taskId}/approve` | POST | reviewer, admin | 批准任務 |
+| `/api/v1/review/{taskId}/reject` | POST | reviewer, admin | 退回任務 |
+| `/api/v1/review/{taskId}/ingest` | POST | reviewer, admin | 送入 RAG |
 
-- **方法**: `GET`
-- **路徑**: `/api/v1/rules/{profile_id}`
-- **路徑參數**: `profile_id` (UUID) - 設定檔 ID
+### POST 送審任務
 
-#### 回應範例
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": "d4e5f6a7-b8c9-0123-defa-234567890123",
-    "name": "標準台灣 PII 規則",
-    "description": "適用於台灣地區的標準個資去識別化規則",
-    "rules": [
-      { "entity_type": "PERSON", "strategy": "pseudonymize", "params": {} },
-      { "entity_type": "TW_ID", "strategy": "mask", "params": { "mask_char": "*" } }
-    ],
-    "is_default": true,
-    "created_at": "2025-01-10T08:00:00.000Z",
-    "updated_at": "2025-01-10T08:00:00.000Z"
-  }
-}
-```
-
-#### curl 範例
-
-```bash
-curl http://localhost:4000/api/v1/rules/d4e5f6a7-b8c9-0123-defa-234567890123
-```
-
----
-
-### 建立規則設定檔
-
-- **方法**: `POST`
-- **路徑**: `/api/v1/rules`
-- **Content-Type**: `application/json`
+- **路徑**: `/api/v1/review/{taskId}/submit`
+- **角色**: `admin`, `data_cleaner`
+- **前置條件**: `task.status == 'completed'` 且 `approval_status in ('pending', 'rejected')`
 
 #### 請求結構
 
 | 欄位 | 型別 | 必填 | 說明 |
 |------|------|------|------|
-| `name` | `string` | 是 | 設定檔名稱 |
-| `description` | `string` | 否 | 描述說明 |
-| `rules` | `EntityRuleSchema[]` | 是 | 去識別化規則列表 |
-| `is_default` | `boolean` | 否 | 是否設為預設（預設 false） |
+| `note` | `string` | 否 | 送審備註 |
 
-#### 請求範例
+#### 行為
 
-```json
-{
-  "name": "金融業嚴格規則",
-  "description": "適用於金融業的嚴格個資去識別化規則",
-  "rules": [
-    { "entity_type": "PERSON", "strategy": "pseudonymize" },
-    { "entity_type": "TW_ID", "strategy": "mask" },
-    { "entity_type": "CREDIT_CARD", "strategy": "mask" },
-    { "entity_type": "EMAIL_ADDRESS", "strategy": "mask" },
-    { "entity_type": "PHONE_NUMBER", "strategy": "mask" }
-  ],
-  "is_default": false
-}
-```
+- 設定 `approval_status = 'review_requested'`，記錄 `submitted_by` / `submitted_at`
+- 若從 `rejected` 重新送審：重設所有 completed file 的 `review_status` 為 `pending`
+- 清除先前批准資訊（`approved_by`, `approved_at`）
 
-#### 回應範例
+### POST 退回任務
 
-```json
-{
-  "success": true,
-  "data": {
-    "id": "e5f6a7b8-c9d0-1234-efab-345678901234",
-    "name": "金融業嚴格規則",
-    "description": "適用於金融業的嚴格個資去識別化規則",
-    "rules": [ ... ],
-    "is_default": false,
-    "created_at": "2025-01-15T11:00:00.000Z",
-    "updated_at": "2025-01-15T11:00:00.000Z"
-  }
-}
-```
-
-#### curl 範例
-
-```bash
-curl -X POST http://localhost:4000/api/v1/rules \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "金融業嚴格規則",
-    "description": "適用於金融業的嚴格個資去識別化規則",
-    "rules": [
-      { "entity_type": "PERSON", "strategy": "pseudonymize" },
-      { "entity_type": "TW_ID", "strategy": "mask" },
-      { "entity_type": "CREDIT_CARD", "strategy": "mask" }
-    ]
-  }'
-```
-
----
-
-### 更新規則設定檔
-
-- **方法**: `PUT`
-- **路徑**: `/api/v1/rules/{profile_id}`
-- **路徑參數**: `profile_id` (UUID) - 設定檔 ID
-- **Content-Type**: `application/json`
+- **路徑**: `/api/v1/review/{taskId}/reject`
+- **角色**: `admin`, `data_reviewer`
+- **前置條件**: `approval_status == 'review_requested'`
+- **Maker-Checker**: `reviewer_id != task.submitted_by`（否則 403）
 
 #### 請求結構
 
-同建立規則設定檔，所有欄位皆為可選（僅更新傳入的欄位）。
+| 欄位 | 型別 | 必填 | 說明 |
+|------|------|------|------|
+| `note` | `string` | 是 | 退回原因（必填） |
 
-#### 請求範例
+#### 行為
 
-```json
-{
-  "name": "金融業嚴格規則 v2",
-  "rules": [
-    { "entity_type": "PERSON", "strategy": "pseudonymize" },
-    { "entity_type": "TW_ID", "strategy": "encrypt" },
-    { "entity_type": "CREDIT_CARD", "strategy": "mask" },
-    { "entity_type": "IP_ADDRESS", "strategy": "generalize" }
-  ]
-}
-```
+- 設定 `approval_status = 'rejected'`
+- 保留 file-level review notes（供 cleaner 查看退回原因）
 
-#### curl 範例
+### 狀態凍結規則
 
-```bash
-curl -X PUT http://localhost:4000/api/v1/rules/e5f6a7b8-c9d0-1234-efab-345678901234 \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "金融業嚴格規則 v2",
-    "rules": [
-      { "entity_type": "PERSON", "strategy": "pseudonymize" },
-      { "entity_type": "TW_ID", "strategy": "encrypt" }
-    ]
-  }'
-```
-
----
-
-### 刪除規則設定檔
-
-- **方法**: `DELETE`
-- **路徑**: `/api/v1/rules/{profile_id}`
-- **路徑參數**: `profile_id` (UUID) - 設定檔 ID
-
-#### 回應範例
-
-```json
-{
-  "success": true,
-  "data": {
-    "message": "規則設定檔已刪除"
-  }
-}
-```
-
-#### curl 範例
-
-```bash
-curl -X DELETE http://localhost:4000/api/v1/rules/e5f6a7b8-c9d0-1234-efab-345678901234
-```
-
----
-
-### 匯出規則設定檔
-
-將規則設定檔匯出為 JSON 檔案，便於備份或跨環境移轉。
-
-- **方法**: `GET`
-- **路徑**: `/api/v1/rules/{profile_id}/export`
-- **路徑參數**: `profile_id` (UUID) - 設定檔 ID
-- **回應格式**: `application/json`（直接下載）
-
-#### 匯出 JSON 結構
-
-```json
-{
-  "version": "1.0",
-  "exported_at": "2025-01-15T12:00:00.000Z",
-  "profile": {
-    "name": "標準台灣 PII 規則",
-    "description": "適用於台灣地區的標準個資去識別化規則",
-    "rules": [
-      { "entity_type": "PERSON", "strategy": "pseudonymize", "params": {} },
-      { "entity_type": "TW_ID", "strategy": "mask", "params": { "mask_char": "*" } }
-    ]
-  }
-}
-```
-
-#### curl 範例
-
-```bash
-curl -o rule_profile.json \
-  http://localhost:4000/api/v1/rules/d4e5f6a7-b8c9-0123-defa-234567890123/export
-```
-
----
-
-### 匯入規則設定檔
-
-從 JSON 檔案匯入規則設定檔。
-
-- **方法**: `POST`
-- **路徑**: `/api/v1/rules/import`
-- **Content-Type**: `application/json`
-
-#### 請求結構
-
-同匯出的 JSON 結構。
-
-#### 回應範例
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": "f6a7b8c9-d0e1-2345-fabc-456789012345",
-    "name": "標準台灣 PII 規則",
-    "message": "規則設定檔匯入成功"
-  }
-}
-```
-
-#### curl 範例
-
-```bash
-curl -X POST http://localhost:4000/api/v1/rules/import \
-  -H "Content-Type: application/json" \
-  -d @rule_profile.json
-```
+送審後（`review_requested`、`approved`、`ingested`）禁止以下操作：
+- 更新檔案編輯內容（PUT content）
+- 更新檔案標籤（PUT tags）
 
 ---
 
