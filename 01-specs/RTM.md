@@ -2,9 +2,9 @@
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**
 >
-> 文件版本：1.2.0
+> 文件版本：1.4.0
 > 建立日期：2026-03-01
-> 最後更新：2026-03-11
+> 最後更新：2026-04-18
 > 文件類型：需求追溯矩陣（Requirements Traceability Matrix）
 
 ---
@@ -16,6 +16,8 @@
 | v1.0.0 | 2026-03-01 | 初版建立，FR-01~21 追溯矩陣 |
 | v1.1.0 | 2026-03-06 | 新增 FR-18 Maker-Checker 追溯、FR-19~21 追溯、驗收測試更新 |
 | v1.2.0 | 2026-03-11 | 新增 US-05-03 ZIP 追溯、更新角色定義為 7 角色、測試覆蓋統計更新（107 test files） |
+| v1.3.0 | 2026-03-16 | ML-15：新增 FR-22 回饋機制追溯、FR-23 信心度追溯；驗收案例 TC-05-006/007 確認 |
+| v1.4.0 | 2026-04-18 | **Wave 1-5 功能 + 機制修正追溯同步**：<br/>① 新增 19 項 Wave 功能追溯（標籤範本/報告模板/Demo 問題庫/Golden Test/測試執行器/法規版本管理）<br/>② gap-analysis P1 修補映射（GAP-01 ~ GAP-05 全數 closed）<br/>③ 記錄本 session 揭露的 Maker-Checker UUID 比較 bug 修復、changePassword tokenVersion 補齊、Expert maxTokens 規格校正、ZIP 閾值校正、query history 5 輪修正、RejectTaskRequest validator、file content audit log、SELECT FOR UPDATE 行鎖<br/>④ 新增反偽測試覆蓋率指標（舊 15 處 `inspect.getsource()` 已識別，待 Q2 取代）<br/>⑤ 補充 AC-02-05 vs AC-23-01 閾值語意差異說明<br/>⑥ 明確標註 3 項 NFR 未驗證項目（PII 95% 召回率、P95 < 10s、10 files/分吞吐量） |
 
 ---
 
@@ -223,6 +225,22 @@ User Story (PRD.md)
 
 ---
 
+### FR-22：回答品質回饋 ✅
+
+| US | 說明 | API 端點 | NestJS 模組 | NestJS 測試 | Python 測試 | TC | Screen | Security | 狀態 |
+|----|------|----------|------------|-------------|-------------|-----|--------|----------|------|
+| US-22-01 | 回答品質回饋 | `POST /api/chat/messages/:messageId/feedback` | chat/ | chat.service.spec | — | — | Chatbot 主畫面 | JWT, Input Validation | ✅ |
+
+---
+
+### FR-23：RAG 信心度指示器 ✅
+
+| US | 說明 | API 端點 | NestJS 模組 | NestJS 測試 | Python 測試 | TC | Screen | Security | 狀態 |
+|----|------|----------|------------|-------------|-------------|-----|--------|----------|------|
+| US-23-01 | 信心度彩色標籤 | `POST /api/chat`（response.confidenceLevel） | chat/ | chat.service.spec | — | — | Chatbot 主畫面 | JWT | ✅ |
+
+---
+
 ## 2. 追溯矩陣 — 未來功能
 
 | FR | 說明 | 狀態 | 目標階段 |
@@ -307,9 +325,9 @@ User Story (PRD.md)
 | 類別 | FR 數量 | US 數量 | 狀態 |
 |------|---------|---------|------|
 | 已實作（✅） | 12 | 29 | Unit + Integration 覆蓋 |
-| 規劃中（🔄） | 3 | 10 | 部分實作、持續強化 |
+| 規劃中（🔄） | 5 | 12 | 部分實作、持續強化 |
 | 未來願景（🔮） | 6 | 6（未展開） | Phase 3 以後 |
-| **合計** | **21** | **45** | — |
+| **合計** | **23** | **47** | — |
 
 ### 5.2 測試覆蓋統計
 
