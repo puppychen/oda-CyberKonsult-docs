@@ -2,7 +2,7 @@
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**
 >
-> 文件版本：1.1.0
+> 文件版本：1.2.0
 > 建立日期：2026-03-01
 > 文件類型：測試策略（Test Strategy）
 
@@ -12,6 +12,7 @@
 |------|------|------|
 | v1.0.0 | 2026-03-01 | 初版建立 |
 | v1.1.0 | 2026-03-11 | 更新測試覆蓋統計（107 test files） |
+| v1.2.0 | 2026-03-16 | ML-15：新增 Maker-Checker TC-05-006/007；精確化測試檔案計數 |
 
 ---
 
@@ -159,6 +160,8 @@ cd python/data-pipeline && uv run pytest
 | TC-05-003 | FR-18 | 標籤管理 | ✅ Unit |
 | TC-05-004 | FR-18 | 任務批准 | ✅ Unit |
 | TC-05-005 | FR-18 | 送入 RAG | ✅ Unit |
+| TC-05-006 | FR-18 | Maker-Checker 送審 | ✅ Unit + Python |
+| TC-05-007 | FR-18 | Maker-Checker 退回 | ✅ Unit + Python |
 | TC-06-001 | FR-19 | 清洗統計 | ✅ Python |
 | TC-06-002 | FR-19 | 時間軸統計 | ✅ Python |
 

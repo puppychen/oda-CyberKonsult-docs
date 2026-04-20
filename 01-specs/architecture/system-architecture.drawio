@@ -1,0 +1,361 @@
+<mxfile host="Claude Code" modified="2026-03-23" agent="Claude Code" type="device" version="1.0">
+  <diagram id="system-arch" name="系統架構總覽">
+    <mxGraphModel dx="1600" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ============ 標題 ============ -->
+        <mxCell id="title" value="&lt;b&gt;ODA Cyber Konsult — 系統架構圖&lt;/b&gt;&lt;br&gt;AI 資安顧問 RAG 系統（三層式：新手/一般/顧問模式）&lt;br&gt;最後更新：2026-03-23" style="text;html=1;fontSize=16;fontFamily=Noto Sans TC;align=center;verticalAlign=middle;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="400" y="10" width="600" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ============ 箭頭（後層） ============ -->
+        <!-- 使用者 → 前端群組 -->
+        <mxCell id="arrow-user-fe" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#333333;fontFamily=Noto Sans TC;fontSize=11;" edge="1" parent="1" source="user-icon" target="fe-group">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Admin → NestJS -->
+        <mxCell id="arrow-admin-nest" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;strokeColor=#6C8EBF;fontFamily=Noto Sans TC;fontSize=10;" edge="1" parent="1" source="fe-admin" target="nestjs-box">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="0" y="10" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-admin-nest-label" value="Vite Proxy&lt;br&gt;/api → :3051" style="edgeLabel;html=1;fontSize=9;fontFamily=Noto Sans TC;fontColor=#6C8EBF;" vertex="1" connectable="0" parent="arrow-admin-nest">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint x="0" y="-5" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Chatbot → NestJS -->
+        <mxCell id="arrow-chat-nest" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;strokeColor=#6C8EBF;fontFamily=Noto Sans TC;fontSize=10;" edge="1" parent="1" source="fe-chatbot" target="nestjs-box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-chat-nest-label" value="SSE 串流&lt;br&gt;/api/chat/stream" style="edgeLabel;html=1;fontSize=9;fontFamily=Noto Sans TC;fontColor=#6C8EBF;" vertex="1" connectable="0" parent="arrow-chat-nest">
+          <mxGeometry x="-0.1" relative="1" as="geometry">
+            <mxPoint x="0" y="-5" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Cleaner → NestJS -->
+        <mxCell id="arrow-cleaner-nest" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;strokeColor=#6C8EBF;fontFamily=Noto Sans TC;fontSize=10;" edge="1" parent="1" source="fe-cleaner" target="nestjs-box">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="0" y="10" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-cleaner-nest-label" value="Vite Proxy&lt;br&gt;/api → :3051" style="edgeLabel;html=1;fontSize=9;fontFamily=Noto Sans TC;fontColor=#6C8EBF;" vertex="1" connectable="0" parent="arrow-cleaner-nest">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint x="0" y="-5" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- NestJS → FastAPI (代理) -->
+        <mxCell id="arrow-nest-fastapi" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#D79B00;fontFamily=Noto Sans TC;fontSize=10;" edge="1" parent="1" source="nestjs-box" target="fastapi-box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-nest-fastapi-label" value="代理轉發&lt;br&gt;X-Internal-Token&lt;br&gt;/api/v1/* → :3502" style="edgeLabel;html=1;fontSize=9;fontFamily=Noto Sans TC;fontColor=#D79B00;" vertex="1" connectable="0" parent="arrow-nest-fastapi">
+          <mxGeometry x="-0.1" relative="1" as="geometry">
+            <mxPoint x="0" y="-10" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- NestJS → LLM -->
+        <mxCell id="arrow-nest-llm" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;strokeColor=#B85450;fontFamily=Noto Sans TC;fontSize=10;" edge="1" parent="1" source="nestjs-box" target="llm-box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-nest-llm-label" value="HTTPS&lt;br&gt;Gemini / OpenAI" style="edgeLabel;html=1;fontSize=9;fontFamily=Noto Sans TC;fontColor=#B85450;" vertex="1" connectable="0" parent="arrow-nest-llm">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint x="0" y="-5" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- NestJS → SearXNG -->
+        <mxCell id="arrow-nest-searx" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;strokeColor=#82B366;fontFamily=Noto Sans TC;fontSize=10;" edge="1" parent="1" source="nestjs-box" target="searxng-box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-nest-searx-label" value="HTTP&lt;br&gt;Docker 內部&lt;br&gt;:8080/search" style="edgeLabel;html=1;fontSize=9;fontFamily=Noto Sans TC;fontColor=#82B366;" vertex="1" connectable="0" parent="arrow-nest-searx">
+          <mxGeometry x="-0.1" relative="1" as="geometry">
+            <mxPoint x="0" y="-5" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- NestJS → PostgreSQL -->
+        <mxCell id="arrow-nest-pg" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;strokeColor=#9673A6;fontFamily=Noto Sans TC;fontSize=10;" edge="1" parent="1" source="nestjs-box" target="pg-box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-nest-pg-label" value="Prisma ORM&lt;br&gt;TCP :5432" style="edgeLabel;html=1;fontSize=9;fontFamily=Noto Sans TC;fontColor=#9673A6;" vertex="1" connectable="0" parent="arrow-nest-pg">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint x="0" y="-5" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- FastAPI → PostgreSQL -->
+        <mxCell id="arrow-fastapi-pg" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;strokeColor=#9673A6;fontFamily=Noto Sans TC;fontSize=10;" edge="1" parent="1" source="fastapi-box" target="pg-box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-fastapi-pg-label" value="SQLAlchemy&lt;br&gt;TCP :5432" style="edgeLabel;html=1;fontSize=9;fontFamily=Noto Sans TC;fontColor=#9673A6;" vertex="1" connectable="0" parent="arrow-fastapi-pg">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint x="0" y="-5" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- FastAPI → Qdrant -->
+        <mxCell id="arrow-fastapi-qdrant" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;strokeColor=#AE4132;fontFamily=Noto Sans TC;fontSize=10;" edge="1" parent="1" source="fastapi-box" target="qdrant-box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-fastapi-qdrant-label" value="HTTP/gRPC&lt;br&gt;:6333 / :6334" style="edgeLabel;html=1;fontSize=9;fontFamily=Noto Sans TC;fontColor=#AE4132;" vertex="1" connectable="0" parent="arrow-fastapi-qdrant">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint x="0" y="-5" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- NestJS WebSocket arrow -->
+        <mxCell id="arrow-nest-ws" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1;dashed=1;strokeColor=#666666;fontFamily=Noto Sans TC;fontSize=9;" edge="1" parent="1" source="nestjs-box" target="fe-admin">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="170" y="420" />
+              <mxPoint x="170" y="260" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-nest-ws-label" value="WebSocket&lt;br&gt;任務進度推播" style="edgeLabel;html=1;fontSize=8;fontFamily=Noto Sans TC;fontColor=#666666;" vertex="1" connectable="0" parent="arrow-nest-ws">
+          <mxGeometry x="0.3" relative="1" as="geometry">
+            <mxPoint x="-15" y="0" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ============ 使用者層 ============ -->
+        <mxCell id="user-icon" value="&lt;b&gt;使用者 / 管理者&lt;/b&gt;&lt;br&gt;(basic_user / user / it_user&lt;br&gt;consultant / data_cleaner&lt;br&gt;data_reviewer / admin)" style="shape=mxgraph.basic.smiley;fillColor=#E6D0DE;strokeColor=#AE4132;rounded=1;whiteSpace=wrap;html=1;fontSize=10;fontFamily=Noto Sans TC;verticalAlign=bottom;spacingBottom=5;" vertex="1" parent="1">
+          <mxGeometry x="560" y="90" width="280" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ============ 前端層（群組框） ============ -->
+        <mxCell id="fe-group" value="&lt;b&gt;前端層&lt;/b&gt;  React 19 + Vite 6" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#666666;strokeWidth=2;dashed=1;fontSize=12;fontFamily=Noto Sans TC;verticalAlign=top;spacingTop=5;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="200" y="200" width="1000" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="fe-admin" value="&lt;b&gt;Admin Dashboard&lt;/b&gt;&lt;br&gt;Ant Design v6&lt;br&gt;port: 5173&lt;br&gt;&lt;font color=&quot;#888888&quot;&gt;7 頁面：上傳/任務/使用者&lt;br&gt;稽核/提示詞/對話/設定&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="220" y="230" width="260" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="fe-chatbot" value="&lt;b&gt;Chatbot UI&lt;/b&gt;&lt;br&gt;TailwindCSS v4&lt;br&gt;port: 5174&lt;br&gt;&lt;font color=&quot;#888888&quot;&gt;SSE 串流・三層模式&lt;br&gt;回饋 👍👎・信心度指示&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="520" y="230" width="260" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="fe-cleaner" value="&lt;b&gt;Cleaner App&lt;/b&gt;&lt;br&gt;Ant Design v6 + TanStack Query&lt;br&gt;port: 5175&lt;br&gt;&lt;font color=&quot;#888888&quot;&gt;7 頁面：Dashboard/Files&lt;br&gt;Tasks/Review/Ingest/KB&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="820" y="230" width="260" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ============ API 層 ============ -->
+        <mxCell id="api-group" value="&lt;b&gt;API 層&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#666666;strokeWidth=2;dashed=1;fontSize=12;fontFamily=Noto Sans TC;verticalAlign=top;spacingTop=5;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="200" y="370" width="1000" height="220" as="geometry" />
+        </mxCell>
+
+        <!-- NestJS API Gateway -->
+        <mxCell id="nestjs-box" value="&lt;b&gt;NestJS API Gateway&lt;/b&gt;&lt;br&gt;NestJS 11 + TypeScript 5.7+&lt;br&gt;port: 4000" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;strokeWidth=2;fontSize=12;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="220" y="400" width="320" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- NestJS 內部模組列表 -->
+        <mxCell id="nestjs-modules" value="&lt;div style=&quot;text-align:left;font-size:9px;&quot;&gt;&lt;b&gt;模組：&lt;/b&gt;&lt;br&gt;auth（JWT+RBAC+密碼政策） │ users（CRUD+角色） │ chat（RAG+LLM+SSE+回饋）&lt;br&gt;prompts（範本CRUD+測試） │ audit（日誌+匯出） │ cleaning（代理→FastAPI）&lt;br&gt;datasources（GDrive 代理） │ websearch（SearXNG+WebFetcher） │ health（DB+RAG 探針）&lt;br&gt;llm（Gemini/OpenAI @Global） │ websocket（Socket.io 任務推播）&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8EDF3;strokeColor=#6C8EBF;fontSize=9;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="220" y="470" width="320" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- 安全機制標示 -->
+        <mxCell id="security-box" value="&lt;div style=&quot;text-align:left;font-size:9px;&quot;&gt;&lt;b&gt;🔒 安全機制：&lt;/b&gt;&lt;br&gt;• JWT (access+refresh) + bcrypt 12r&lt;br&gt;• 資通安全「普」級密碼政策&lt;br&gt;• RBAC @Roles Guard&lt;br&gt;• ThrottlerModule 60req/min&lt;br&gt;• ValidationPipe + 50MB 上傳限制&lt;br&gt;• PasswordChangeRequired Guard&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=9;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="560" y="400" width="240" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- FastAPI RAG Service -->
+        <mxCell id="fastapi-box" value="&lt;b&gt;FastAPI RAG Service&lt;/b&gt;&lt;br&gt;Python 3.12+ (uv)&lt;br&gt;port: 8000" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;strokeWidth=2;fontSize=12;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="830" y="400" width="320" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- FastAPI 內部模組列表 -->
+        <mxCell id="fastapi-modules" value="&lt;div style=&quot;text-align:left;font-size:9px;&quot;&gt;&lt;b&gt;功能模組：&lt;/b&gt;&lt;br&gt;upload（檔案上傳+ZIP解壓） │ clean（PII偵測+去識別化） │ preview（清洗預覽）&lt;br&gt;review（Maker-Checker 審核流程） │ ingest（向量化+Qdrant入庫）&lt;br&gt;tasks（任務管理） │ download（結果下載） │ analytics（統計儀表板）&lt;br&gt;knowledge-base（KB瀏覽+語意搜尋） │ gdrive（Google Drive同步）&lt;br&gt;&lt;b&gt;核心引擎：&lt;/b&gt; Presidio+spaCy（20種PII） │ Hybrid Search（Vector+BM25+RRF） │ Reranker&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF7E0;strokeColor=#D6B656;fontSize=9;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="830" y="470" width="350" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- ============ 外部服務層 ============ -->
+        <mxCell id="ext-group" value="&lt;b&gt;外部服務&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#666666;strokeWidth=2;dashed=1;fontSize=12;fontFamily=Noto Sans TC;verticalAlign=top;spacingTop=5;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="200" y="630" width="500" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="llm-box" value="&lt;b&gt;LLM API&lt;/b&gt;&lt;br&gt;Gemini / OpenAI&lt;br&gt;&lt;font color=&quot;#888888&quot;&gt;回答生成（NestJS 直呼）&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="220" y="660" width="220" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="searxng-box" value="&lt;b&gt;SearXNG&lt;/b&gt;&lt;br&gt;Docker 容器&lt;br&gt;port: 8080 (內部)&lt;br&gt;&lt;font color=&quot;#888888&quot;&gt;開源元搜尋引擎&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="460" y="660" width="220" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- ============ 資料層 ============ -->
+        <mxCell id="data-group" value="&lt;b&gt;資料層&lt;/b&gt;  Docker 容器" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#666666;strokeWidth=2;dashed=1;fontSize=12;fontFamily=Noto Sans TC;verticalAlign=top;spacingTop=5;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="740" y="630" width="520" height="180" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pg-box" value="&lt;b&gt;PostgreSQL 17&lt;/b&gt;&lt;br&gt;port: 5432" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=11;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="770" y="660" width="160" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pg-detail" value="&lt;div style=&quot;text-align:left;font-size:8px;&quot;&gt;&lt;b&gt;Prisma：&lt;/b&gt;users, conversations,&lt;br&gt;messages, prompt_templates,&lt;br&gt;audit_logs, web_search_configs,&lt;br&gt;password_histories&lt;br&gt;&lt;b&gt;Alembic：&lt;/b&gt;files, tasks, task_files,&lt;br&gt;cleaning_audit_logs, gdrive_*&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6C8EBF;fontSize=8;fontFamily=Noto Sans TC;align=left;spacingLeft=5;" vertex="1" parent="1">
+          <mxGeometry x="770" y="740" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="qdrant-box" value="&lt;b&gt;Qdrant&lt;/b&gt;&lt;br&gt;向量資料庫&lt;br&gt;REST :6333 / gRPC :6334" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=11;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="970" y="660" width="180" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="qdrant-detail" value="&lt;div style=&quot;text-align:left;font-size:8px;&quot;&gt;• 文件嵌入向量儲存&lt;br&gt;• Hybrid Search（Vector + BM25）&lt;br&gt;• RRF 融合排序 + Reranking&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D6B656;fontSize=8;fontFamily=Noto Sans TC;align=left;spacingLeft=5;" vertex="1" parent="1">
+          <mxGeometry x="970" y="740" width="180" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ============ 圖例 ============ -->
+        <mxCell id="legend-box" value="&lt;div style=&quot;text-align:left;font-size:9px;&quot;&gt;&lt;b&gt;圖例&lt;/b&gt;&lt;br&gt;🔵 藍色 — NestJS / TypeScript 元件&lt;br&gt;🟡 黃色 — Python / FastAPI 元件&lt;br&gt;🟣 紫色 — 外部 LLM 服務&lt;br&gt;🟢 綠色 — 搜尋 / Chatbot 元件&lt;br&gt;🔴 紅色 — 安全機制&lt;br&gt;虛線框 — 邏輯群組&lt;br&gt;實線箭頭 — 同步呼叫 │ 虛線箭頭 — 推播/事件&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#999999;fontSize=9;fontFamily=Noto Sans TC;align=left;spacingLeft=8;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="20" y="640" width="170" height="160" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="data-model" name="資料模型與雙 ORM 架構">
+    <mxGraphModel dx="1400" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- 標題 -->
+        <mxCell id="dm-title" value="&lt;b&gt;ODA Cyber Konsult — 資料模型與雙 ORM 架構&lt;/b&gt;&lt;br&gt;PostgreSQL 17 共用實例・Prisma (NestJS) + SQLAlchemy/Alembic (Python)" style="text;html=1;fontSize=14;fontFamily=Noto Sans TC;align=center;verticalAlign=middle;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="250" y="10" width="700" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Prisma 管理區域 -->
+        <mxCell id="prisma-group" value="&lt;b&gt;Prisma ORM（NestJS 端管理）&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;strokeWidth=2;fontSize=12;fontFamily=Noto Sans TC;verticalAlign=top;spacingTop=5;align=center;" vertex="1" parent="1">
+          <mxGeometry x="30" y="80" width="540" height="480" as="geometry" />
+        </mxCell>
+
+        <!-- users -->
+        <mxCell id="t-users" value="&lt;div style=&quot;text-align:left;font-size:10px;&quot;&gt;&lt;b&gt;users&lt;/b&gt;&lt;br&gt;─────────────────&lt;br&gt;id: UUID (PK)&lt;br&gt;email: String (unique)&lt;br&gt;password: String (bcrypt)&lt;br&gt;name: String&lt;br&gt;role: Enum (7種角色)&lt;br&gt;isActive: Boolean&lt;br&gt;failedLoginAttempts: Int&lt;br&gt;lockedUntil: DateTime?&lt;br&gt;mustChangePassword: Boolean&lt;br&gt;passwordLastChangedAt: DateTime&lt;br&gt;createdAt / updatedAt&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="50" y="120" width="230" height="200" as="geometry" />
+        </mxCell>
+
+        <!-- password_histories -->
+        <mxCell id="t-pwdhist" value="&lt;div style=&quot;text-align:left;font-size:10px;&quot;&gt;&lt;b&gt;password_histories&lt;/b&gt;&lt;br&gt;────────────────&lt;br&gt;id: UUID (PK)&lt;br&gt;userId: UUID (FK→users)&lt;br&gt;passwordHash: String&lt;br&gt;createdAt&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="310" y="120" width="240" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- conversations -->
+        <mxCell id="t-conv" value="&lt;div style=&quot;text-align:left;font-size:10px;&quot;&gt;&lt;b&gt;conversations&lt;/b&gt;&lt;br&gt;──────────────&lt;br&gt;id: UUID (PK)&lt;br&gt;userId: UUID (FK→users)&lt;br&gt;title: String&lt;br&gt;mode: Enum (beginner/&lt;br&gt;  standard/expert)&lt;br&gt;createdAt / updatedAt&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="50" y="340" width="230" height="140" as="geometry" />
+        </mxCell>
+
+        <!-- messages -->
+        <mxCell id="t-msg" value="&lt;div style=&quot;text-align:left;font-size:10px;&quot;&gt;&lt;b&gt;messages&lt;/b&gt;&lt;br&gt;──────────────&lt;br&gt;id: UUID (PK)&lt;br&gt;conversationId: UUID (FK)&lt;br&gt;role: user/assistant/system&lt;br&gt;content: Text&lt;br&gt;sources: JSON?&lt;br&gt;metadata: JSON?&lt;br&gt;feedback: Enum? (positive/&lt;br&gt;  negative)&lt;br&gt;createdAt&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="310" y="240" width="240" height="170" as="geometry" />
+        </mxCell>
+
+        <!-- prompt_templates -->
+        <mxCell id="t-prompt" value="&lt;div style=&quot;text-align:left;font-size:10px;&quot;&gt;&lt;b&gt;prompt_templates&lt;/b&gt;&lt;br&gt;────────────────&lt;br&gt;id / name / role / mode&lt;br&gt;content / isActive&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="310" y="430" width="240" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- audit_logs (NestJS) -->
+        <mxCell id="t-auditlog-nest" value="&lt;div style=&quot;text-align:left;font-size:10px;&quot;&gt;&lt;b&gt;audit_logs&lt;/b&gt;&lt;br&gt;──────────────&lt;br&gt;id / userId / action&lt;br&gt;entity / details / ip&lt;br&gt;createdAt&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="50" y="500" width="230" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- web_search_configs -->
+        <mxCell id="t-websearch" value="&lt;div style=&quot;text-align:left;font-size:10px;&quot;&gt;&lt;b&gt;web_search_configs&lt;/b&gt;&lt;br&gt;────────────────&lt;br&gt;id / searxngUrl&lt;br&gt;threshold / categories&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="310" y="510" width="240" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- 關聯箭頭 -->
+        <mxCell id="rel-user-pwd" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6C8EBF;fontSize=9;fontFamily=Noto Sans TC;" edge="1" parent="1" source="t-users" target="t-pwdhist">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-user-conv" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6C8EBF;fontSize=9;fontFamily=Noto Sans TC;" edge="1" parent="1" source="t-users" target="t-conv">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-conv-msg" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6C8EBF;fontSize=9;fontFamily=Noto Sans TC;" edge="1" parent="1" source="t-conv" target="t-msg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ========== SQLAlchemy 管理區域 ========== -->
+        <mxCell id="sa-group" value="&lt;b&gt;SQLAlchemy + Alembic（Python 端管理）&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;strokeWidth=2;fontSize=12;fontFamily=Noto Sans TC;verticalAlign=top;spacingTop=5;align=center;" vertex="1" parent="1">
+          <mxGeometry x="620" y="80" width="540" height="480" as="geometry" />
+        </mxCell>
+
+        <!-- files -->
+        <mxCell id="t-files" value="&lt;div style=&quot;text-align:left;font-size:10px;&quot;&gt;&lt;b&gt;files&lt;/b&gt;&lt;br&gt;──────────────&lt;br&gt;id: UUID (PK)&lt;br&gt;filename / original_name&lt;br&gt;size / type / path&lt;br&gt;auto_tags: JSON&lt;br&gt;created_at&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D6B656;fontSize=10;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="640" y="120" width="230" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- tasks -->
+        <mxCell id="t-tasks" value="&lt;div style=&quot;text-align:left;font-size:10px;&quot;&gt;&lt;b&gt;tasks&lt;/b&gt;&lt;br&gt;──────────────&lt;br&gt;id: UUID (PK)&lt;br&gt;status: pending/processing/&lt;br&gt;  completed/failed/cancelled&lt;br&gt;progress: Float&lt;br&gt;approval_status: pending/&lt;br&gt;  review_requested/approved/&lt;br&gt;  rejected/ingested&lt;br&gt;submitted_by/at&lt;br&gt;approved_by/at&lt;br&gt;created_at / updated_at&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D6B656;fontSize=10;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="900" y="120" width="240" height="200" as="geometry" />
+        </mxCell>
+
+        <!-- task_files -->
+        <mxCell id="t-taskfiles" value="&lt;div style=&quot;text-align:left;font-size:10px;&quot;&gt;&lt;b&gt;task_files（M:N 中間表）&lt;/b&gt;&lt;br&gt;────────────────────&lt;br&gt;id / task_id (FK) / file_id (FK)&lt;br&gt;status / entities_found: JSON&lt;br&gt;cleaned_content / edited_content&lt;br&gt;cleaning_report: JSON&lt;br&gt;tags: JSON / approval_status&lt;br&gt;edited_by/at / reviewed_by/at&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D6B656;fontSize=10;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="640" y="280" width="250" height="140" as="geometry" />
+        </mxCell>
+
+        <!-- cleaning_audit_logs -->
+        <mxCell id="t-cleanaudit" value="&lt;div style=&quot;text-align:left;font-size:10px;&quot;&gt;&lt;b&gt;cleaning_audit_logs&lt;/b&gt;&lt;br&gt;────────────────&lt;br&gt;id / task_id (FK)&lt;br&gt;action / user_id / details&lt;br&gt;timestamp&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D6B656;fontSize=10;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="920" y="340" width="220" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- gdrive tables -->
+        <mxCell id="t-gdrive" value="&lt;div style=&quot;text-align:left;font-size:10px;&quot;&gt;&lt;b&gt;gdrive_configs&lt;/b&gt; │ &lt;b&gt;gdrive_sync_files&lt;/b&gt; │ &lt;b&gt;gdrive_sync_history&lt;/b&gt;&lt;br&gt;────────────────────────────────────────&lt;br&gt;Google Drive 設定・已同步檔案追蹤・同步歷史記錄&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D6B656;fontSize=10;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="640" y="460" width="500" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- 關聯箭頭 -->
+        <mxCell id="rel-task-tf" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#D6B656;fontSize=9;fontFamily=Noto Sans TC;" edge="1" parent="1" source="t-tasks" target="t-taskfiles">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-file-tf" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#D6B656;fontSize=9;fontFamily=Noto Sans TC;" edge="1" parent="1" source="t-files" target="t-taskfiles">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-task-audit" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#D6B656;fontSize=9;fontFamily=Noto Sans TC;" edge="1" parent="1" source="t-tasks" target="t-cleanaudit">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 跨 ORM 關聯說明 -->
+        <mxCell id="cross-orm" value="&lt;div style=&quot;text-align:center;font-size:9px;&quot;&gt;⚠️ 跨 ORM 關聯（透過 users.id）：&lt;br&gt;tasks.submitted_by / approved_by → users.id&lt;br&gt;task_files.edited_by / reviewed_by → users.id&lt;br&gt;（應用層關聯，非 DB FK）&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=9;fontFamily=Noto Sans TC;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="380" y="590" width="440" height="55" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="role-permission" name="角色權限矩陣">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="rp-title" value="&lt;b&gt;ODA Cyber Konsult — 角色權限矩陣&lt;/b&gt;&lt;br&gt;RBAC 7 角色 × 3 應用 × 功能存取" style="text;html=1;fontSize=14;fontFamily=Noto Sans TC;align=center;verticalAlign=middle;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="300" y="10" width="600" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- 角色表格 -->
+        <mxCell id="role-table" value="&lt;table style=&quot;font-size:11px;font-family:Noto Sans TC;border-collapse:collapse;width:100%;&quot;&gt;&lt;tr style=&quot;background:#6C8EBF;color:white;&quot;&gt;&lt;th style=&quot;padding:6px;border:1px solid #ccc;width:140px;&quot;&gt;角色&lt;/th&gt;&lt;th style=&quot;padding:6px;border:1px solid #ccc;width:80px;&quot;&gt;Admin&lt;br&gt;(5173)&lt;/th&gt;&lt;th style=&quot;padding:6px;border:1px solid #ccc;width:80px;&quot;&gt;Chatbot&lt;br&gt;(5174)&lt;/th&gt;&lt;th style=&quot;padding:6px;border:1px solid #ccc;width:80px;&quot;&gt;Cleaner&lt;br&gt;(5175)&lt;/th&gt;&lt;th style=&quot;padding:6px;border:1px solid #ccc;width:130px;&quot;&gt;預設模式&lt;/th&gt;&lt;th style=&quot;padding:6px;border:1px solid #ccc;width:180px;&quot;&gt;可切換模式&lt;/th&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;&lt;b&gt;admin&lt;/b&gt;&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#d5e8d4;&quot;&gt;✅ 全部&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#d5e8d4;&quot;&gt;✅&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#d5e8d4;&quot;&gt;✅ 全部&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;standard&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;beginner / standard / expert&lt;/td&gt;&lt;/tr&gt;&lt;tr style=&quot;background:#f9f9f9;&quot;&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;&lt;b&gt;data_reviewer&lt;/b&gt;&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#f8cecc;&quot;&gt;❌&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#d5e8d4;&quot;&gt;✅&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#d5e8d4;&quot;&gt;✅ 審核+送入&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;standard&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;beginner / standard&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;&lt;b&gt;data_cleaner&lt;/b&gt;&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#f8cecc;&quot;&gt;❌&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#d5e8d4;&quot;&gt;✅&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#d5e8d4;&quot;&gt;✅ 編輯+送審&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;standard&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;beginner / standard&lt;/td&gt;&lt;/tr&gt;&lt;tr style=&quot;background:#f9f9f9;&quot;&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;&lt;b&gt;consultant&lt;/b&gt;&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#f8cecc;&quot;&gt;❌&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#d5e8d4;&quot;&gt;✅&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#f8cecc;&quot;&gt;❌&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;expert&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;beginner / standard / expert&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;&lt;b&gt;it_user&lt;/b&gt;&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#f8cecc;&quot;&gt;❌&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#d5e8d4;&quot;&gt;✅&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#f8cecc;&quot;&gt;❌&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;standard&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;beginner / standard&lt;/td&gt;&lt;/tr&gt;&lt;tr style=&quot;background:#f9f9f9;&quot;&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;&lt;b&gt;user&lt;/b&gt;&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#f8cecc;&quot;&gt;❌&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#d5e8d4;&quot;&gt;✅&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#f8cecc;&quot;&gt;❌&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;beginner&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;beginner / standard&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;&lt;b&gt;basic_user&lt;/b&gt;&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#f8cecc;&quot;&gt;❌&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#d5e8d4;&quot;&gt;✅&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;text-align:center;background:#f8cecc;&quot;&gt;❌&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;beginner&lt;/td&gt;&lt;td style=&quot;padding:5px;border:1px solid #ccc;&quot;&gt;❌ 不可切換&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;" style="text;html=1;whiteSpace=wrap;overflow=auto;rounded=1;strokeColor=#999999;fillColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="110" y="70" width="980" height="290" as="geometry" />
+        </mxCell>
+
+        <!-- Maker-Checker 職責分離說明 -->
+        <mxCell id="mc-box" value="&lt;div style=&quot;text-align:left;font-size:11px;&quot;&gt;&lt;b&gt;🔒 Maker-Checker 職責分離（清洗審核流程）&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;Maker（送審者）：&lt;/b&gt;data_cleaner、admin&lt;br&gt;　→ 編輯去識別化內容、管理標籤、送審&lt;br&gt;&lt;br&gt;&lt;b&gt;Checker（審批者）：&lt;/b&gt;data_reviewer、admin&lt;br&gt;　→ 批准/退回任務、送入 RAG 知識庫&lt;br&gt;&lt;br&gt;&lt;b&gt;⚠️ 強制規則：&lt;/b&gt;submitted_by ≠ approved_by（FastAPI 伺服器端驗證）&lt;br&gt;　操作者身份由 NestJS JWT @CurrentUser 注入，不依賴客戶端&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=11;fontFamily=Noto Sans TC;align=left;spacingLeft=12;spacingTop=8;" vertex="1" parent="1">
+          <mxGeometry x="110" y="390" width="500" height="190" as="geometry" />
+        </mxCell>
+
+        <!-- 三層回應模式參數 -->
+        <mxCell id="mode-box" value="&lt;div style=&quot;text-align:left;font-size:11px;&quot;&gt;&lt;b&gt;📊 三層回應模式差異化參數&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;🟢 beginner（新手）：&lt;/b&gt;&lt;br&gt;　topK=3, temp=0.3, maxTokens=1024&lt;br&gt;　白話文、故事化回應&lt;br&gt;&lt;br&gt;&lt;b&gt;🟡 standard（一般）：&lt;/b&gt;&lt;br&gt;　topK=5, temp=0.1, maxTokens=2048&lt;br&gt;　實務技術建議&lt;br&gt;&lt;br&gt;&lt;b&gt;🔴 expert（顧問）：&lt;/b&gt;&lt;br&gt;　topK=8, temp=0.05, maxTokens=4096&lt;br&gt;　Rerank=ON, 含 ISO 條款/法規引用&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=11;fontFamily=Noto Sans TC;align=left;spacingLeft=12;spacingTop=8;" vertex="1" parent="1">
+          <mxGeometry x="650" y="390" width="340" height="220" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -2,7 +2,7 @@
 
 > **版本**: v1
 > **基礎路徑**: `/api/auth`
-> **服務**: NestJS API (Port 4000)
+> **服務**: NestJS API (Port 3051)
 
 ## 概述
 
@@ -47,7 +47,7 @@ Auth API 提供使用者身份驗證與授權功能,包含註冊、登入、Toke
 
 ```http
 POST /api/auth/register HTTP/1.1
-Host: localhost:4000
+Host: localhost:3051
 Content-Type: application/json
 
 {
@@ -127,7 +127,7 @@ Content-Type: application/json
 
 ```http
 POST /api/auth/login HTTP/1.1
-Host: localhost:4000
+Host: localhost:3051
 Content-Type: application/json
 
 {
@@ -213,7 +213,7 @@ Content-Type: application/json
 
 ```http
 POST /api/auth/refresh HTTP/1.1
-Host: localhost:4000
+Host: localhost:3051
 Content-Type: application/json
 
 {
@@ -268,7 +268,7 @@ Content-Type: application/json
 
 ```http
 POST /api/auth/logout HTTP/1.1
-Host: localhost:4000
+Host: localhost:3051
 Authorization: Bearer YOUR_ACCESS_TOKEN
 ```
 
@@ -298,7 +298,7 @@ Authorization: Bearer YOUR_ACCESS_TOKEN
 
 ```http
 POST /api/auth/change-password HTTP/1.1
-Host: localhost:4000
+Host: localhost:3051
 Authorization: Bearer YOUR_ACCESS_TOKEN
 Content-Type: application/json
 
@@ -423,7 +423,7 @@ export class ProfileController {
 
 ```http
 GET /profile HTTP/1.1
-Host: localhost:4000
+Host: localhost:3051
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
@@ -523,7 +523,7 @@ JWT_SECRET=use-a-strong-random-string-at-least-32-characters-long
 ### 1. 註冊新使用者
 
 ```bash
-curl -X POST http://localhost:4000/api/auth/register \
+curl -X POST http://localhost:3051/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "john@example.com",
@@ -536,7 +536,7 @@ curl -X POST http://localhost:4000/api/auth/register \
 ### 2. 使用者登入
 
 ```bash
-curl -X POST http://localhost:4000/api/auth/login \
+curl -X POST http://localhost:3051/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "john@example.com",
@@ -549,14 +549,14 @@ curl -X POST http://localhost:4000/api/auth/login \
 ### 3. 使用 Access Token 存取受保護資源
 
 ```bash
-curl http://localhost:4000/protected-endpoint \
+curl http://localhost:3051/protected-endpoint \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 ### 4. Token 過期時刷新
 
 ```bash
-curl -X POST http://localhost:4000/api/auth/refresh \
+curl -X POST http://localhost:3051/api/auth/refresh \
   -H "Content-Type: application/json" \
   -d '{
     "refreshToken": "YOUR_REFRESH_TOKEN"

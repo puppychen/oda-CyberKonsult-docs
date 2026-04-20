@@ -32,7 +32,7 @@
 
 ### 3. 環境變數範例
 - `/.env.example`
-  - 已加入 `FASTAPI_BASE_URL=http://localhost:8000`
+  - 已加入 `FASTAPI_BASE_URL=http://localhost:3502`
 
 ## 安裝步驟
 
@@ -54,7 +54,7 @@ cp .env.example .env
 確認 `.env` 中包含：
 
 ```env
-FASTAPI_BASE_URL=http://localhost:8000
+FASTAPI_BASE_URL=http://localhost:3502
 ```
 
 ### 3. 啟動服務
@@ -67,7 +67,7 @@ docker ps | grep postgres
 
 # 2. FastAPI (data-pipeline)
 cd python/data-pipeline
-uv run uvicorn data_pipeline.api.main:app --host 0.0.0.0 --port 8000 --reload
+uv run uvicorn data_pipeline.api.main:app --host 0.0.0.0 --port 3502 --reload
 
 # 3. NestJS API
 cd apps/api
@@ -92,13 +92,13 @@ NestJS 啟動時應顯示：
 
 ```bash
 # 取得 Token (假設已有 admin 使用者)
-TOKEN=$(curl -X POST http://localhost:4000/auth/login \
+TOKEN=$(curl -X POST http://localhost:3051/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@example.com","password":"password"}' \
   | jq -r '.access_token')
 
 # 測試取得任務列表
-curl http://localhost:4000/api/v1/tasks \
+curl http://localhost:3051/api/v1/tasks \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -109,14 +109,14 @@ NestJS 應正確轉發請求至 FastAPI，並返回相同格式的回應。
 ## 架構總覽
 
 ```
-Admin Dashboard (5173)
+Admin Dashboard (5501)
     ↓
-NestJS API (4000)
+NestJS API (3051)
     ├── JWT 驗證
     ├── Admin 角色檢查
     └── CleaningProxyService
             ↓
-        FastAPI (8000)
+        FastAPI (3502)
             ├── De-identification Engine
             ├── File Processing
             └── Database (PostgreSQL)
@@ -144,14 +144,14 @@ Error: Cannot find module '@nestjs/axios'
 ### 2. FastAPI 連線失敗
 
 ```
-Error: connect ECONNREFUSED 127.0.0.1:8000
+Error: connect ECONNREFUSED 127.0.0.1:3502
 ```
 
-**解決方式**：確認 FastAPI 已啟動於 port 8000
+**解決方式**：確認 FastAPI 已啟動於 port 3502
 
 ```bash
 cd python/data-pipeline
-uv run uvicorn data_pipeline.api.main:app --host 0.0.0.0 --port 8000 --reload
+uv run uvicorn data_pipeline.api.main:app --host 0.0.0.0 --port 3502 --reload
 ```
 
 ### 3. 權限檢查失敗

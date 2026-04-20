@@ -4,7 +4,7 @@
 
 Health check endpoints for monitoring the NestJS API service and its dependencies.
 
-**Base URL:** `http://localhost:4000`
+**Base URL:** `http://localhost:3051`
 
 ---
 
@@ -89,7 +89,7 @@ Health check endpoints for monitoring the NestJS API service and its dependencie
 ### Check Overall Health
 
 ```bash
-curl http://localhost:4000/health
+curl http://localhost:3051/health
 ```
 
 ### Kubernetes Probes
@@ -131,10 +131,10 @@ readinessProbe:
 RAG service URL is read from `ConfigService`:
 
 ```typescript
-this.config.get<string>('fastapi.baseUrl', 'http://localhost:8000')
+this.config.get<string>('fastapi.baseUrl', 'http://localhost:3502')
 ```
 
-Default: `http://localhost:8000`
+Default: `http://localhost:3502`
 
 ---
 

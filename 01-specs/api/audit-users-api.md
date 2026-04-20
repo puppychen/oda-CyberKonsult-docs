@@ -1,7 +1,7 @@
 # Audit & Users API Documentation
 
 **Version:** 1.0.0
-**Base URL:** `http://localhost:4000`
+**Base URL:** `http://localhost:3051`
 
 ---
 
@@ -256,11 +256,11 @@
 
 **Namespace:** `/cleaning/ws`
 
-**URL:** `ws://localhost:4000/cleaning/ws`
+**URL:** `ws://localhost:3051/cleaning/ws`
 
 **支援的來源 (CORS):**
-- `http://localhost:5173` (Admin Dashboard)
-- `http://localhost:5174` (Chatbot UI)
+- `http://localhost:5501` (Admin Dashboard)
+- `http://localhost:5502` (Chatbot UI)
 
 ---
 
@@ -271,7 +271,7 @@
 ```javascript
 import io from 'socket.io-client';
 
-const socket = io('http://localhost:4000/cleaning/ws', {
+const socket = io('http://localhost:3051/cleaning/ws', {
   query: { taskId: '550e8400-e29b-41d4-a716-446655440000' }
 });
 
@@ -283,7 +283,7 @@ socket.on('task_update', (data) => {
 #### 2. 訂閱所有任務更新
 
 ```javascript
-const socket = io('http://localhost:4000/cleaning/ws');
+const socket = io('http://localhost:3051/cleaning/ws');
 
 socket.on('task_update', (data) => {
   console.log('Task update:', data);
@@ -293,7 +293,7 @@ socket.on('task_update', (data) => {
 #### 3. 動態訂閱任務
 
 ```javascript
-const socket = io('http://localhost:4000/cleaning/ws');
+const socket = io('http://localhost:3051/cleaning/ws');
 
 socket.emit('subscribe_task', '550e8400-e29b-41d4-a716-446655440000');
 

@@ -2,9 +2,9 @@
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**
 >
-> 文件版本：1.2.0
+> 文件版本：1.3.0
 > 建立日期：2026-03-01
-> 最後更新：2026-03-11
+> 最後更新：2026-03-16
 > 文件類型：威脅模型（Threat Model）
 
 ---
@@ -100,6 +100,7 @@
 | 內部 API 偽造 | 高 | X-Internal-Token HMAC 驗證 | `python/rag-service/middleware/` |
 | 檔案類型偽裝 | 中 | MIME type 檢查 + 副檔名白名單 | FastAPI upload 端點 |
 | ZIP 路徑穿越（Zip Slip） | 高 | ZIP 內所有檔案路徑不得包含 `../` 等路徑穿越字元，違規直接拒絕解壓 | FastAPI ZIP 上傳處理 |
+| CORS/CSP 配置不當 | 中 | CORS 白名單配置、CSP 內容安全政策（Phase 2 規劃中） | 基礎設施層 |
 
 #### R — Repudiation（否認）
 
@@ -152,7 +153,7 @@ Maker-Checker 職責分離機制引入獨立攻擊面，以下為各威脅類別
 
 ## 4. 攻擊面分析
 
-### 4.1 NestJS API（Port 4000）
+### 4.1 NestJS API（Port 3051）
 
 | 項目 | 說明 |
 |------|------|
@@ -162,7 +163,7 @@ Maker-Checker 職責分離機制引入獨立攻擊面，以下為各威脅類別
 | 主要威脅 | API 濫用、JWT 竊取、輸入注入 |
 | 緩解措施 | ThrottlerModule、ValidationPipe、JwtAuthGuard、RolesGuard |
 
-### 4.2 FastAPI RAG Service（Port 8000）
+### 4.2 FastAPI RAG Service（Port 3502）
 
 | 項目 | 說明 |
 |------|------|
@@ -206,9 +207,9 @@ Maker-Checker 職責分離機制引入獨立攻擊面，以下為各威脅類別
 
 | 應用 | Port (dev) | 暴露方式 | 主要威脅 |
 |------|-----------|---------|---------|
-| Admin Dashboard | 5173 | 對外（Nginx 靜態） | XSS、CSRF、未授權存取管理功能 |
-| Chatbot UI | 5174 | 對外（Nginx 靜態） | XSS、對話資料洩漏 |
-| Cleaner App | 5175 | 對外（Nginx 靜態） | XSS、清洗資料未授權存取 |
+| Admin Dashboard | 5501 | 對外（Nginx 靜態） | XSS、CSRF、未授權存取管理功能 |
+| Chatbot UI | 5502 | 對外（Nginx 靜態） | XSS、對話資料洩漏 |
+| Cleaner App | 5503 | 對外（Nginx 靜態） | XSS、清洗資料未授權存取 |
 
 **共通緩解措施**：
 - React 自動轉義防 XSS
@@ -299,6 +300,7 @@ Maker-Checker 職責分離機制引入獨立攻擊面，以下為各威脅類別
 | M-026 | EoP | Maker-Checker method-level @Roles Guard | ✅ 已實作 | review.controller.ts | review.controller.spec |
 | M-027 | DoS | ZIP 解壓縮安全驗證（壓縮比 ≤ 20:1、檔案數 ≤ 100、解壓後總大小 ≤ 200MB） | ✅ 已實作 | FastAPI ZIP 上傳處理 | test_zip_bomb_protection |
 | M-028 | Tampering | ZIP 路徑穿越驗證（拒絕含 `../` 路徑的檔案） | ✅ 已實作 | FastAPI ZIP 上傳處理 | test_zip_slip_protection |
+| M-029 | Tampering | CORS 白名單 + CSP 內容安全政策 | 📋 規劃中 | 基礎設施 | Phase 2 |
 
 ---
 
@@ -321,6 +323,7 @@ Maker-Checker 職責分離機制引入獨立攻擊面，以下為各威脅類別
 | v1.0.0 | 2026-03-01 | 初版：STRIDE 威脅分析、攻擊面分析、風險矩陣、緩解措施追蹤表 |
 | v1.1.0 | 2026-03-06 | 新增 Maker-Checker 審核流程 STRIDE 分析、M-023~M-026 緩解措施 |
 | v1.2.0 | 2026-03-11 | 新增 ZIP bomb 與 Zip Slip 威脅分析及緩解措施（M-027、M-028） |
+| v1.3.0 | 2026-03-16 | ML-15：PII 實體數量確認 20 種；新增 CORS/CSP 威脅分析（M-029） |
 
 ---
 

@@ -2,8 +2,8 @@
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**
 >
-> 文件版本：1.7.0
-> 最後更新：2026-03-11
+> 文件版本：1.9.0
+> 最後更新：2026-03-23
 > 文件類型：完整技術 SRS（面向開發人員、系統架構師、QA 工程師）
 
 ---
@@ -62,7 +62,7 @@
 | **PII** | Personally Identifiable Information，個人可識別資訊 |
 | **去識別化** | 將敏感資料轉換為無法識別原始資料的形式（Data De-identification） |
 | **實體類型** | PII 的分類，如人名、身分證字號、電話號碼等 |
-| **規則設定檔** | 預先定義的去識別化規則組合，可重複使用 |
+| **固定去識別化規則** | 系統內建的 6 種去識別化策略組合，由 `get_default_rules()` 統一定義，不支援自訂規則 CRUD |
 | **知識庫** | 經向量化處理後可供 RAG 檢索的文件集合 |
 | **Embedding** | 將文字轉換為向量表示的過程 |
 | **多會員** | 單一系統服務多個獨立組織（會員）的架構模式 |
@@ -73,7 +73,7 @@
 | **一般模式** | 提供實務技術建議與操作步驟，適合 IT/MIS 工程師 |
 | **顧問模式** | 提供深入專業分析，含 ISO 標準引用與法規依據，適合資安顧問 |
 | **在地化法規知識庫** | 以台灣資通安全管理法、個資法及 ISO 27001/27701 等標準建構的 RAG 知識庫 |
-| **Cleaner App** | 獨立的清洗審核管理前端應用 (Port 5175)，提供完整的審核工作流 |
+| **Cleaner App** | 獨立的清洗審核管理前端應用 (Port 5503)，提供完整的審核工作流 |
 | **審核工作流** | 查看 → 標籤 → 編輯 → 批准 → 送入 RAG 的完整清洗品質審核流程 |
 | **Analytics Dashboard** | 資料分析儀表板，提供清洗統計、知識庫統計與時間軸統計 |
 
@@ -147,7 +147,7 @@
 │ Chatbot  │  │    Admin      │  │   Cleaner     │  │   API    │  │   API Gateway   │
 │ UI       │  │  Dashboard    │  │   App         │  │ Gateway  │  │   🔮            │
 │ React 19 │  │  React 19     │  │  React 19     │  │   🔮     │  │                 │
-│ :5174    │  │  :5173        │  │  :5175        │  │          │  │                 │
+│ :5502    │  │  :5501        │  │  :5503        │  │          │  │                 │
 └────┬─────┘  └───────┬───────┘  └───────┬───────┘  └──────────┘  └────────┬────────┘
      │                │                  │                                  │
      └────────────────┴──────────────────┴──────────────────────────────────┘
@@ -172,7 +172,7 @@
     │ RAG + Cleaning  │  │ Gemini/  │  │ SearXNG  │  │ Notification │
     │ Service         │  │ OpenAI   │  │ (Docker) │  │ Service      │
     │ FastAPI         │  │ LLM API  │  │ :8080    │  │ 🔮           │
-    │ :8000 (檢索專用)│  │          │  │ 網路搜尋 │  │              │
+    │ :3502 (檢索專用)│  │          │  │ 網路搜尋 │  │              │
     └────────┬────────┘  └──────────┘  └──────────┘  └──────┬───────┘
              │                                              │
              └──────────────────────────────────────────────┘
@@ -238,11 +238,11 @@
 
 | 服務 | Port | 協定 | 狀態 | 說明 |
 |------|------|------|------|------|
-| NestJS API | 4000 | HTTP/WS | ✅ | 核心後端 API |
-| Admin Dashboard | 5173 | HTTP | ✅ | 管理後台 |
-| Chatbot UI | 5174 | HTTP | ✅ | 使用者聊天介面 |
-| Cleaner UI | 5175 | HTTP | ✅ | 清洗審核管理介面 |
-| RAG + Cleaning Service (FastAPI) | 8000 | HTTP | ✅ | RAG 與清洗服務（已合併） |
+| NestJS API | 3051 | HTTP/WS | ✅ | 核心後端 API |
+| Admin Dashboard | 5501 | HTTP | ✅ | 管理後台 |
+| Chatbot UI | 5502 | HTTP | ✅ | 使用者聊天介面 |
+| Cleaner UI | 5503 | HTTP | ✅ | 清洗審核管理介面 |
+| RAG + Cleaning Service (FastAPI) | 3502 | HTTP | ✅ | RAG 與清洗服務（已合併） |
 | PostgreSQL | 5432 | TCP | ✅ | 關聯式資料庫 |
 | Qdrant REST | 6333 | HTTP | ✅ | 向量資料庫 REST |
 | Qdrant gRPC | 6334 | gRPC | ✅ | 向量資料庫 gRPC |
@@ -373,7 +373,7 @@
 
 #### 5.2.3 API 規格
 
-**POST /api/v1/auth/login - 使用者登入**
+**POST /api/auth/login - 使用者登入**
 
 ```yaml
 Request:
@@ -417,7 +417,7 @@ Response 423:
   }
 ```
 
-**POST /api/v1/auth/logout - 使用者登出**
+**POST /api/auth/logout - 使用者登出**
 
 ```yaml
 Request:
@@ -431,7 +431,7 @@ Response 200:
   }
 ```
 
-**POST /api/v1/auth/refresh - 更新 Token**
+**POST /api/auth/refresh - 更新 Token**
 
 ```yaml
 Request:
@@ -499,7 +499,7 @@ CREATE INDEX idx_users_role ON users(role);
 
 #### 5.3.4 API 規格
 
-**POST /api/v1/chat - 發送對話訊息**
+**POST /api/chat - 發送對話訊息**
 
 ```yaml
 Request:
@@ -529,6 +529,7 @@ Response 200 (非串流):
           "score": 0.92
         }
       ],
+      "confidenceLevel": "high",
       "createdAt": "2026-02-05T10:30:00.000Z"
     }
   }
@@ -546,10 +547,41 @@ Response 200 (串流 - SSE):
   data: {"sources": [...]}
 
   event: done
-  data: {"messageId": "msg-uuid", "conversationId": "conv-uuid"}
+  data: {"messageId": "msg-uuid", "conversationId": "conv-uuid", "confidenceLevel": "high"}
 ```
 
-**GET /api/v1/conversations - 取得對話列表**
+> **信心度欄位**：回應中包含 `confidenceLevel: 'high' | 'medium' | 'low'`，非串流模式亦於 `data` 中回傳。
+
+#### 信心度判定邏輯
+
+| 等級 | 標籤 | 條件 |
+|------|------|------|
+| high | 知識庫來源 | `best_score >= 0.7` 且未觸發 web search |
+| medium | 混合來源 | `best_score 0.3~0.7` 或觸發 web search |
+| low | 網路補充 | `best_score < 0.3` 或僅依賴 web search |
+
+**POST /api/chat/messages/{messageId}/feedback — 回覆品質回饋**
+
+```yaml
+Request:
+  Headers:
+    Authorization: Bearer <accessToken>
+  Path:
+    messageId: string (required)
+  Body:
+    feedback: 'positive' | 'negative' (required)
+
+Response 200:
+  {
+    "success": true,
+    "data": {
+      "messageId": "msg-uuid",
+      "feedback": "positive"
+    }
+  }
+```
+
+**GET /api/chat/conversations - 取得對話列表**
 
 ```yaml
 Request:
@@ -578,7 +610,7 @@ Response 200:
   }
 ```
 
-**GET /api/v1/conversations/{conversationId} - 取得對話詳情**
+**GET /api/chat/conversations/{conversationId} - 取得對話詳情**
 
 ```yaml
 Request:
@@ -672,7 +704,7 @@ CREATE INDEX idx_messages_created_at ON messages(created_at);
 
 #### 5.4.4 API 規格
 
-**GET /api/v1/prompts - 取得提示詞範本列表**
+**GET /api/prompts - 取得提示詞範本列表**
 
 ```yaml
 Request:
@@ -701,7 +733,7 @@ Response 200:
   }
 ```
 
-**POST /api/v1/prompts - 建立提示詞範本**
+**POST /api/prompts - 建立提示詞範本**
 
 ```yaml
 Request:
@@ -729,7 +761,7 @@ Response 201:
   }
 ```
 
-**POST /api/v1/prompts/{promptId}/test - 測試提示詞**
+**POST /api/prompts/{promptId}/test - 測試提示詞**
 
 ```yaml
 Request:
@@ -773,6 +805,19 @@ CREATE UNIQUE INDEX idx_prompt_templates_active_role_mode
     ON prompt_templates(role, mode) WHERE is_active = TRUE;
 ```
 
+#### 5.4.6 角色專屬提示詞說明
+
+| 角色 | 提示詞策略 | 說明 |
+|------|-----------|------|
+| basic_user | 沿用 `user` 提示詞 | 僅限 beginner 模式，提示詞與 `user` 角色共用 |
+| user | 標準提示詞 | beginner / standard 模式各有對應提示詞 |
+| it_user | **專屬提示詞（偏技術風格）** | standard 模式使用獨立提示詞，強調實務操作步驟、技術指令、設定範例，回應風格偏向 CLI 指令與組態片段 |
+| consultant | 專業提示詞 | expert 模式引用 ISO 條款與法規依據 |
+| data_cleaner / data_reviewer | 沿用 standard | 僅在 Cleaner App 使用，無需獨立提示詞 |
+| admin | 沿用 standard | 可切換全部模式，使用各模式對應提示詞 |
+
+> `it_user` 角色的提示詞與 `user` 角色的 standard 模式不同——`it_user` 偏向實務技術操作（如防火牆規則、系統組態、指令範例），而 `user` 的 standard 模式偏向概念性技術建議。
+
 ---
 
 ### 5.5 FR-04：資料去識別化功能 ✅
@@ -785,9 +830,9 @@ CREATE UNIQUE INDEX idx_prompt_templates_active_role_mode
 
 | US 編號 | 使用者故事 | 驗收標準 |
 |---------|------------|----------|
-| US-04-01 | 身為系統管理員，我希望能夠自動偵測文件中的敏感資料 | 1. 支援 19 種實體類型<br>2. 偵測準確率 > 95%<br>3. 顯示偵測信心分數 |
+| US-04-01 | 身為系統管理員，我希望能夠自動偵測文件中的敏感資料 | 1. 支援 20 種實體類型<br>2. 偵測準確率 > 95%<br>3. 顯示偵測信心分數 |
 | US-04-02 | 身為系統管理員，我希望能夠選擇不同的去識別化策略 | 1. 支援 6 種去識別化策略<br>2. 可自訂策略參數<br>3. 可預覽去識別化效果 |
-| US-04-03 | 身為系統管理員，我希望能夠建立規則組合 | 1. 可建立規則設定檔<br>2. 可匯入/匯出規則<br>3. 可設定預設規則 |
+| US-04-03 | 身為系統管理員，我希望系統自動套用內建的去識別化規則 | 1. 系統內建 6 種固定規則（`get_default_rules()`）<br>2. 清洗任務自動套用固定規則<br>3. 規則變更需透過程式碼更新 |
 | US-04-04 | 身為系統管理員，我希望能夠批次處理多個檔案 | 1. 支援多檔上傳<br>2. 並行處理<br>3. 即時進度回報 |
 
 #### 5.5.3 清洗管線流程
@@ -797,12 +842,12 @@ Upload → Parse → Detect PII → Anonymize → Output
 
 1. Upload    - 接收檔案 (PDF/DOCX/XLSX/CSV/TXT)
 2. Parse     - 依類型提取純文字
-3. Detect    - Presidio + spaCy 偵測 19 種實體
+3. Detect    - Presidio + spaCy 偵測 20 種實體
 4. Anonymize - 依規則執行 6 種去識別化策略
 5. Output    - 產出清洗檔案與 JSON 報告
 ```
 
-#### 5.5.4 支援的實體類型（19 種）
+#### 5.5.4 支援的實體類型（20 種）
 
 | 分類 | 實體類型 | 說明 | 範例 |
 |------|----------|------|------|
@@ -819,6 +864,7 @@ Upload → Parse → Detect PII → Anonymize → Output
 | **台灣專屬** | TW_ID | 身分證字號 | A123456789 |
 | | TW_PHONE | 台灣手機 | 0912-345-678 |
 | | TW_UNIFIED_BUSINESS_NO | 統一編號 | 12345678 |
+| | TW_ADDRESS | 台灣地址 | 台北市信義區信義路五段7號 |
 | **企業機密** | API_KEY | API 金鑰 | sk-abc123def456... |
 | | ACCESS_TOKEN | 存取權杖 | Bearer eyJhbGciOiJ... |
 | | PRIVATE_KEY | 私密金鑰 | -----BEGIN RSA PRIVATE KEY----- |
@@ -847,8 +893,8 @@ interface MaskParams {
 
 // partial_mask 策略參數
 interface PartialMaskParams {
-  revealFirst?: number;   // 前方保留字數
-  revealLast?: number;    // 後方保留字數
+  keep_first?: number;   // 前方保留字數
+  keep_last?: number;    // 後方保留字數
   maskChar?: string;      // 遮罩字元
 }
 
@@ -991,30 +1037,9 @@ CREATE TABLE files (
 
 CREATE INDEX idx_files_user_id ON files(user_id);
 
-CREATE TABLE rule_profiles (
-    id          VARCHAR(36) PRIMARY KEY,
-    name        VARCHAR(100) NOT NULL,
-    description TEXT,
-    is_default  BOOLEAN DEFAULT FALSE,
-    is_active   BOOLEAN DEFAULT TRUE,
-    user_id     UUID REFERENCES users(id) ON DELETE SET NULL,
-    created_at  TIMESTAMP DEFAULT NOW(),
-    updated_at  TIMESTAMP DEFAULT NOW()
-);
-
-CREATE INDEX idx_rule_profiles_user_id ON rule_profiles(user_id);
-
-CREATE TABLE anonymization_rules (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    profile_id  VARCHAR(36) NOT NULL REFERENCES rule_profiles(id) ON DELETE CASCADE,
-    entity_type VARCHAR(100) NOT NULL,
-    strategy    VARCHAR(100) NOT NULL,
-    options     JSONB DEFAULT '{}',
-    enabled     BOOLEAN DEFAULT TRUE,
-    sequence    INTEGER DEFAULT 0
-);
-
-CREATE INDEX idx_anon_rules_profile_id ON anonymization_rules(profile_id);
+-- 注意：rule_profiles 與 anonymization_rules 表已於 migration 005 移除。
+-- 去識別化規則改為固定模式，由 data-pipeline 的 get_default_rules() 統一定義。
+-- 6 種固定策略：mask、partial_mask、pseudonymize、generalize、keep_labeled、encrypt
 
 CREATE TABLE tasks (
     id                      VARCHAR(36) PRIMARY KEY,
@@ -1025,7 +1050,11 @@ CREATE TABLE tasks (
     files_processed         INTEGER DEFAULT 0,
     total_entities_found    INTEGER DEFAULT 0,
     processing_time_seconds FLOAT,
-    rule_id                 VARCHAR(36) REFERENCES rule_profiles(id) ON DELETE SET NULL,
+    approval_status         VARCHAR(50) DEFAULT 'pending',  -- pending/review_requested/approved/rejected/ingested
+    submitted_by            UUID REFERENCES users(id),
+    submitted_at            TIMESTAMP,
+    approved_by             UUID REFERENCES users(id),
+    approved_at             TIMESTAMP,
     session_id              VARCHAR(36),
     user_id                 UUID REFERENCES users(id) ON DELETE SET NULL,
     created_at              TIMESTAMP DEFAULT NOW(),
@@ -1279,7 +1308,7 @@ interface PingPongMessage {
 
 #### 5.8.3 API 規格
 
-**GET /api/v1/audit-logs - 查詢稽核日誌**
+**GET /api/audit-logs - 查詢稽核日誌**
 
 ```yaml
 Request:
@@ -1346,7 +1375,9 @@ CREATE INDEX idx_audit_logs_resource_type ON audit_logs(resource_type);
 
 ---
 
-### 5.9 FR-08：去識別化規則管理 ✅
+### 5.9 FR-08：去識別化規則管理 — 已簡化 ✅
+
+> **⚠️ 已簡化**：原規劃為自訂規則 CRUD API，已簡化為固定規則模式。系統內建 6 種去識別化規則（由 `get_default_rules()` 統一定義），不再支援自訂規則 CRUD。原 API 端點（`/api/v1/rules/*`）及相關資料表（`rule_profiles`、`anonymization_rules`）已於 migration 005 移除。
 
 #### 5.9.1 功能描述
 
@@ -1916,7 +1947,7 @@ alert_rules:
 
 #### 5.17.5 API 規格
 
-**POST /api/v1/chat — 擴展 `responseMode` 欄位**
+**POST /api/chat — 擴展 `responseMode` 欄位**
 
 ```yaml
 Request:
@@ -1934,7 +1965,7 @@ Request:
 
 > 若未提供 `responseMode`，系統依使用者角色自動選擇預設模式。
 
-**GET /api/v1/chat/modes — 取得可用回應模式**
+**GET /api/chat/modes — 取得可用回應模式**
 
 ```yaml
 Request:
@@ -2003,7 +2034,7 @@ ALTER TABLE conversations ADD COLUMN response_mode VARCHAR(50) DEFAULT 'standard
 
 #### 5.19.1 功能描述
 
-提供獨立的清洗審核管理前端應用 (apps/cleaner, Port 5175)，支援完整的審核工作流：查看清洗結果 → 標籤分類 → 內容編輯 → 批准/駁回 → 送入 RAG 知識庫。本功能供 `data_cleaner` 與 `admin` 角色使用。
+提供獨立的清洗審核管理前端應用 (apps/cleaner, Port 5503)，支援完整的審核工作流：查看清洗結果 → 標籤分類 → 內容編輯 → 批准/駁回 → 送入 RAG 知識庫。本功能供 `data_cleaner` 與 `admin` 角色使用。
 
 #### 5.19.2 技術架構
 
@@ -2014,8 +2045,8 @@ ALTER TABLE conversations ADD COLUMN response_mode VARCHAR(50) DEFAULT 'standard
 | **資料獲取** | TanStack React Query | 伺服器狀態管理與快取 |
 | **路由** | React Router v7 | SPA 路由管理 |
 | **HTTP 客戶端** | Axios | API 請求封裝 |
-| **Dev Port** | 5175 | 開發伺服器連接埠 |
-| **API 代理** | Vite dev server → NestJS (4000) | 開發環境 API 代理 |
+| **Dev Port** | 5503 | 開發伺服器連接埠 |
+| **API 代理** | Vite dev server → NestJS (3051) | 開發環境 API 代理 |
 
 #### 5.19.3 使用者故事
 
@@ -2026,7 +2057,7 @@ ALTER TABLE conversations ADD COLUMN response_mode VARCHAR(50) DEFAULT 'standard
 | US-18-03 | 身為資料清洗人員，我希望手動修正清洗結果中的錯誤 | 1. 提供內容編輯功能<br>2. 儲存編輯後內容<br>3. 記錄修改歷程 |
 | US-18-04 | 身為資料清洗人員，我希望為檔案標記分類標籤 | 1. 可新增/移除標籤<br>2. 支援自訂標籤名稱<br>3. 標籤用於後續知識庫分類 |
 | US-18-05 | 身為資料清洗人員，我希望批准或駁回清洗任務 | 1. 可批准已審核完成的任務<br>2. 可駁回品質不合格的任務<br>3. 記錄審核意見 |
-| US-18-06 | 身為系統管理員，我希望將批准的資料送入 RAG 知識庫 | 1. 僅 admin 可執行送入操作<br>2. 顯示送入進度<br>3. 記錄送入結果 |
+| US-18-06 | 身為系統管理員，我希望將批准的資料送入 RAG 知識庫 | 1. 僅 data_reviewer / admin 可執行送入操作<br>2. 顯示送入進度<br>3. 記錄送入結果 |
 | US-18-07 | 身為資料清洗人員，我希望瀏覽所有上傳的來源資料 | 1. 列出所有檔案<br>2. 支援類型篩選與關鍵字搜尋<br>3. 分頁顯示 |
 | US-18-08 | 身為資料清洗人員，我希望瀏覽知識庫中的向量化文件 | 1. 列出 Qdrant 中的文件<br>2. 依來源/標籤篩選<br>3. 顯示內容摘要 |
 | US-18-09 | 身為系統管理員，我希望按來源刪除知識庫文件 | 1. 選擇來源<br>2. 確認後刪除<br>3. 顯示刪除結果 |
@@ -2040,10 +2071,10 @@ ALTER TABLE conversations ADD COLUMN response_mode VARCHAR(50) DEFAULT 'standard
                ┌──────────────┐
                │   pending    │ (待審核)
                └──────┬───────┘
-                      │ 開始審核
+                      │ 送審
                       ▼
                ┌──────────────┐
-               │  reviewing   │ (審核中：查看/標籤/編輯)
+               │  review_requested  │ (已送審：等待審核)
                └──────┬───────┘
                       │
             ┌─────────┼─────────┐
@@ -2053,7 +2084,7 @@ ALTER TABLE conversations ADD COLUMN response_mode VARCHAR(50) DEFAULT 'standard
     │   approved   │    │   rejected   │
     │  (已批准)     │    │  (已駁回)     │
     └──────┬───────┘    └──────────────┘
-           │ 送入 RAG (僅 Admin)
+           │ 送入 RAG (data_reviewer / admin)
            ▼
     ┌──────────────┐
     │   ingested   │
@@ -2643,19 +2674,19 @@ Response 200:
        │                      │                      │
        ▼                      ▼                      ▼
 ┌───────────────┐    ┌───────────────┐    ┌───────────────────┐
-│knowledge_bases│    │    files      │    │  rule_profiles    │
+│knowledge_bases│    │    files      │    │cleaning_audit_logs│
 │      🔮       │    ├───────────────┤    ├───────────────────┤
 └───────┬───────┘    │ id (PK)       │    │ id (PK)           │
-        │            │ tenant_id(FK) │    │ tenant_id(FK)     │
-        │            │ original_name │    │ name              │
-        │            │ file_type     │    │ description       │
-        │            │ size_bytes    │    │ is_default        │
-        │            └───────┬───────┘    └─────────┬─────────┘
-        │                    │                      │
-        ▼                    │                      ▼
-┌───────────────┐            │            ┌───────────────────┐
-│ kb_documents  │            │            │anonymization_rules│
-│      🔮       │            │            └───────────────────┘
+        │            │ original_name │    │ task_id (FK)      │
+        │            │ file_type     │    │ action            │
+        │            │ size_bytes    │    │ user_id           │
+        │            │ auto_tags     │    │ details           │
+        │            └───────┬───────┘    └───────────────────┘
+        │                    │
+        ▼                    │
+┌───────────────┐            │
+│ kb_documents  │            │
+│      🔮       │            │
 └───────────────┘            │
                              │
               ┌──────────────┴──────────────┐
@@ -2703,10 +2734,12 @@ Response 200:
 
 | 值 | 說明 | 階段 |
 |----|------|------|
+| basic_user | 基礎使用者（僅 beginner 模式） | ✅ |
 | user | 一般使用者 | ✅ |
-| it_user | IT 工程師 | 🔄 |
+| it_user | IT 工程師 | ✅ |
 | consultant | 資安顧問 | ✅ |
 | data_cleaner | 資料清洗人員（僅 Cleaner App） | ✅ |
+| data_reviewer | 資料審核人員（Maker-Checker 審批者） | ✅ |
 | admin | 系統管理員 | ✅ |
 | platform_admin | 平台管理員 | 🔮 |
 
@@ -2735,6 +2768,7 @@ Response 200:
 | TW_ID | 台灣身分證 | 台灣專屬 |
 | TW_PHONE | 台灣手機 | 台灣專屬 |
 | TW_UNIFIED_BUSINESS_NO | 統一編號 | 台灣專屬 |
+| TW_ADDRESS | 台灣地址 | 台灣專屬 |
 | API_KEY | API 金鑰 | 企業機密 |
 | ACCESS_TOKEN | 存取權杖 | 企業機密 |
 | PRIVATE_KEY | 私密金鑰 | 企業機密 |
@@ -2755,6 +2789,7 @@ Response 200:
 | 值 | 說明 | 階段 |
 |----|------|------|
 | pending | 待批准 | ✅ |
+| review_requested | 已送審（等待審核） | ✅ |
 | approved | 已批准 | ✅ |
 | rejected | 已駁回 | ✅ |
 | ingested | 已匯入知識庫 | ✅ |
@@ -2778,18 +2813,19 @@ Response 200:
 
 | 分類 | 方法 | 路徑 | 說明 | 狀態 |
 |------|------|------|------|------|
-| **認證** | POST | /api/v1/auth/login | 使用者登入 | 🔄 |
-| | POST | /api/v1/auth/logout | 使用者登出 | 🔄 |
-| | POST | /api/v1/auth/refresh | 更新 Token | 🔄 |
-| **對話** | POST | /api/v1/chat | 發送對話訊息 | ✅ |
-| | GET | /api/v1/chat/modes | 取得可用回應模式 | 🔄 |
-| | GET | /api/v1/conversations | 取得對話列表 | ✅ |
-| | GET | /api/v1/conversations/{id} | 取得對話詳情 | ✅ |
-| **提示詞** | GET | /api/v1/prompts | 取得提示詞列表 | 🔄 |
-| | POST | /api/v1/prompts | 建立提示詞 | 🔄 |
-| | PUT | /api/v1/prompts/{id} | 更新提示詞 | 🔄 |
-| | DELETE | /api/v1/prompts/{id} | 刪除提示詞 | 🔄 |
-| | POST | /api/v1/prompts/{id}/test | 測試提示詞 | 🔄 |
+| **認證** | POST | /api/auth/login | 使用者登入 | 🔄 |
+| | POST | /api/auth/logout | 使用者登出 | 🔄 |
+| | POST | /api/auth/refresh | 更新 Token | 🔄 |
+| **對話** | POST | /api/chat | 發送對話訊息 | ✅ |
+| | GET | /api/chat/modes | 取得可用回應模式 | 🔄 |
+| | GET | /api/chat/conversations | 取得對話列表 | ✅ |
+| | GET | /api/chat/conversations/{id} | 取得對話詳情 | ✅ |
+| | POST | /api/chat/messages/{messageId}/feedback | 回覆品質回饋 | ✅ |
+| **提示詞** | GET | /api/prompts | 取得提示詞列表 | 🔄 |
+| | POST | /api/prompts | 建立提示詞 | 🔄 |
+| | PUT | /api/prompts/{id} | 更新提示詞 | 🔄 |
+| | DELETE | /api/prompts/{id} | 刪除提示詞 | 🔄 |
+| | POST | /api/prompts/{id}/test | 測試提示詞 | 🔄 |
 | **上傳** | POST | /api/v1/upload | 上傳檔案 | ✅ |
 | | GET | /api/v1/upload/{id} | 取得檔案資訊 | ✅ |
 | | GET | /api/v1/files | 列出所有上傳檔案（支援 pipeline_status 篩選） | ✅ |
@@ -2799,17 +2835,11 @@ Response 200:
 | **任務** | GET | /api/v1/tasks | 列出所有任務 | ✅ |
 | | GET | /api/v1/tasks/{id} | 取得任務狀態 | ✅ |
 | | DELETE | /api/v1/tasks/{id} | 取消任務 | ✅ |
-| **規則** | GET | /api/v1/rules | 列出規則設定檔 | ✅ |
-| | POST | /api/v1/rules | 建立規則設定檔 | ✅ |
-| | GET | /api/v1/rules/{id} | 取得單一規則 | ✅ |
-| | PUT | /api/v1/rules/{id} | 更新規則 | ✅ |
-| | DELETE | /api/v1/rules/{id} | 刪除規則 | ✅ |
-| | GET | /api/v1/rules/{id}/export | 匯出規則 | ✅ |
-| | POST | /api/v1/rules/import | 匯入規則 | ✅ |
+| ~~**規則**~~ | | | 已移除 — 改為固定規則模式（`get_default_rules()`），migration 005 已刪除相關資料表 | ❌ removed |
 | **下載** | GET | /api/v1/download/{task_id} | 下載所有結果 | ✅ |
 | | GET | /api/v1/download/{task_id}/{file_id} | 下載單一檔案 | ✅ |
 | | GET | /api/v1/download/{task_id}/report | 下載清洗報告 | ✅ |
-| **稽核** | GET | /api/v1/audit-logs | 查詢稽核日誌 | ✅ |
+| **稽核** | GET | /api/audit-logs | 查詢稽核日誌 | ✅ |
 | **審核** | GET | /api/v1/review/{task_id} | 取得任務審核資訊 | ✅ |
 | | GET | /api/v1/review/{task_id}/files/{file_id}/content | 取得檔案內容 | ✅ |
 | | PUT | /api/v1/review/{task_id}/files/{file_id}/content | 更新編輯內容 | ✅ |
@@ -3015,6 +3045,8 @@ Response 200:
 | TC-05-003 | 標籤管理 | 為檔案新增分類標籤 | 標籤儲存成功 |
 | TC-05-004 | 任務批准 | 審核完成後批准任務 | 任務狀態更新為 approved |
 | TC-05-005 | 送入 RAG | Admin 將批准任務送入知識庫 | 文件向量化成功，顯示結果 |
+| TC-05-006 | Maker-Checker 送審 | data_cleaner 登入 → 完成清洗任務 → 送審 → 確認 submitted_by 記錄 | 任務狀態變更為 review_requested，submitted_by = cleaner ID |
+| TC-05-007 | Maker-Checker 退回 | data_reviewer 登入 → 開啟已送審任務 → 退回（附理由）→ 確認狀態 | 任務狀態變回 pending，記錄 rejection_reason |
 | TC-06-001 | 清洗統計 | 查看 Analytics 清洗統計頁面 | 顯示任務完成率、PII 分佈 |
 | TC-06-002 | 時間軸統計 | 查看時間軸趨勢圖表 | 圖表正確顯示每日處理量 |
 
@@ -3057,7 +3089,7 @@ Response 200:
 | SLA | Service Level Agreement | 服務水準協議 |
 | RTO | Recovery Time Objective | 恢復時間目標 |
 | RPO | Recovery Point Objective | 恢復點目標 |
-| Cleaner App | - | 獨立的清洗審核管理前端應用 (Port 5175) |
+| Cleaner App | - | 獨立的清洗審核管理前端應用 (Port 5503) |
 | TanStack React Query | - | React 伺服器狀態管理與快取函式庫 |
 
 ### 12.2 版本規劃藍圖
@@ -3096,10 +3128,11 @@ Q1 2026   Q2 2026   Q3 2026   Q4 2026   Q1 2027   Q2 2027
 
 | 版本 | 日期 | 變更說明 |
 |------|------|----------|
+| 1.8.0 | 2026-03-16 | ML-15 全面審查：PII 實體統一為 20 種（含 TW_ADDRESS）；API 路徑修正（Auth/Chat/Prompts 移除 /v1/）；partial_mask 參數名修正（keep_first/keep_last）；UserRole enum 補齊 7 角色；FR-08 Rules API 標記 deprecated；Ingest 權限修正（data_reviewer/admin）；審核狀態機 reviewing→review_requested；新增 Maker-Checker 驗收案例（TC-05-006/007）；新增回饋 API 規格；新增信心度判定邏輯；新增 it_user 專屬提示詞說明 |
 | 1.7.0 | 2026-03-11 | 新增 basic_user 角色（beginner only）與 data_reviewer 角色（Maker-Checker 審批者）；上傳格式新增 MD、JSON、HTML、ZIP；新增 ZIP 上傳 API 規格（安全限制：壓縮比≤20:1、檔案數≤100、總大小≤200MB、禁止路徑穿越）；新增 Maker-Checker 職責分離欄位（submitted_by/submitted_at）與四端點驗證規則（approve、reject、file_status、ingest）；更新三層模式角色對應表（7 角色） |
-| 1.6.0 | 2026-02-13 | 移除獨立 Cleaning Service :8001（已合併至 RAG Service :8000）；新增 5 支 API（analytics/pipeline、analytics/recent-activity、knowledge-base/documents/grouped、knowledge-base/documents/by-source、files pipeline_status 篩選）；重寫 Cleaner App 介面規格（管線漏斗、三 Tab 知識庫、檔案審核面板）；更新服務通訊矩陣與連線埠分配 |
+| 1.6.0 | 2026-02-13 | 移除獨立 Cleaning Service :8001（已合併至 RAG Service :3502）；新增 5 支 API（analytics/pipeline、analytics/recent-activity、knowledge-base/documents/grouped、knowledge-base/documents/by-source、files pipeline_status 篩選）；重寫 Cleaner App 介面規格（管線漏斗、三 Tab 知識庫、檔案審核面板）；更新服務通訊矩陣與連線埠分配 |
 | 1.5.0 | 2026-02-12 | 新增 FR-20 來源資料瀏覽（GET /api/v1/files）；新增 FR-21 知識庫文件瀏覽（4 支 API）；更新功能權限矩陣；新增 US-18-07~09 使用者故事；更新 API 端點清單；更新介面設計規格（4 個側邊欄項目） |
-| 1.4.0 | 2026-02-11 | 新增 Cleaner App 獨立前端 (Port 5175)；新增 data_cleaner 角色與應用程式存取矩陣；新增 FR-18 清洗審核管理（含 7 支 Review API）；新增 FR-19 資料分析儀表板（含 3 支 Analytics API）；擴展 task_files/tasks 資料模型（審核欄位）；更新系統架構圖、連線埠分配、API 端點清單、ER 圖、資料字典、介面設計規格 |
+| 1.4.0 | 2026-02-11 | 新增 Cleaner App 獨立前端 (Port 5503)；新增 data_cleaner 角色與應用程式存取矩陣；新增 FR-18 清洗審核管理（含 7 支 Review API）；新增 FR-19 資料分析儀表板（含 3 支 Analytics API）；擴展 task_files/tasks 資料模型（審核欄位）；更新系統架構圖、連線埠分配、API 端點清單、ER 圖、資料字典、介面設計規格 |
 | 1.3.0 | 2026-02-09 | 對齊計畫書：目標市場改為中小企業；新增三層式AI顧問模式(FR-16)；新增 IT User 角色；新增在地化法規知識庫(FR-17)；新增 AI 品質需求(NFR-06)；修復 header 版本號 |
 | 1.2.0 | 2026-02-09 | 「租戶」→「會員」；移除 Tenant Admin 角色（功能併入 Platform Admin）；效能指標調整為 P95 < 10/7 秒 |
 | 1.1.0 | 2026-02-09 | 修正角色定位：去識別化功能限 Admin；Consultant 改為對話導向；術語「脫敏」→「去識別化」 |

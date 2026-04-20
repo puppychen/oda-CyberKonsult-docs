@@ -4,7 +4,7 @@
 
 ### 1. 配置修改
 - `/Users/puppychen/Job/EcMap/zProjectsSource/oda-cyber-konsult/apps/chatbot/vite.config.ts`
-  - 已將 proxy 簡化為單一 `/api` 路由指向 NestJS (port 4000)
+  - 已將 proxy 簡化為單一 `/api` 路由指向 NestJS (port 3051)
 
 ### 2. API 層
 - `/Users/puppychen/Job/EcMap/zProjectsSource/oda-cyber-konsult/apps/chatbot/src/api/client.ts`
@@ -100,7 +100,7 @@
 ## 待啟動服務
 
 確保以下服務正在運行：
-- NestJS API (port 4000)
+- NestJS API (port 3051)
 - PostgreSQL (port 5432)
 - Qdrant (port 6333)
 
@@ -111,7 +111,7 @@ cd /Users/puppychen/Job/EcMap/zProjectsSource/oda-cyber-konsult
 pnpm dev --filter @oda-cyber/chatbot
 ```
 
-瀏覽器開啟：http://localhost:5174
+瀏覽器開啟：http://localhost:5502
 
 ## 後續可擴充功能
 

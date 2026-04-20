@@ -2,7 +2,7 @@
 
 ## 概述
 
-Cleaning 模組是 NestJS API 的代理層，負責將前端的去識別化請求轉發至 FastAPI 後端 (port 8000)，並確保所有操作僅限 Admin 使用者。
+Cleaning 模組是 NestJS API 的代理層，負責將前端的去識別化請求轉發至 FastAPI 後端 (port 3502)，並確保所有操作僅限 Admin 使用者。
 
 ## 模組架構
 
@@ -221,7 +221,7 @@ const { data } = await firstValueFrom(this.httpService.get(url, config));
 FastAPI URL 透過環境變數設定：
 
 ```typescript
-this.baseUrl = process.env.FASTAPI_BASE_URL || 'http://localhost:8000';
+this.baseUrl = process.env.FASTAPI_BASE_URL || 'http://localhost:3502';
 ```
 
 **優點**：

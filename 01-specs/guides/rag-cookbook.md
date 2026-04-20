@@ -1480,7 +1480,7 @@ export const STRATEGIES: StrategyInfo[] = [
 
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3502'
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api/v1`,
@@ -1519,7 +1519,7 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "3502:3502"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/rag_clean
       - REDIS_URL=redis://redis:6379/0
@@ -1555,7 +1555,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - VITE_API_URL=http://localhost:8000
+      - VITE_API_URL=http://localhost:3502
     depends_on:
       - backend
 
@@ -1671,9 +1671,9 @@ COPY app ./app
 # 建立資料目錄
 RUN mkdir -p /app/data/input /app/data/output
 
-EXPOSE 8000
+EXPOSE 3502
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "3502", "--reload"]
 ```
 
 ### 系統依賴
@@ -1840,11 +1840,11 @@ docker-compose up -d
 sleep 30
 
 # 3. 驗證健康檢查
-curl http://localhost:8000/health
+curl http://localhost:3502/health
 # Expected: {"status": "healthy", "version": "0.1.0"}
 
 # 4. 驗證 API 文件
-open http://localhost:8000/docs
+open http://localhost:3502/docs
 
 # 5. 驗證前端
 open http://localhost:3000

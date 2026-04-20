@@ -74,7 +74,7 @@
 
 **操作步驟：**
 
-1. 登入 Admin Dashboard（`http://localhost:5173`）
+1. 登入 Admin Dashboard（`http://localhost:5501`）
 2. 在左側側欄選擇「**資料來源**」（Data Sources）
 3. 點選「新增資料來源」或選擇已有的 Google Drive 設定
 4. 填寫以下資訊：
@@ -125,7 +125,7 @@ RAG_GDRIVE_ENCRYPTION_KEY=your-generated-fernet-key-here
 **方式二：透過 API**
 
 ```bash
-curl -X POST http://localhost:4000/api/datasources/gdrive/sync \
+curl -X POST http://localhost:3051/api/datasources/gdrive/sync \
   -H "Authorization: Bearer <your-jwt-token>" \
   -H "Content-Type: application/json" \
   -d '{"datasource_id": "<datasource-uuid>"}'
@@ -145,7 +145,7 @@ curl -X POST http://localhost:4000/api/datasources/gdrive/sync \
 排程設定於 Admin Dashboard 的資料來源設定中選擇，或透過 API 更新：
 
 ```bash
-curl -X PATCH http://localhost:4000/api/datasources/gdrive/<datasource-uuid> \
+curl -X PATCH http://localhost:3051/api/datasources/gdrive/<datasource-uuid> \
   -H "Authorization: Bearer <your-jwt-token>" \
   -H "Content-Type: application/json" \
   -d '{"sync_schedule": "daily"}'
@@ -167,11 +167,11 @@ curl -X PATCH http://localhost:4000/api/datasources/gdrive/<datasource-uuid> \
 
 ```bash
 # 取得同步狀態
-curl http://localhost:4000/api/datasources/gdrive/<datasource-uuid>/status \
+curl http://localhost:3051/api/datasources/gdrive/<datasource-uuid>/status \
   -H "Authorization: Bearer <your-jwt-token>"
 
 # 取得同步歷史
-curl http://localhost:4000/api/datasources/gdrive/<datasource-uuid>/history \
+curl http://localhost:3051/api/datasources/gdrive/<datasource-uuid>/history \
   -H "Authorization: Bearer <your-jwt-token>"
 ```
 

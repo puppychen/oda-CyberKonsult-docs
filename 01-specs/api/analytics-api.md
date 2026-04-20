@@ -2,7 +2,7 @@
 
 > **版本**: v1
 > **基礎路徑**: `/api/v1/analytics`
-> **服務**: NestJS API (Port 4000) → FastAPI (Port 8000)
+> **服務**: NestJS API (Port 3051) → FastAPI (Port 3502)
 >
 > **使用範圍**：本 API 僅供系統管理員與資料清洗人員使用，提供清洗任務統計、知識庫概覽及時間軸分析等數據。
 
@@ -22,7 +22,7 @@
 ### Base URL
 
 ```
-http://localhost:4000/api/v1
+http://localhost:3051/api/v1
 ```
 
 ### 認證方式
@@ -170,7 +170,7 @@ Authorization: Bearer <accessToken>
 #### curl 範例
 
 ```bash
-curl http://localhost:4000/api/v1/analytics/cleaning \
+curl http://localhost:3051/api/v1/analytics/cleaning \
   -H "Authorization: Bearer <accessToken>"
 ```
 
@@ -257,7 +257,7 @@ curl http://localhost:4000/api/v1/analytics/cleaning \
 #### curl 範例
 
 ```bash
-curl http://localhost:4000/api/v1/analytics/knowledge-base \
+curl http://localhost:3051/api/v1/analytics/knowledge-base \
   -H "Authorization: Bearer <accessToken>"
 ```
 
@@ -350,15 +350,15 @@ curl http://localhost:4000/api/v1/analytics/knowledge-base \
 
 ```bash
 # 預設 30 天
-curl http://localhost:4000/api/v1/analytics/cleaning \
+curl http://localhost:3051/api/v1/analytics/cleaning \
   -H "Authorization: Bearer <accessToken>"
 
 # 自訂天數
-curl "http://localhost:4000/api/v1/analytics/timeline?days=7" \
+curl "http://localhost:3051/api/v1/analytics/timeline?days=7" \
   -H "Authorization: Bearer <accessToken>"
 
 # 查詢最近一年
-curl "http://localhost:4000/api/v1/analytics/timeline?days=365" \
+curl "http://localhost:3051/api/v1/analytics/timeline?days=365" \
   -H "Authorization: Bearer <accessToken>"
 ```
 

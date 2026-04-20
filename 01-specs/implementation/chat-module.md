@@ -33,7 +33,7 @@ apps/api/src/modules/chat/
 ```
 Controller (HTTP) → Service (業務邏輯) → Repository (資料存取) → Prisma → PostgreSQL
                                     ↓
-                              RagProxyService → FastAPI (localhost:8000)
+                              RagProxyService → FastAPI (localhost:3502)
 ```
 
 ### 職責分離
@@ -91,7 +91,7 @@ Controller (HTTP) → Service (業務邏輯) → Repository (資料存取) → P
 - **標準模式**：使用 `@nestjs/axios` + `firstValueFrom`
 - **串流模式**：使用 `responseType: 'stream'` + AsyncGenerator
 - **超時設定**：120 秒
-- **環境變數**：`FASTAPI_BASE_URL`（預設 `http://localhost:8000`）
+- **環境變數**：`FASTAPI_BASE_URL`（預設 `http://localhost:3502`）
 
 ---
 
@@ -183,7 +183,7 @@ model Message {
 
 ```bash
 # NestJS API
-FASTAPI_BASE_URL=http://localhost:8000   # RAG 服務位址
+FASTAPI_BASE_URL=http://localhost:3502   # RAG 服務位址
 
 # Database
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/oda_cyber?schema=public"
@@ -209,7 +209,7 @@ app.useGlobalPipes(
 
 ```typescript
 app.enableCors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: ['http://localhost:5501', 'http://localhost:5502'],
   credentials: true,
 });
 ```
@@ -253,23 +253,23 @@ cd apps/api
 pnpm dev
 
 # 2. 取得 JWT Token（透過 Auth API）
-TOKEN=$(curl -X POST http://localhost:4000/api/auth/login \
+TOKEN=$(curl -X POST http://localhost:3051/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"password"}' \
   | jq -r '.data.token')
 
 # 3. 發送訊息
-curl -X POST http://localhost:4000/api/chat \
+curl -X POST http://localhost:3051/api/chat \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"question":"什麼是 PDPA？","topK":5}' | jq
 
 # 4. 列出對話
-curl -X GET "http://localhost:4000/api/chat/conversations?limit=10" \
+curl -X GET "http://localhost:3051/api/chat/conversations?limit=10" \
   -H "Authorization: Bearer $TOKEN" | jq
 
 # 5. 串流測試（需支援 SSE 的客戶端）
-curl -X POST http://localhost:4000/api/chat/stream \
+curl -X POST http://localhost:3051/api/chat/stream \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"question":"請詳細說明資料去識別化流程"}' \

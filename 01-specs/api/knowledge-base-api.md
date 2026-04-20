@@ -19,7 +19,7 @@
 ### Base URL
 
 ```
-http://localhost:4000/api/v1/knowledge-base
+http://localhost:3051/api/v1/knowledge-base
 ```
 
 ### 認證

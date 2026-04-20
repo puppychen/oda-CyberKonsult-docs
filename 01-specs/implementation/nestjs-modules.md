@@ -111,21 +111,21 @@ apps/api/src/modules/websocket/
   - 支援單一任務或全域任務訂閱
   - 自動處理連線管理與清理
 - **CORS 支援:**
-  - `http://localhost:5173` (Admin Dashboard)
-  - `http://localhost:5174` (Chatbot UI)
+  - `http://localhost:5501` (Admin Dashboard)
+  - `http://localhost:5502` (Chatbot UI)
 
 ### WebSocket 連線模式
 
 1. **連線時指定任務 ID**
    ```javascript
-   const socket = io('http://localhost:4000/cleaning/ws', {
+   const socket = io('http://localhost:3051/cleaning/ws', {
      query: { taskId: 'task-uuid' }
    });
    ```
 
 2. **連線後訂閱所有任務**
    ```javascript
-   const socket = io('http://localhost:4000/cleaning/ws');
+   const socket = io('http://localhost:3051/cleaning/ws');
    ```
 
 3. **動態訂閱特定任務**
@@ -310,10 +310,10 @@ pnpm dev
 
 ```bash
 # 取得當前使用者資訊（需 JWT Token）
-curl -H "Authorization: Bearer <token>" http://localhost:4000/api/users/me
+curl -H "Authorization: Bearer <token>" http://localhost:3051/api/users/me
 
 # 取得稽核日誌（需 Admin 權限）
-curl -H "Authorization: Bearer <admin-token>" http://localhost:4000/api/audit?limit=10
+curl -H "Authorization: Bearer <admin-token>" http://localhost:3051/api/audit?limit=10
 
 # WebSocket 連線測試（使用前端框架）
 ```

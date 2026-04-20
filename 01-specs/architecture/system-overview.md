@@ -13,22 +13,24 @@
         +-------------------+   +-------------------+   +-------------------+
         |   Chatbot UI      |   |  Cleaner App      |   |  Admin Dashboard  |
         |   React 19        |   |  React 19         |   |  React 19         |
-        |   port: 5174      |   |  port: 5175       |   |  port: 5173       |
+        |   port: 5502      |   |  port: 5503       |   |  port: 5501       |
         +--------+----------+   +--------+----------+   +--------+----------+
                  |                       |                       |
                  |  Vite Proxy           |  Vite Proxy           |  Vite Proxy
-                 |  /api -> :4000        |  /api -> :4000        |  /api -> :4000
+                 |  /api -> :3051        |  /api -> :3051        |  /api -> :3051
                  +----------------+------+-----------------------+
                                   |
                                   v
                       +-----------------------+
                       |     NestJS API        |
-                      |     port: 4000        |
+                      |     port: 3051        |
                       |                       |
                       |  +--- REST API -----+ |
+                      |  | Auth / Users     | |
+                      |  | Chat / Prompts   | |
                       |  | Upload / Clean   | |
-                      |  | Tasks / Rules    | |
-                      |  | Download         | |
+                      |  | Tasks / Review   | |
+                      |  | Audit / Download | |
                       |  +-----------------+ |
                       |                       |
                       |  +--- WebSocket ---+ |
@@ -43,7 +45,7 @@
         +-------------------+  +-----------+  +-------------------+
         |   PostgreSQL 17   |  | Gemini /  |  | RAG Service       |
         |   port: 5432      |  | OpenAI    |  | FastAPI           |
-        |                   |  | API       |  | port: 8000        |
+        |                   |  | API       |  | port: 3502        |
         |  Prisma Tables:   |  | (LLM生成) |  |                   |
         |  - users          |  +-----------+  | +--- BM25 (SQLite)|
         |  - conversations  |                 | +--- Reranker     |
@@ -54,11 +56,11 @@
         |  SQLAlchemy/      |  | (網路搜尋) |  +-------------------+
         |  Alembic Tables:  |  +-----------+  |   Qdrant          |
         |  - files          |                 |   port: 6333/6334 |
-        |  - rule_profiles  |                 |                   |
-        |  - anon_rules     |                 |   向量嵌入儲存     |
-        |  - tasks          |                 +-------------------+
-        |  - task_files     |
-        |  - audit_logs     |
+        |  - tasks          |                 |                   |
+        |  - task_files     |                 |   向量嵌入儲存     |
+        |  - cleaning_      |                 +-------------------+
+        |    audit_logs     |
+        |  - gdrive_*       |
         +-------------------+
 ```
 
@@ -73,33 +75,37 @@
 | 項目 | 說明 |
 |------|------|
 | **技術** | React 19 + Vite 6 + Ant Design v6 |
-| **連接埠** | 5173 |
-| **用途** | 僅限系統管理員使用，負責訓練資料上傳、去識別化任務管理、規則設定、稽核日誌查看、系統設定 |
-| **路由代理** | `/api/*` 轉發至 `localhost:4000` |
+| **連接埠** | 5501 |
+| **用途** | 僅限系統管理員使用，負責訓練資料上傳、去識別化任務管理、使用者管理、稽核日誌、提示詞管理、系統設定 |
+| **路由代理** | `/api/*` 轉發至 `localhost:3051` |
 
-主要頁面：
+主要頁面（7 頁）：
 
-- **首頁 (Home)** - 檔案上傳區域、快速啟動清洗、即時任務狀態監控
-- **規則管理 (Rules)** - 規則設定檔 CRUD、規則匯入/匯出、預設規則設定
+- **首頁 (Home)** - 檔案上傳區域、快速啟動清洗（固定規則）、即時任務狀態監控
 - **任務列表 (Tasks)** - 歷史任務瀏覽、進度追蹤、結果下載、清洗報告檢視
+- **使用者管理 (Users)** - 使用者 CRUD、角色變更、帳號啟用/停用
+- **稽核日誌 (Audit Logs)** - 稽核日誌查詢、時間/類型/使用者篩選、CSV/JSON 匯出
+- **提示詞管理 (Prompts)** - 提示詞範本 CRUD、變數注入測試
+- **對話記錄 (Conversations)** - Admin 檢視所有使用者的對話記錄
+- **系統設定 (Settings)** - 網路搜尋閾值、SearXNG URL 設定
 
 #### Chatbot UI（使用者聊天介面）
 
 | 項目 | 說明 |
 |------|------|
 | **技術** | React 19 + Vite 6 + TailwindCSS v4 |
-| **連接埠** | 5174 |
+| **連接埠** | 5502 |
 | **用途** | 所有角色（User / Consultant / Admin）的統一對話介面，支援 SSE 串流回應 |
-| **路由代理** | `/api/*` 轉發至 `localhost:4000` |
+| **路由代理** | `/api/*` 轉發至 `localhost:3051` |
 
 #### Cleaner App（清洗審核管理介面）
 
 | 項目 | 說明 |
 |------|------|
 | **技術** | React 19 + Vite 6 + Ant Design v6 + TanStack React Query |
-| **連接埠** | 5175 |
+| **連接埠** | 5503 |
 | **用途** | 供資料清洗人員 (data_cleaner) 及系統管理員使用，負責清洗結果審核、來源資料瀏覽、知識庫管理 |
-| **路由代理** | `/api/*` 轉發至 `localhost:4000` |
+| **路由代理** | `/api/*` 轉發至 `localhost:3051` |
 
 主要頁面：
 
@@ -115,13 +121,13 @@
 | 項目 | 說明 |
 |------|------|
 | **技術** | NestJS 11 + TypeScript 5.7+ + Prisma ORM |
-| **連接埠** | 4000 |
+| **連接埠** | 3051 |
 | **用途** | 核心後端，處理認證、業務邏輯、資料持久化、清洗任務編排 |
 | **ORM** | Prisma（管理 users、conversations、settings 等主表） |
 
 職責範圍：
 
-- RESTful API 端點（Upload、Clean、Tasks、Rules、Download）
+- RESTful API 端點（Auth、Users、Chat、Prompts、Audit、Upload、Clean、Tasks、Review、Download）
 - WebSocket 即時通知（任務進度推送）
 - 檔案儲存管理
 - 任務排程與狀態追蹤
@@ -135,9 +141,9 @@
 | 項目 | 說明 |
 |------|------|
 | **技術** | FastAPI + Qdrant |
-| **連接埠** | 8000 |
+| **連接埠** | 3502 |
 | **用途** | 文件檢索（向量搜尋 + BM25 + Reranking），不含 LLM 回答生成 |
-| **ORM** | SQLAlchemy + Alembic（管理 files、tasks、rules 等清洗相關表） |
+| **ORM** | SQLAlchemy + Alembic（管理 files、tasks、task_files、cleaning_audit_logs、gdrive_* 等清洗相關表） |
 
 職責範圍：
 
@@ -162,7 +168,7 @@
 雙 ORM 架構（共用同一個 PostgreSQL 實例）：
 
 - **Prisma**（NestJS 端）- 管理使用者、對話、系統設定等主業務表
-- **SQLAlchemy + Alembic**（Python 端）- 管理檔案、任務、規則等清洗業務表
+- **SQLAlchemy + Alembic**（Python 端）- 管理檔案、任務、清洗稽核、Google Drive 同步等清洗業務表
 
 #### Qdrant 向量資料庫
 
@@ -220,7 +226,7 @@
 
 #### 4. Anonymize（去識別化處理）
 
-- 根據管理員設定的規則（Rule Profile）進行去識別化
+- 根據系統內建固定規則（`get_default_rules()` 定義）進行去識別化
 - 六種去識別化策略：mask、partial_mask、pseudonymize、generalize、keep_labeled、encrypt
 - 假名替換使用一致性對映（同一人名在全文中替換為相同假名）
 - 處理過程記錄於 `audit_logs` 表
@@ -261,27 +267,27 @@
 ```
 oda-cyber-konsult/
 ├── apps/
-│   ├── api/                    # NestJS 後端 API (port 4000)
+│   ├── api/                    # NestJS 後端 API (port 3051)
 │   │   ├── src/
-│   │   │   ├── modules/        # 功能模組（upload, clean, tasks, rules, download）
+│   │   │   ├── modules/        # 功能模組（auth, users, chat, prompts, audit, cleaning, health, llm, websearch, websocket, datasources）
 │   │   │   ├── common/         # 共用元件（guards, pipes, filters）
 │   │   │   └── main.ts
 │   │   └── prisma/             # Prisma schema & migrations
-│   ├── admin/                  # 管理後台 (port 5173)
+│   ├── admin/                  # 管理後台 (port 5501)
 │   │   ├── src/
-│   │   │   ├── pages/          # 頁面元件（Home, Rules, Tasks）
+│   │   │   ├── pages/          # 頁面元件（Home, Tasks, Users, AuditLogs, Prompts, Conversations, Settings）
 │   │   │   ├── components/     # 共用 UI 元件
 │   │   │   ├── hooks/          # 自訂 React Hooks
 │   │   │   └── services/       # API 呼叫服務層
 │   │   └── vite.config.ts
-│   ├── cleaner/                 # 清洗審核管理介面 (port 5175)
+│   ├── cleaner/                 # 清洗審核管理介面 (port 5503)
 │   │   ├── src/
 │   │   │   ├── pages/          # 頁面元件（Dashboard, Files, Tasks, KnowledgeBase）
 │   │   │   ├── components/     # 共用 UI 元件（Layout）
 │   │   │   ├── hooks/          # 自訂 React Hooks
 │   │   │   └── api/            # API 呼叫服務層
 │   │   └── vite.config.ts
-│   └── chatbot/                # 使用者聊天介面 (port 5174)
+│   └── chatbot/                # 使用者聊天介面 (port 5502)
 │       ├── src/
 │       └── vite.config.ts
 ├── packages/
@@ -299,7 +305,7 @@ oda-cyber-konsult/
 │   │   │   ├── anonymizers/    # 去識別化處理器
 │   │   │   └── pipeline.py     # 管線編排
 │   │   └── pyproject.toml
-│   └── rag-service/            # RAG FastAPI 服務 (port 8000)
+│   └── rag-service/            # RAG FastAPI 服務 (port 3502)
 │       ├── src/
 │       │   ├── api/            # FastAPI 路由
 │       │   ├── models/         # SQLAlchemy 模型
@@ -307,9 +313,9 @@ oda-cyber-konsult/
 │       │   └── alembic/        # 資料庫遷移
 │       └── pyproject.toml
 ├── docs/                       # 專案文件
-│   ├── api/                    # API 文件
-│   ├── architecture/           # 架構文件
-│   └── setup/                  # 環境建置指南
+│   ├── 01-specs/               # Outer Loop：需求、架構、API 規格
+│   ├── 02-testing/             # Middle Loop：測試策略、測試指南
+│   └── 03-operations/          # Delivery Loop：運維、部署、環境設定
 ├── turbo.json                  # Turborepo 建置設定
 ├── pnpm-workspace.yaml         # pnpm workspace 設定
 └── package.json                # 根層級 package.json
@@ -329,11 +335,11 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:4000',
+        target: 'http://localhost:3051',
         changeOrigin: true,
       },
       '/ws': {
-        target: 'ws://localhost:4000',
+        target: 'ws://localhost:3051',
         ws: true,
       },
     },
@@ -349,7 +355,7 @@ export default defineConfig({
 | Admin Dashboard | NestJS API | WebSocket (via Proxy) | `/ws/*` |
 | Chatbot UI | NestJS API | HTTP (via Proxy) | `/api/v1/*` |
 | Cleaner App | NestJS API | HTTP (via Proxy) | `/api/v1/*` |
-| NestJS API | RAG Service | HTTP | `http://localhost:8000/api/v1/rag/retrieve` |
+| NestJS API | RAG Service | HTTP | `http://localhost:3502/api/v1/rag/retrieve` |
 | NestJS API | Gemini/OpenAI API | HTTPS | LLM 回答生成（直接呼叫） |
 | NestJS API | SearXNG | HTTP | `http://searxng:8080/search`（Docker 內部） |
 | NestJS API | PostgreSQL | TCP | `localhost:5432` |
@@ -366,28 +372,36 @@ export default defineConfig({
 
 負責主業務資料：
 
-- `users` - 系統使用者
-- `conversations` - 對話記錄
-- `messages` - 訊息記錄
-- `settings` - 系統設定
+- `users` - 系統使用者（含密碼鎖定、角色、強制密碼變更）
+- `password_histories` - 密碼歷史（資通安全「普」級：2 代不重複）
+- `conversations` - 對話記錄（含回應模式 beginner/standard/expert）
+- `messages` - 訊息記錄（含 sources、metadata、feedback 欄位）
+- `prompt_templates` - 提示詞範本（按角色/模式儲存）
+- `audit_logs` - NestJS 稽核日誌
+- `web_search_configs` - 網路搜尋設定（SearXNG URL、閾值）
 
 ### SQLAlchemy + Alembic 管理的資料表（Python 端）
 
 負責清洗業務資料：
 
 - `files` - 上傳檔案記錄
-- `rule_profiles` - 去識別化規則設定檔
-- `anonymization_rules` - 具體去識別化規則（隸屬於 rule_profiles）
-- `tasks` - 清洗任務
-- `task_files` - 任務與檔案的關聯（多對多）
-- `audit_logs` - 操作稽核日誌
+- `tasks` - 清洗任務（含 Maker-Checker 審批狀態：pending → review_requested → approved → ingested）
+- `task_files` - 任務與檔案的關聯（多對多，含 edited_content、tags、approval_status）
+- `cleaning_audit_logs` - 清洗操作稽核日誌
+- `gdrive_configs` - Google Drive 連線設定
+- `gdrive_sync_files` - 已同步檔案追蹤
+- `gdrive_sync_history` - 同步操作歷史
+
+> **注意**：規則管理表（`rule_profiles`、`anonymization_rules`）已於 migration 005 移除，去識別化改為固定規則模式（`get_default_rules()`）。
 
 ### 資料表關聯
 
 ```
-rule_profiles  1---N  anonymization_rules
+users          1---N  password_histories
+users          1---N  conversations
+conversations  1---N  messages
 tasks          N---M  files              (透過 task_files)
-tasks          1---N  audit_logs
+tasks          1---N  cleaning_audit_logs
 ```
 
 > **注意事項**：兩端的遷移（migration）各自獨立管理。Prisma 使用 `prisma migrate`，Python 端使用 `alembic upgrade head`。部署時需分別執行兩端的遷移指令。

@@ -2,8 +2,8 @@
 
 > ODA Cyber Konsult WebSearch 系統 API - SearXNG 整合與 RAG 檢索
 
-Base URL (NestJS): `http://localhost:4000/api`
-Base URL (FastAPI): `http://localhost:8000/api/v1`
+Base URL (NestJS): `http://localhost:3051/api`
+Base URL (FastAPI): `http://localhost:3502/api/v1`
 
 ---
 
@@ -182,7 +182,7 @@ LLM 生成回答
 
 執行 RAG 檢索（**僅檢索，不生成回答**），用於測試 WebSearch 觸發邏輯。
 
-**Base URL**: FastAPI (`http://localhost:8000`)
+**Base URL**: FastAPI (`http://localhost:3502`)
 
 **Request Body:**
 
@@ -424,14 +424,14 @@ curl http://localhost:8888/search?q=cybersecurity&format=json
 ### cURL - 取得 Config (Admin)
 
 ```bash
-curl -X GET http://localhost:4000/api/websearch/config \
+curl -X GET http://localhost:3051/api/websearch/config \
   -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN"
 ```
 
 ### cURL - 更新 Config (Admin)
 
 ```bash
-curl -X PUT http://localhost:4000/api/websearch/config \
+curl -X PUT http://localhost:3051/api/websearch/config \
   -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -446,7 +446,7 @@ curl -X PUT http://localhost:4000/api/websearch/config \
 ### cURL - RAG Retrieve 測試
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/rag/retrieve \
+curl -X POST http://localhost:3502/api/v1/rag/retrieve \
   -H "Content-Type: application/json" \
   -d '{
     "question": "什麼是零信任架構？",
@@ -458,7 +458,7 @@ curl -X POST http://localhost:8000/api/v1/rag/retrieve \
 ### JavaScript (Fetch) - 取得 Config
 
 ```javascript
-const response = await fetch('http://localhost:4000/api/websearch/config', {
+const response = await fetch('http://localhost:3051/api/websearch/config', {
   headers: {
     'Authorization': `Bearer ${adminToken}`,
   },
@@ -471,7 +471,7 @@ console.log(result.data);
 ### JavaScript (Fetch) - 更新 Config
 
 ```javascript
-const response = await fetch('http://localhost:4000/api/websearch/config', {
+const response = await fetch('http://localhost:3051/api/websearch/config', {
   method: 'PUT',
   headers: {
     'Authorization': `Bearer ${adminToken}`,
@@ -495,7 +495,7 @@ console.log('Updated config:', result.data);
 import requests
 
 response = requests.post(
-    "http://localhost:8000/api/v1/rag/retrieve",
+    "http://localhost:3502/api/v1/rag/retrieve",
     json={
         "question": "什麼是零信任架構？",
         "top_k": 5,

@@ -2,7 +2,7 @@
 
 > ODA Cyber Konsult RAG (Retrieval-Augmented Generation) 系統 API
 
-Base URL: `http://localhost:8000/api/v1`
+Base URL: `http://localhost:3502/api/v1`
 
 ---
 

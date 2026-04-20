@@ -24,7 +24,7 @@
 ### Base URL
 
 ```
-http://localhost:4000/api/v1
+http://localhost:3051/api/v1
 ```
 
 ### 回應格式
@@ -109,7 +109,7 @@ http://localhost:4000/api/v1
 #### curl 範例
 
 ```bash
-curl -X POST http://localhost:4000/api/v1/upload \
+curl -X POST http://localhost:3051/api/v1/upload \
   -F "files=@/path/to/report.pdf" \
   -F "files=@/path/to/data.csv"
 ```
@@ -213,7 +213,7 @@ curl -X POST http://localhost:4000/api/v1/upload \
 #### curl 範例
 
 ```bash
-curl http://localhost:4000/api/v1/upload/a1b2c3d4-e5f6-7890-abcd-ef1234567890
+curl http://localhost:3051/api/v1/upload/a1b2c3d4-e5f6-7890-abcd-ef1234567890
 ```
 
 ---
@@ -269,7 +269,7 @@ curl http://localhost:4000/api/v1/upload/a1b2c3d4-e5f6-7890-abcd-ef1234567890
 #### curl 範例
 
 ```bash
-curl -X POST http://localhost:4000/api/v1/clean \
+curl -X POST http://localhost:3051/api/v1/clean \
   -H "Content-Type: application/json" \
   -d '{"file_ids": ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]}'
 ```
@@ -358,7 +358,7 @@ curl -X POST http://localhost:4000/api/v1/clean \
 #### curl 範例
 
 ```bash
-curl -X POST http://localhost:4000/api/v1/clean/preview \
+curl -X POST http://localhost:3051/api/v1/clean/preview \
   -H "Content-Type: application/json" \
   -d '{
     "file_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
@@ -446,7 +446,7 @@ curl -X POST http://localhost:4000/api/v1/clean/preview \
 #### curl 範例
 
 ```bash
-curl http://localhost:4000/api/v1/clean/c3d4e5f6-a7b8-9012-cdef-123456789012/result
+curl http://localhost:3051/api/v1/clean/c3d4e5f6-a7b8-9012-cdef-123456789012/result
 ```
 
 ---
@@ -520,7 +520,7 @@ curl http://localhost:4000/api/v1/clean/c3d4e5f6-a7b8-9012-cdef-123456789012/res
 #### curl 範例
 
 ```bash
-curl "http://localhost:4000/api/v1/tasks?limit=10&offset=0"
+curl "http://localhost:3051/api/v1/tasks?limit=10&offset=0"
 ```
 
 ---
@@ -557,7 +557,7 @@ curl "http://localhost:4000/api/v1/tasks?limit=10&offset=0"
 #### curl 範例
 
 ```bash
-curl http://localhost:4000/api/v1/tasks/c3d4e5f6-a7b8-9012-cdef-123456789012
+curl http://localhost:3051/api/v1/tasks/c3d4e5f6-a7b8-9012-cdef-123456789012
 ```
 
 ---
@@ -586,7 +586,7 @@ curl http://localhost:4000/api/v1/tasks/c3d4e5f6-a7b8-9012-cdef-123456789012
 #### curl 範例
 
 ```bash
-curl -X DELETE http://localhost:4000/api/v1/tasks/c3d4e5f6-a7b8-9012-cdef-123456789012
+curl -X DELETE http://localhost:3051/api/v1/tasks/c3d4e5f6-a7b8-9012-cdef-123456789012
 ```
 
 ---
@@ -694,7 +694,7 @@ approval_status:
 
 ```bash
 curl -o cleaned_result.zip \
-  http://localhost:4000/api/v1/download/c3d4e5f6-a7b8-9012-cdef-123456789012
+  http://localhost:3051/api/v1/download/c3d4e5f6-a7b8-9012-cdef-123456789012
 ```
 
 ---
@@ -714,7 +714,7 @@ curl -o cleaned_result.zip \
 
 ```bash
 curl -o cleaned_report.pdf \
-  http://localhost:4000/api/v1/download/c3d4e5f6-a7b8-9012-cdef-123456789012/a1b2c3d4-e5f6-7890-abcd-ef1234567890
+  http://localhost:3051/api/v1/download/c3d4e5f6-a7b8-9012-cdef-123456789012/a1b2c3d4-e5f6-7890-abcd-ef1234567890
 ```
 
 ---
@@ -763,7 +763,7 @@ curl -o cleaned_report.pdf \
 
 ```bash
 curl -o report.json \
-  http://localhost:4000/api/v1/download/c3d4e5f6-a7b8-9012-cdef-123456789012/report
+  http://localhost:3051/api/v1/download/c3d4e5f6-a7b8-9012-cdef-123456789012/report
 ```
 
 ---
@@ -777,7 +777,7 @@ curl -o report.json \
 #### 訂閱特定任務
 
 ```
-ws://localhost:4000/ws/tasks/{task_id}
+ws://localhost:3051/ws/tasks/{task_id}
 ```
 
 僅接收指定任務的狀態更新。
@@ -785,7 +785,7 @@ ws://localhost:4000/ws/tasks/{task_id}
 #### 訂閱所有任務
 
 ```
-ws://localhost:4000/ws/all
+ws://localhost:3051/ws/all
 ```
 
 接收所有進行中任務的狀態更新。
@@ -862,7 +862,7 @@ ws://localhost:4000/ws/all
 ### JavaScript 連線範例
 
 ```javascript
-const ws = new WebSocket('ws://localhost:4000/ws/tasks/c3d4e5f6-a7b8-9012-cdef-123456789012');
+const ws = new WebSocket('ws://localhost:3051/ws/tasks/c3d4e5f6-a7b8-9012-cdef-123456789012');
 
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);

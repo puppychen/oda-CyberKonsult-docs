@@ -2721,7 +2721,7 @@ services:
     build: .
     container_name: rag-api
     ports:
-      - "8000:8000"
+      - "3502:3502"
     environment:
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333

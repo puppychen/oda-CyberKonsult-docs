@@ -4,7 +4,7 @@
 
 ## 文件索引
 
-### NestJS API (Port 4000)
+### NestJS API (Port 3051)
 
 NestJS 後端提供以下核心功能：
 
@@ -20,8 +20,9 @@ NestJS 後端提供以下核心功能：
 | [analytics-api.md](./analytics-api.md) | 資料分析統計 | `/api/v1/analytics/*` |
 | [gdrive-api.md](./gdrive-api.md) | Google Drive 資料來源 | `/api/datasources/gdrive/*` |
 | [websearch-api.md](./websearch-api.md) | 網路搜尋設定與 RAG Retrieve | `/api/websearch/*` |
+| [knowledge-base-api.md](./knowledge-base-api.md) | 知識庫文件瀏覽與管理 | `/api/v1/knowledge-base/*` |
 
-### RAG Service API (Port 8000)
+### RAG Service API (Port 3502)
 
 Python FastAPI 提供 RAG（檢索增強生成）相關功能：
 
@@ -179,9 +180,12 @@ Authorization: Bearer <accessToken>
 
 | 角色 | 權限 |
 |------|------|
+| `basic_user` | 基本聊天（僅 beginner 模式） |
 | `user` | 基本聊天功能（beginner/standard 模式） |
-| `it_user` | IT 進階功能 |
+| `it_user` | IT 進階功能（偏技術風格提示詞） |
 | `consultant` | 顧問模式（beginner/standard/expert） |
+| `data_cleaner` | 清洗資料編輯與送審（Cleaner App） |
+| `data_reviewer` | 清洗資料審核與批准（Cleaner App） |
 | `admin` | 完整系統管理權限 |
 
 ## 測試工具
@@ -203,7 +207,7 @@ pnpm test:e2e
 NestJS API 提供 Swagger UI 介面（開發中）：
 
 ```
-http://localhost:4000/api/docs
+http://localhost:3051/api/docs
 ```
 
 ### 手動測試範例
@@ -212,22 +216,22 @@ http://localhost:4000/api/docs
 
 ```bash
 # 1. 註冊使用者
-curl -X POST http://localhost:4000/api/auth/register \
+curl -X POST http://localhost:3051/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"Test123456","name":"Test User"}'
 
 # 2. 登入取得 token
-TOKEN=$(curl -X POST http://localhost:4000/api/auth/login \
+TOKEN=$(curl -X POST http://localhost:3051/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"Test123456"}' \
   | jq -r '.data.accessToken')
 
 # 3. 取得可用模式
-curl http://localhost:4000/api/chat/modes \
+curl http://localhost:3051/api/chat/modes \
   -H "Authorization: Bearer $TOKEN"
 
 # 4. 發送聊天訊息
-curl -X POST http://localhost:4000/api/chat \
+curl -X POST http://localhost:3051/api/chat \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"question":"什麼是資安風險評估？","mode":"standard"}'

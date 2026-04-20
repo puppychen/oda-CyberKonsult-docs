@@ -73,7 +73,7 @@
 
 ### 決策
 
-NestJS 作為**統一 API Gateway**，前端僅與 NestJS (port 4000) 通訊。清洗/資料來源請求由 NestJS **代理轉發**至 FastAPI (port 8000)，保持 `/api/v1/` 前綴。
+NestJS 作為**統一 API Gateway**，前端僅與 NestJS (port 3051) 通訊。清洗/資料來源請求由 NestJS **代理轉發**至 FastAPI (port 3502)，保持 `/api/v1/` 前綴。
 
 ### 理由
 
@@ -209,9 +209,9 @@ LLM 生成回答耗時 3~8 秒，使用者等待體驗差。需要逐字顯示�
 
 | 應用 | Port | UI 框架 | 目標使用者 |
 |------|------|---------|-----------|
-| Admin Dashboard | 5173 | Ant Design v6 | 系統管理員 |
-| Chatbot UI | 5174 | TailwindCSS v4 | 所有角色 |
-| Cleaner App | 5175 | Ant Design v6 + TanStack Query | data_cleaner + admin |
+| Admin Dashboard | 5501 | Ant Design v6 | 系統管理員 |
+| Chatbot UI | 5502 | TailwindCSS v4 | 所有角色 |
+| Cleaner App | 5503 | Ant Design v6 + TanStack Query | data_cleaner + admin |
 
 ### 理由
 
@@ -224,7 +224,7 @@ LLM 生成回答耗時 3~8 秒，使用者等待體驗差。需要逐字顯示�
 
 - 正面：各應用可獨立演進，不互相干擾
 - 負面：共用邏輯需抽至 `@oda-cyber/shared-types`；認證流程三個應用各自實作
-- 注意：三個應用透過 Vite proxy 統一指向 NestJS API (port 4000)
+- 注意：三個應用透過 Vite proxy 統一指向 NestJS API (port 3051)
 
 ---
 

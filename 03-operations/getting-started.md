@@ -12,6 +12,7 @@
 以下服務需在本機 Docker 中運行：
 - PostgreSQL 17 (port 5432)
 - Qdrant (REST port 6333, gRPC port 6334)
+- SearXNG (port 8080) — 選用，網路搜尋補充
 
 ## 安裝步驟
 
@@ -40,21 +41,24 @@ npx prisma migrate dev
 
 ## 啟動開發伺服器
 
-### TypeScript 服務
+需要兩個終端機分別啟動 Node.js 和 Python 服務：
+
 ```bash
-# 從根目錄啟動所有 TypeScript 服務
+# 終端機 1：TypeScript 服務（NestJS + Admin + Cleaner + Chatbot）
 pnpm dev
+
+# 終端機 2：FastAPI 服務（RAG + 清洗 + 檔案管理）
+cd python/rag-service && uv run uvicorn rag_service.api.main:app --host 0.0.0.0 --port 3502 --reload
 ```
 
-### RAG 服務
-```bash
-cd python
-uv run uvicorn rag_service.api.main:app --reload --port 8000
-```
+> **重要**：`pnpm dev` 不會啟動 FastAPI。沒有啟動 FastAPI 時，Cleaner 清洗介面和檔案管理功能會回傳 500 錯誤。
 
 ## 驗證
 
-- NestJS API: http://localhost:4000
-- Admin Dashboard: http://localhost:5173
-- Chatbot UI: http://localhost:5174
-- RAG Service: http://localhost:8000/health
+| 服務 | URL | 說明 |
+|------|-----|------|
+| NestJS API | http://localhost:3051 | 後端主 API |
+| Admin Dashboard | http://localhost:5501 | 管理後台 |
+| Chatbot UI | http://localhost:5502 | 聊天介面 |
+| Cleaner App | http://localhost:5503 | 資料清洗審核介面 |
+| FastAPI (RAG) | http://localhost:3502/health | 健康檢查 |

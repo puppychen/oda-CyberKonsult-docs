@@ -4,7 +4,7 @@
 
 Chat API 提供對話管理、訊息發送與 RAG（檢索增強生成）整合功能。所有端點皆需 JWT 認證。
 
-**Base URL**: `http://localhost:4000/api/chat`
+**Base URL**: `http://localhost:3051/api/chat`
 
 ---
 
@@ -366,7 +366,7 @@ data: {"type":"done","messageId":"msg-uuid","conversationId":"conv-uuid","source
 ### 內部呼叫流程
 
 ```
-ChatController → ChatService → RagProxyService → FastAPI (localhost:8000)
+ChatController → ChatService → RagProxyService → FastAPI (localhost:3502)
 ```
 
 ### RAG Retrieve Request (Internal)
@@ -420,7 +420,7 @@ NestJS ChatService 呼叫 Python RAG `/api/v1/rag/retrieve` 端點時的請求�
 ### cURL - 發送訊息
 
 ```bash
-curl -X POST http://localhost:4000/api/chat \
+curl -X POST http://localhost:3051/api/chat \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -433,7 +433,7 @@ curl -X POST http://localhost:4000/api/chat \
 ### cURL - 串流模式
 
 ```bash
-curl -X POST http://localhost:4000/api/chat/stream \
+curl -X POST http://localhost:3051/api/chat/stream \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -445,7 +445,7 @@ curl -X POST http://localhost:4000/api/chat/stream \
 ### JavaScript (Fetch) - 標準模式
 
 ```javascript
-const response = await fetch('http://localhost:4000/api/chat', {
+const response = await fetch('http://localhost:3051/api/chat', {
   method: 'POST',
   headers: {
     'Authorization': `Bearer ${token}`,
@@ -466,7 +466,7 @@ console.log(result.data.answer.content);
 
 ```javascript
 // 注意：EventSource 不支援自訂 Header，需使用 fetch + ReadableStream
-const response = await fetch('http://localhost:4000/api/chat/stream', {
+const response = await fetch('http://localhost:3051/api/chat/stream', {
   method: 'POST',
   headers: {
     'Authorization': `Bearer ${token}`,
@@ -541,7 +541,7 @@ while (true) {
 5. **自動標題生成**：若未提供 `title`，系統會自動取問題前 50 字作為標題。
 6. **Cascade Delete**：刪除對話時會自動刪除所有關聯訊息。
 7. **RAG 超時**：RAG 服務請求超時設定為 120 秒。
-8. **環境變數**：需設定 `FASTAPI_BASE_URL`（預設 `http://localhost:8000`）。
+8. **環境變數**：需設定 `FASTAPI_BASE_URL`（預設 `http://localhost:3502`）。
 9. **來源類型**：`sources` 陣列中每個來源包含 `source_type` 欄位，值為 `knowledge_base`（知識庫）或 `web_search`（網路搜尋）。當 `source_type` 為 `web_search` 時，額外包含 `title` 欄位（網頁標題）。
 
 ---

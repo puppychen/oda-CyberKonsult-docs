@@ -2,7 +2,7 @@
 
 > **版本**: v1
 > **基礎路徑**: `/api/v1/review`
-> **服務**: NestJS API (Port 4000) → FastAPI (Port 8000)
+> **服務**: NestJS API (Port 3051) → FastAPI (Port 3502)
 >
 > **使用範圍**：本 API 僅供系統管理員與資料清洗人員使用，負責管理清洗任務的審核、標籤標註、人工編輯及 RAG 知識庫匯入流程。
 
@@ -28,7 +28,7 @@
 ### Base URL
 
 ```
-http://localhost:4000/api/v1
+http://localhost:3051/api/v1
 ```
 
 ### 認證方式
@@ -265,7 +265,7 @@ sequenceDiagram
 #### curl 範例
 
 ```bash
-curl http://localhost:4000/api/v1/review/c3d4e5f6-a7b8-9012-cdef-123456789012 \
+curl http://localhost:3051/api/v1/review/c3d4e5f6-a7b8-9012-cdef-123456789012 \
   -H "Authorization: Bearer <accessToken>"
 ```
 
@@ -371,7 +371,7 @@ curl http://localhost:4000/api/v1/review/c3d4e5f6-a7b8-9012-cdef-123456789012 \
 #### curl 範例
 
 ```bash
-curl http://localhost:4000/api/v1/review/c3d4e5f6-a7b8-9012-cdef-123456789012/files/a1b2c3d4-e5f6-7890-abcd-ef1234567890/content \
+curl http://localhost:3051/api/v1/review/c3d4e5f6-a7b8-9012-cdef-123456789012/files/a1b2c3d4-e5f6-7890-abcd-ef1234567890/content \
   -H "Authorization: Bearer <accessToken>"
 ```
 
@@ -424,7 +424,7 @@ curl http://localhost:4000/api/v1/review/c3d4e5f6-a7b8-9012-cdef-123456789012/fi
 #### curl 範例
 
 ```bash
-curl -X PUT http://localhost:4000/api/v1/review/c3d4e5f6-a7b8-9012-cdef-123456789012/files/a1b2c3d4-e5f6-7890-abcd-ef1234567890/content \
+curl -X PUT http://localhost:3051/api/v1/review/c3d4e5f6-a7b8-9012-cdef-123456789012/files/a1b2c3d4-e5f6-7890-abcd-ef1234567890/content \
   -H "Authorization: Bearer <accessToken>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -485,7 +485,7 @@ curl -X PUT http://localhost:4000/api/v1/review/c3d4e5f6-a7b8-9012-cdef-12345678
 #### curl 範例
 
 ```bash
-curl -X PUT http://localhost:4000/api/v1/review/c3d4e5f6-a7b8-9012-cdef-123456789012/files/a1b2c3d4-e5f6-7890-abcd-ef1234567890/tags \
+curl -X PUT http://localhost:3051/api/v1/review/c3d4e5f6-a7b8-9012-cdef-123456789012/files/a1b2c3d4-e5f6-7890-abcd-ef1234567890/tags \
   -H "Authorization: Bearer <accessToken>" \
   -H "Content-Type: application/json" \
   -d '{ "tags": ["財務", "2026-Q1", "客戶資料"] }'
@@ -555,7 +555,7 @@ curl -X PUT http://localhost:4000/api/v1/review/c3d4e5f6-a7b8-9012-cdef-12345678
 #### curl 範例
 
 ```bash
-curl -X PUT http://localhost:4000/api/v1/review/c3d4e5f6-a7b8-9012-cdef-123456789012/files/a1b2c3d4-e5f6-7890-abcd-ef1234567890/status \
+curl -X PUT http://localhost:3051/api/v1/review/c3d4e5f6-a7b8-9012-cdef-123456789012/files/a1b2c3d4-e5f6-7890-abcd-ef1234567890/status \
   -H "Authorization: Bearer <accessToken>" \
   -H "Content-Type: application/json" \
   -d '{ "status": "approved", "note": "去識別化結果正確" }'
@@ -663,7 +663,7 @@ curl -X PUT http://localhost:4000/api/v1/review/c3d4e5f6-a7b8-9012-cdef-12345678
 #### curl 範例
 
 ```bash
-curl -X POST http://localhost:4000/api/v1/review/c3d4e5f6-a7b8-9012-cdef-123456789012/approve \
+curl -X POST http://localhost:3051/api/v1/review/c3d4e5f6-a7b8-9012-cdef-123456789012/approve \
   -H "Authorization: Bearer <accessToken>" \
   -H "Content-Type: application/json" \
   -d '{ "note": "所有檔案審核完畢，準備匯入知識庫" }'
@@ -788,7 +788,7 @@ curl -X POST http://localhost:4000/api/v1/review/c3d4e5f6-a7b8-9012-cdef-1234567
 #### curl 範例
 
 ```bash
-curl -X POST http://localhost:4000/api/v1/review/c3d4e5f6-a7b8-9012-cdef-123456789012/ingest \
+curl -X POST http://localhost:3051/api/v1/review/c3d4e5f6-a7b8-9012-cdef-123456789012/ingest \
   -H "Authorization: Bearer <accessToken>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -836,7 +836,7 @@ curl -X POST http://localhost:4000/api/v1/review/c3d4e5f6-a7b8-9012-cdef-1234567
 #### curl 範例
 
 ```bash
-curl http://localhost:4000/api/v1/review/tags \
+curl http://localhost:3051/api/v1/review/tags \
   -H "Authorization: Bearer <accessToken>"
 ```
 

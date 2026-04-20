@@ -9,10 +9,10 @@
 docker ps | grep postgres
 
 # 2. RAG FastAPI Service
-curl http://localhost:8000/health
+curl http://localhost:3502/health
 
 # 3. NestJS API
-curl http://localhost:4000
+curl http://localhost:3051
 ```
 
 ---
@@ -31,7 +31,7 @@ cp .env.example .env
 ```bash
 # .env
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/oda_cyber?schema=public"
-FASTAPI_BASE_URL=http://localhost:8000
+FASTAPI_BASE_URL=http://localhost:3502
 ```
 
 ---
@@ -65,7 +65,7 @@ pnpm dev
 **預期輸出**：
 
 ```
-[Nest] INFO [Bootstrap] Application running on port 4000
+[Nest] INFO [Bootstrap] Application running on port 3051
 ```
 
 ---
@@ -75,7 +75,7 @@ pnpm dev
 ### 註冊新使用者
 
 ```bash
-curl -X POST http://localhost:4000/api/auth/register \
+curl -X POST http://localhost:3051/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -87,7 +87,7 @@ curl -X POST http://localhost:4000/api/auth/register \
 ### 登入取得 Token
 
 ```bash
-TOKEN=$(curl -X POST http://localhost:4000/api/auth/login \
+TOKEN=$(curl -X POST http://localhost:3051/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -104,7 +104,7 @@ echo "Token: $TOKEN"
 ### 5.1 發送第一則訊息（自動建立對話）
 
 ```bash
-curl -X POST http://localhost:4000/api/chat \
+curl -X POST http://localhost:3051/api/chat \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -149,7 +149,7 @@ curl -X POST http://localhost:4000/api/chat \
 # 將上一步的 conversationId 存為變數
 CONV_ID="conv-uuid"
 
-curl -X POST http://localhost:4000/api/chat \
+curl -X POST http://localhost:3051/api/chat \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d "{
@@ -162,7 +162,7 @@ curl -X POST http://localhost:4000/api/chat \
 ### 5.3 列出所有對話
 
 ```bash
-curl -X GET "http://localhost:4000/api/chat/conversations?limit=10&offset=0" \
+curl -X GET "http://localhost:3051/api/chat/conversations?limit=10&offset=0" \
   -H "Authorization: Bearer $TOKEN" | jq
 ```
 
@@ -198,14 +198,14 @@ curl -X GET "http://localhost:4000/api/chat/conversations?limit=10&offset=0" \
 ### 5.4 取得完整對話歷史
 
 ```bash
-curl -X GET "http://localhost:4000/api/chat/conversations/$CONV_ID" \
+curl -X GET "http://localhost:3051/api/chat/conversations/$CONV_ID" \
   -H "Authorization: Bearer $TOKEN" | jq
 ```
 
 ### 5.5 刪除對話
 
 ```bash
-curl -X DELETE "http://localhost:4000/api/chat/conversations/$CONV_ID" \
+curl -X DELETE "http://localhost:3051/api/chat/conversations/$CONV_ID" \
   -H "Authorization: Bearer $TOKEN" | jq
 ```
 
@@ -216,7 +216,7 @@ curl -X DELETE "http://localhost:4000/api/chat/conversations/$CONV_ID" \
 ### 6.1 使用 cURL（基礎測試）
 
 ```bash
-curl -X POST http://localhost:4000/api/chat/stream \
+curl -X POST http://localhost:3051/api/chat/stream \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -242,7 +242,7 @@ data: {"type":"done","messageId":"msg-uuid","conversationId":"conv-uuid"}
 
 ```javascript
 async function streamChat(token, question) {
-  const response = await fetch('http://localhost:4000/api/chat/stream', {
+  const response = await fetch('http://localhost:3051/api/chat/stream', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -298,7 +298,7 @@ streamChat('YOUR_JWT_TOKEN', '請詳細說明資料去識別化流程');
 
 ```bash
 # 重新登入取得新 Token
-TOKEN=$(curl -X POST http://localhost:4000/api/auth/login \
+TOKEN=$(curl -X POST http://localhost:3051/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"password123"}' \
   | jq -r '.data.token')
@@ -312,7 +312,7 @@ TOKEN=$(curl -X POST http://localhost:4000/api/auth/login \
 
 ```bash
 # 檢查對話是否存在
-curl -X GET "http://localhost:4000/api/chat/conversations" \
+curl -X GET "http://localhost:3051/api/chat/conversations" \
   -H "Authorization: Bearer $TOKEN" | jq '.data.conversations[].id'
 ```
 
@@ -337,7 +337,7 @@ curl -X GET "http://localhost:4000/api/chat/conversations" \
 
 ```bash
 # 1. 確認 RAG 服務運行中
-curl http://localhost:8000/health
+curl http://localhost:3502/health
 
 # 2. 檢查環境變數
 cat .env | grep FASTAPI_BASE_URL
@@ -372,7 +372,7 @@ pnpm dev
 ```
 [ChatController] POST /api/chat
 [ChatService] Creating conversation for user: user-uuid
-[RagProxyService] Querying RAG: http://localhost:8000/api/v1/rag/query
+[RagProxyService] Querying RAG: http://localhost:3502/api/v1/rag/query
 ```
 
 ### 8.2 使用 Prisma Studio 檢視資料
@@ -412,7 +412,7 @@ function ChatComponent({ token }: { token: string }) {
   const [conversationId, setConversationId] = useState<string | null>(null);
 
   const sendMessage = async () => {
-    const response = await fetch('http://localhost:4000/api/chat', {
+    const response = await fetch('http://localhost:3051/api/chat', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -455,7 +455,7 @@ function StreamChatComponent({ token }: { token: string }) {
     setIsStreaming(true);
     setAnswer('');
 
-    const response = await fetch('http://localhost:4000/api/chat/stream', {
+    const response = await fetch('http://localhost:3051/api/chat/stream', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

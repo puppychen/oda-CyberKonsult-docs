@@ -64,7 +64,7 @@ cd /path/to/oda-cyber-konsult
 pnpm dev
 ```
 
-啟動項目：NestJS API (4000) + Admin Dashboard (5173) + Chatbot UI (5174) + Cleaner App (5175)
+啟動項目：NestJS API (3051) + Admin Dashboard (5501) + Chatbot UI (5502) + Cleaner App (5503)
 
 ### 終端 2 — RAG Service
 
@@ -73,17 +73,17 @@ cd python/rag-service
 uv run uvicorn rag_service.api.main:app --reload --host 127.0.0.1 --port 8017
 ```
 
-> 注意：預設 port 8000 可能被 Parallels NAT 佔用，實際使用 **8017**。
+> 注意：預設 port 3502 可能被 Parallels NAT 佔用，實際使用 **8017**。
 > 確保 `.env` 中 `FASTAPI_BASE_URL=http://localhost:8017` 與啟動 port 一致。
 
 ## 6. 服務清單與 Port 對應
 
 | 服務 | Port | 健康檢查 |
 |------|------|---------|
-| NestJS API | 4000 | `curl http://localhost:4000/health` |
-| Admin Dashboard | 5173 | 瀏覽器開啟 `http://localhost:5173` |
-| Chatbot UI | 5174 | 瀏覽器開啟 `http://localhost:5174` |
-| Cleaner App | 5175 | 瀏覽器開啟 `http://localhost:5175` |
+| NestJS API | 3051 | `curl http://localhost:3051/health` |
+| Admin Dashboard | 5501 | 瀏覽器開啟 `http://localhost:5501` |
+| Chatbot UI | 5502 | 瀏覽器開啟 `http://localhost:5502` |
+| Cleaner App | 5503 | 瀏覽器開啟 `http://localhost:5503` |
 | RAG Service | 8017 | `curl http://localhost:8017/health` |
 | Qdrant | 6333 | `curl http://localhost:6333/healthz` |
 | PostgreSQL | 5234 | `docker exec boodion-database psql -U postgres -c "SELECT 1"` |
@@ -92,7 +92,7 @@ uv run uvicorn rag_service.api.main:app --reload --host 127.0.0.1 --port 8017
 
 ```bash
 # NestJS — 應回傳 database: up, ragService: up
-curl -s http://localhost:4000/health | python3 -m json.tool
+curl -s http://localhost:3051/health | python3 -m json.tool
 
 # RAG Service
 curl -s http://localhost:8017/health
@@ -112,12 +112,13 @@ curl -s http://localhost:6333/healthz
 | Demo Consultant | consultant@oda-cyber.com | OdaPoc2026! | consultant | Chatbot |
 | Data Reviewer | reviewer@oda-cyber.com | OdaPoc2026! | data_reviewer | Chatbot + Cleaner |
 | Demo User | user@oda-cyber.com | OdaPoc2026! | user | Chatbot |
+| Basic User | basic@oda-cyber.com | OdaPoc2026! | basic_user | Chatbot |
 
 > 帳號定義於 `apps/api/prisma/seed.ts`，密碼使用 bcrypt 12 rounds 雜湊。
 
 ## 8. 測試案例
 
-### TC-1：Admin Dashboard (`http://localhost:5173`)
+### TC-1：Admin Dashboard (`http://localhost:5501`)
 
 | # | 測試項目 | 預期結果 | 驗證狀態 |
 |---|---------|---------|---------|
@@ -131,7 +132,7 @@ curl -s http://localhost:6333/healthz
 | 1.8 | 資料來源 `/datasources` | Google Drive 連線設定表單 + 同步狀態 | PASS |
 | 1.9 | 非 admin 登入被拒 | consultant 帳號顯示「此帳號無管理員權限」 | PASS |
 
-### TC-2：Chatbot UI (`http://localhost:5174`)
+### TC-2：Chatbot UI (`http://localhost:5502`)
 
 | # | 測試項目 | 預期結果 | 驗證狀態 |
 |---|---------|---------|---------|
@@ -142,7 +143,7 @@ curl -s http://localhost:6333/healthz
 | 2.5 | consultant 登入 | 顯示「Demo Consultant」，模式：新手/一般/顧問，不同 Demo 對話 | PASS |
 | 2.6 | 註冊功能 | 登入頁底部「還沒有帳號？註冊」連結可見 | PASS |
 
-### TC-3：Cleaner App (`http://localhost:5175`)
+### TC-3：Cleaner App (`http://localhost:5503`)
 
 | # | 測試項目 | 預期結果 | 驗證狀態 |
 |---|---------|---------|---------|
@@ -158,12 +159,12 @@ curl -s http://localhost:6333/healthz
 
 | # | 測試項目 | 預期結果 | 驗證狀態 |
 |---|---------|---------|---------|
-| 3.8 | cleaner 送審任務 | 以 cleaner 登入 → 開啟已完成清洗任務 → 按「送審」→ 任務狀態變更為 `review_requested` | — |
-| 3.9 | reviewer 批准任務 | 以 reviewer 登入 → 開啟已送審任務 → 按「批准」→ 任務狀態變更為 `approved` | — |
-| 3.10 | reviewer 退回任務 | 以 reviewer 登入 → 開啟已送審任務 → 按「退回」→ 填入理由 → 任務狀態變回 `pending` | — |
-| 3.11 | 自審驗證（職責分離） | 以 cleaner 送審 → 同一 cleaner 嘗試批准 → API 回傳 403 Forbidden | — |
-| 3.12 | 凍結驗證 | 送審後 → 以 cleaner 嘗試編輯檔案 → API 回傳 400（檔案已凍結） | — |
-| 3.13 | reviewer 可登入 Cleaner App | 以 reviewer 登入 → 顯示「Data Reviewer」→ 可查看任務列表 | — |
+| 3.8 | cleaner 送審任務 | 以 cleaner 登入 → 開啟已完成清洗任務 → 按「送審」→ 任務狀態變更為 `review_requested` | PASS |
+| 3.9 | reviewer 批准任務 | 以 reviewer 登入 → 開啟已送審任務 → 按「批准」→ 任務狀態變更為 `approved` | PASS |
+| 3.10 | reviewer 退回任務 | 以 reviewer 登入 → 開啟已送審任務 → 按「退回」→ 填入理由 → 任務狀態變回 `pending` | PASS |
+| 3.11 | 自審驗證（職責分離） | 以 cleaner 送審 → 同一 cleaner 嘗試批准 → API 回傳 403 Forbidden | PASS |
+| 3.12 | 凍結驗證 | 送審後 → 以 cleaner 嘗試編輯檔案 → API 回傳 400（檔案已凍結） | PASS |
+| 3.13 | reviewer 可登入 Cleaner App | 以 reviewer 登入 → 顯示「Data Reviewer」→ 可查看任務列表 | PASS |
 
 ### TC-4：角色權限交叉驗證
 
@@ -177,9 +178,9 @@ curl -s http://localhost:6333/healthz
 
 | 應用 | admin | data_cleaner | data_reviewer | consultant | user |
 |------|-------|-------------|---------------|------------|------|
-| Admin Dashboard (5173) | O | X | X | X | X |
-| Chatbot UI (5174) | O | O | O | O | O |
-| Cleaner App (5175) | O | O | O | X | X |
+| Admin Dashboard (5501) | O | X | X | X | X |
+| Chatbot UI (5502) | O | O | O | O | O |
+| Cleaner App (5503) | O | O | O | X | X |
 
 - **Admin Dashboard**：僅 `admin` 角色
 - **Cleaner App**：`admin` + `data_cleaner` + `data_reviewer` 角色（Maker-Checker 審核流程）
@@ -212,10 +213,10 @@ curl -s http://localhost:6333/healthz
 
 ```bash
 # 查看 port 佔用
-lsof -i :5173
-lsof -i :8000
+lsof -i :5501
+lsof -i :3502
 
-# 常見衝突：port 8000 被 Parallels NAT (prl_naptd) 佔用
+# 常見衝突：port 3502 被 Parallels NAT (prl_naptd) 佔用
 # 解法：RAG Service 改用其他 port（如 8017），並更新 .env FASTAPI_BASE_URL
 ```
 
@@ -245,7 +246,7 @@ Cleaner App 的登出按鈕可能偶爾未正確清除 token。手動清除方�
 
 ```bash
 # 正確路徑（無 /api 前綴）
-curl http://localhost:4000/health
+curl http://localhost:3051/health
 
-# 錯誤：curl http://localhost:4000/api/health → 404
+# 錯誤：curl http://localhost:3051/api/health → 404
 ```

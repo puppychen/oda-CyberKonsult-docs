@@ -68,7 +68,7 @@ Auth 模組提供以下端點:
 ### 註冊新使用者
 
 ```bash
-curl -X POST http://localhost:4000/api/auth/register \
+curl -X POST http://localhost:3051/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -81,7 +81,7 @@ curl -X POST http://localhost:4000/api/auth/register \
 ### 登入
 
 ```bash
-curl -X POST http://localhost:4000/api/auth/login \
+curl -X POST http://localhost:3051/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -110,7 +110,7 @@ curl -X POST http://localhost:4000/api/auth/login \
 ### 使用 Token 存取受保護端點
 
 ```bash
-curl http://localhost:4000/protected-endpoint \
+curl http://localhost:3051/protected-endpoint \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 

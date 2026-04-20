@@ -1,0 +1,627 @@
+<mxfile host="Claude Code" modified="2026-03-23" agent="Claude Code" type="device" version="1.0">
+  <diagram id="auth-flow" name="1. 使用者認證流程">
+    <mxGraphModel dx="1400" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="auth-title" value="&lt;b&gt;認證與授權流程&lt;/b&gt;&lt;br&gt;JWT + 資通安全「普」級密碼政策" style="text;html=1;fontSize=14;fontFamily=Noto Sans TC;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="400" y="10" width="400" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- 開始 -->
+        <mxCell id="a-start" value="使用者開啟應用" style="ellipse;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="520" y="60" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="a-start" target="a-login">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-login" value="輸入 Email + 密碼&lt;br&gt;POST /api/auth/login" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=11;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="490" y="140" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="a-login" target="a-check-active">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-check-active" value="帳號狀態檢查" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="530" y="220" width="140" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- 帳號停用 -->
+        <mxCell id="a-e-inactive" value="停用" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;strokeColor=#B85450;fontFamily=Noto Sans TC;fontSize=9;" edge="1" parent="1" source="a-check-active" target="a-deny">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a-deny" value="403 帳號已停用" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="750" y="230" width="140" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-e3" value="啟用" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;fontFamily=Noto Sans TC;fontSize=9;" edge="1" parent="1" source="a-check-active" target="a-check-lock">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-check-lock" value="帳號鎖定檢查&lt;br&gt;（5次失敗→鎖15分鐘）" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="500" y="310" width="200" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-e-locked" value="已鎖定" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;strokeColor=#B85450;fontFamily=Noto Sans TC;fontSize=9;" edge="1" parent="1" source="a-check-lock" target="a-locked">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a-locked" value="423 帳號鎖定&lt;br&gt;請等待15分鐘" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="750" y="320" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-e4" value="未鎖定" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;fontFamily=Noto Sans TC;fontSize=9;" edge="1" parent="1" source="a-check-lock" target="a-verify-pwd">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-verify-pwd" value="密碼驗證&lt;br&gt;bcrypt.compare()" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="520" y="410" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-e-wrongpwd" value="密碼錯誤" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;strokeColor=#B85450;fontFamily=Noto Sans TC;fontSize=9;" edge="1" parent="1" source="a-verify-pwd" target="a-failcount">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a-failcount" value="failedLoginAttempts++&lt;br&gt;401 帳號或密碼錯誤" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="750" y="415" width="200" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-e5" value="密碼正確" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;fontFamily=Noto Sans TC;fontSize=9;" edge="1" parent="1" source="a-verify-pwd" target="a-jwt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-jwt" value="簽發 JWT&lt;br&gt;access token + refresh token&lt;br&gt;重設 failedLoginAttempts=0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="470" y="500" width="260" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="a-jwt" target="a-check-pwd-expire">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-check-pwd-expire" value="密碼過期檢查&lt;br&gt;（90天）或&lt;br&gt;mustChangePassword?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="500" y="585" width="200" height="75" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-e-expire" value="需變更" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;strokeColor=#D79B00;fontFamily=Noto Sans TC;fontSize=9;" edge="1" parent="1" source="a-check-pwd-expire" target="a-force-change">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a-force-change" value="強制導向密碼變更頁&lt;br&gt;POST /api/auth/change-password&lt;br&gt;（歷史2代不重複檢查）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="750" y="585" width="240" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-e7" value="密碼有效" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;fontFamily=Noto Sans TC;fontSize=9;" edge="1" parent="1" source="a-check-pwd-expire" target="a-route">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-route" value="依角色路由至對應應用&lt;br&gt;Admin (5173) / Chatbot (5174) / Cleaner (5175)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="440" y="700" width="320" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 後續 API 呼叫認證 -->
+        <mxCell id="a-e8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="a-route" target="a-api-guard">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-api-guard" value="&lt;div style=&quot;text-align:left;font-size:9px;&quot;&gt;&lt;b&gt;每次 API 呼叫經過 Guards：&lt;/b&gt;&lt;br&gt;1. JwtAuthGuard（Token 驗證）&lt;br&gt;2. PasswordChangeRequiredGuard（密碼過期攔截）&lt;br&gt;3. RolesGuard（@Roles 裝飾器角色檢查）&lt;br&gt;4. ThrottlerGuard（60 req/min）&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8EDF3;strokeColor=#6C8EBF;fontSize=9;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="460" y="780" width="280" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- Token 刷新流程 -->
+        <mxCell id="a-refresh-box" value="&lt;div style=&quot;text-align:left;font-size:9px;&quot;&gt;&lt;b&gt;Token 刷新機制：&lt;/b&gt;&lt;br&gt;• access token 過期 → 前端自動用 refresh token&lt;br&gt;  呼叫 POST /api/auth/refresh&lt;br&gt;• refresh token 也過期 → 自動登出，重導至登入頁&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=9;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="100" y="780" width="300" height="70" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="chat-flow" name="2. RAG 聊天問答流程">
+    <mxGraphModel dx="1500" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1500" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="chat-title" value="&lt;b&gt;RAG 聊天問答流程&lt;/b&gt;&lt;br&gt;SSE 串流 × 三層回應模式 × Query 改寫 × 信心度判定" style="text;html=1;fontSize=14;fontFamily=Noto Sans TC;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="350" y="10" width="500" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- 泳道標題 -->
+        <mxCell id="lane-chatbot" value="&lt;b&gt;Chatbot UI (5174)&lt;/b&gt;" style="text;html=1;fontSize=11;fontFamily=Noto Sans TC;align=center;fontColor=#82B366;" vertex="1" parent="1">
+          <mxGeometry x="60" y="60" width="180" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-nestjs" value="&lt;b&gt;NestJS API (4000)&lt;/b&gt;" style="text;html=1;fontSize=11;fontFamily=Noto Sans TC;align=center;fontColor=#6C8EBF;" vertex="1" parent="1">
+          <mxGeometry x="340" y="60" width="180" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-rag" value="&lt;b&gt;RAG Service (8000)&lt;/b&gt;" style="text;html=1;fontSize=11;fontFamily=Noto Sans TC;align=center;fontColor=#D6B656;" vertex="1" parent="1">
+          <mxGeometry x="620" y="60" width="180" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-ext" value="&lt;b&gt;外部服務&lt;/b&gt;" style="text;html=1;fontSize=11;fontFamily=Noto Sans TC;align=center;fontColor=#9673A6;" vertex="1" parent="1">
+          <mxGeometry x="900" y="60" width="180" height="25" as="geometry" />
+        </mxCell>
+
+        <!-- 泳道分隔線 -->
+        <mxCell id="lane-div1" style="endArrow=none;dashed=1;strokeColor=#CCCCCC;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="270" y="85" as="sourcePoint" />
+            <mxPoint x="270" y="1050" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lane-div2" style="endArrow=none;dashed=1;strokeColor=#CCCCCC;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="550" y="85" as="sourcePoint" />
+            <mxPoint x="550" y="1050" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lane-div3" style="endArrow=none;dashed=1;strokeColor=#CCCCCC;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="830" y="85" as="sourcePoint" />
+            <mxPoint x="830" y="1050" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 步驟 1: 使用者輸入 -->
+        <mxCell id="c1" value="使用者輸入問題&lt;br&gt;選擇回應模式" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="70" y="100" width="160" height="45" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c-e1" value="POST /api/chat/stream" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;fontSize=9;fontFamily=Noto Sans TC;" edge="1" parent="1" source="c1" target="c2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 步驟 2: NestJS 接收 -->
+        <mxCell id="c2" value="ChatController&lt;br&gt;JWT 認證 + 角色檢查" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="340" y="100" width="180" height="45" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c-e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="c2" target="c3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 步驟 3: 載入對話歷史 -->
+        <mxCell id="c3" value="載入對話歷史&lt;br&gt;（最近5輪）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="355" y="175" width="150" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c-e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="c3" target="c4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 步驟 4: Query 改寫 -->
+        <mxCell id="c4" value="Query 改寫&lt;br&gt;（代名詞解析）&lt;br&gt;「它」→「ISO 27001」" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="340" y="240" width="180" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c-e4" value="POST /api/v1/rag/retrieve" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;fontSize=9;fontFamily=Noto Sans TC;" edge="1" parent="1" source="c4" target="c5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 步驟 5: RAG 檢索 -->
+        <mxCell id="c5" value="&lt;b&gt;Hybrid Search&lt;/b&gt;&lt;br&gt;Vector（Qdrant）+ BM25&lt;br&gt;RRF 融合排序" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="620" y="240" width="180" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c-e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="c5" target="c5b">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 模式判斷 -->
+        <mxCell id="c5b" value="expert 模式？" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="650" y="320" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c-e5b-yes" value="是" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;fontSize=9;fontFamily=Noto Sans TC;" edge="1" parent="1" source="c5b" target="c5c">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c5c" value="Reranking&lt;br&gt;(cross-encoder)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="640" y="400" width="140" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c-e5b-no" value="否" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;fontSize=9;fontFamily=Noto Sans TC;dashed=1;" edge="1" parent="1" source="c5b" target="c6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="810" y="345" />
+              <mxPoint x="810" y="480" />
+              <mxPoint x="430" y="480" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="c-e5c" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="c5c" target="c6-filter">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 分數過濾 -->
+        <mxCell id="c6-filter" value="分數過濾&lt;br&gt;hybrid: RRF &amp;lt; 0.005 過濾&lt;br&gt;vector: cosine &amp;lt; 0.3 過濾" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=9;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="610" y="460" width="200" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c-e6f" value="回傳檢索結果" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;fontSize=9;fontFamily=Noto Sans TC;" edge="1" parent="1" source="c6-filter" target="c6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 步驟 6: 判斷結果品質 -->
+        <mxCell id="c6" value="RAG 結果是否充足？&lt;br&gt;（best_score 評估）" style="rhombus;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="360" y="530" width="140" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c-e6-no" value="不足" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;strokeColor=#82B366;fontSize=9;fontFamily=Noto Sans TC;" edge="1" parent="1" source="c6" target="c7-searx">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 步驟 7: SearXNG 搜尋 -->
+        <mxCell id="c7-searx" value="SearXNG 網路搜尋&lt;br&gt;:8080/search&lt;br&gt;+&lt;br&gt;WebFetcher (Cheerio)&lt;br&gt;爬取摘要" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="890" y="530" width="180" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c-e7" value="合併搜尋結果" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;fontSize=9;fontFamily=Noto Sans TC;" edge="1" parent="1" source="c7-searx" target="c8">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="980" y="640" />
+              <mxPoint x="430" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="c-e6-yes" value="充足" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;fontSize=9;fontFamily=Noto Sans TC;" edge="1" parent="1" source="c6" target="c8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 步驟 8: 建構 Context -->
+        <mxCell id="c8" value="建構 LLM Context&lt;br&gt;RAG 結果 + 搜尋結果&lt;br&gt;+ 對話歷史 + 提示詞範本" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="345" y="660" width="170" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c-e8" value="呼叫 LLM" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;fontSize=9;fontFamily=Noto Sans TC;" edge="1" parent="1" source="c8" target="c9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 步驟 9: LLM 生成 -->
+        <mxCell id="c9" value="&lt;b&gt;Gemini / OpenAI&lt;/b&gt;&lt;br&gt;依模式套用參數&lt;br&gt;串流生成回答" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="890" y="665" width="180" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c-e9" value="SSE stream" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;fontSize=9;fontFamily=Noto Sans TC;strokeColor=#6C8EBF;" edge="1" parent="1" source="c9" target="c10">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="980" y="760" />
+              <mxPoint x="430" y="760" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 步驟 10: SSE 轉發 -->
+        <mxCell id="c10" value="SSE 串流回應&lt;br&gt;event: message（逐字）&lt;br&gt;event: sources（引用）&lt;br&gt;event: done（完成）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="340" y="780" width="180" height="65" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c-e10" value="串流顯示" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;fontSize=9;fontFamily=Noto Sans TC;" edge="1" parent="1" source="c10" target="c11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 步驟 11: 前端顯示 -->
+        <mxCell id="c11" value="逐字顯示回答&lt;br&gt;+ 引用來源&lt;br&gt;+ 信心度標籤&lt;br&gt;(🟢知識庫/🟡混合/🔴網路)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="60" y="780" width="180" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- 步驟 12: 儲存 + 回饋 -->
+        <mxCell id="c-e11" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="c10" target="c12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c12" value="儲存 Message 至 DB&lt;br&gt;（含 sources, metadata）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="355" y="880" width="150" height="45" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c-e12" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="c11" target="c13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c13" value="使用者回饋 👍/👎&lt;br&gt;POST .../feedback&lt;br&gt;→ 記錄至 messages.feedback" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=9;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="55" y="880" width="190" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 信心度判定說明 -->
+        <mxCell id="confidence-note" value="&lt;div style=&quot;text-align:left;font-size:9px;&quot;&gt;&lt;b&gt;信心度判定邏輯：&lt;/b&gt;&lt;br&gt;🟢 高信心：best_score ≥ 0.7 且未觸發 web search&lt;br&gt;🟡 中信心：best_score 0.3~0.7 或觸發 web search&lt;br&gt;🔴 低信心：best_score &amp;lt; 0.3 或僅依賴 web search&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#999999;fontSize=9;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="55" y="960" width="290" height="65" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="cleaning-flow" name="3. 資料清洗與 Maker-Checker 審核流程">
+    <mxGraphModel dx="1600" dy="1400" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1600" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="cl-title" value="&lt;b&gt;資料清洗與 Maker-Checker 審核流程&lt;/b&gt;&lt;br&gt;Upload → Clean → Review → Approve → Ingest" style="text;html=1;fontSize=14;fontFamily=Noto Sans TC;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="350" y="10" width="500" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- ========== Phase 1: 上傳與清洗 ========== -->
+        <mxCell id="phase1-bg" value="&lt;b&gt;Phase 1：上傳與自動清洗&lt;/b&gt;（Admin 執行）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F0FF;strokeColor=#6C8EBF;strokeWidth=2;dashed=1;fontSize=12;fontFamily=Noto Sans TC;verticalAlign=top;spacingTop=5;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="30" y="70" width="1140" height="230" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-upload" value="Admin 上傳檔案&lt;br&gt;（PDF/DOCX/XLSX/&lt;br&gt;CSV/TXT/MD/JSON/&lt;br&gt;HTML/ZIP）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="50" y="110" width="170" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="cl-upload" target="cl-zip-check">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-zip-check" value="ZIP 安全檢查&lt;br&gt;壓縮比≤20:1&lt;br&gt;檔案數≤100&lt;br&gt;解壓≤200MB&lt;br&gt;無路徑穿越" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=9;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="260" y="100" width="140" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="cl-zip-check" target="cl-parse">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-parse" value="&lt;b&gt;文件解析（Parse）&lt;/b&gt;&lt;br&gt;pdfminer.six / python-docx&lt;br&gt;openpyxl / 直接讀取&lt;br&gt;→ 提取純文字" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="440" y="105" width="200" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="cl-parse" target="cl-detect">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-detect" value="&lt;b&gt;PII 偵測（Detect）&lt;/b&gt;&lt;br&gt;Presidio + spaCy&lt;br&gt;20 種實體類型&lt;br&gt;（含 TW 身分證/手機/統編）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="680" y="100" width="210" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="cl-detect" target="cl-anon">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-anon" value="&lt;b&gt;去識別化（Anonymize）&lt;/b&gt;&lt;br&gt;6 種固定策略：&lt;br&gt;mask / partial_mask /&lt;br&gt;pseudonymize / generalize /&lt;br&gt;keep_labeled / encrypt" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="930" y="95" width="210" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- WebSocket 進度 -->
+        <mxCell id="cl-ws" value="WebSocket 即時推播&lt;br&gt;進度百分比 + 偵測實體數" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8EDF3;strokeColor=#999999;fontSize=9;fontFamily=Noto Sans TC;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="530" y="210" width="200" height="35" as="geometry" />
+        </mxCell>
+
+        <!-- 任務完成 -->
+        <mxCell id="cl-e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="cl-anon" target="cl-done">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1035" y="210" />
+              <mxPoint x="870" y="210" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="cl-done" value="任務完成&lt;br&gt;status: completed&lt;br&gt;approval_status: pending" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="780" y="200" width="180" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ========== Phase 2: 審核流程 (Maker-Checker) ========== -->
+        <mxCell id="phase2-bg" value="&lt;b&gt;Phase 2：Maker-Checker 審核流程&lt;/b&gt;（Cleaner App 操作）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8F0;strokeColor=#D6B656;strokeWidth=2;dashed=1;fontSize=12;fontFamily=Noto Sans TC;verticalAlign=top;spacingTop=5;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="30" y="320" width="1140" height="470" as="geometry" />
+        </mxCell>
+
+        <!-- Maker 區域 -->
+        <mxCell id="maker-bg" value="&lt;b&gt;Maker（data_cleaner）&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF2FF;strokeColor=#6C8EBF;strokeWidth=1;dashed=1;fontSize=11;fontFamily=Noto Sans TC;verticalAlign=top;spacingTop=5;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="50" y="350" width="530" height="200" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-review-file" value="檢視清洗結果&lt;br&gt;（去識別化內容）&lt;br&gt;PII 摘要 + 實體標示" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="70" y="390" width="180" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="cl-review-file" target="cl-edit">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-edit" value="手動修正內容&lt;br&gt;PUT .../content&lt;br&gt;→ edited_content" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="290" y="390" width="160" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="cl-edit" target="cl-tag">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-tag" value="標籤管理&lt;br&gt;PUT .../tags" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="140" y="475" width="130" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-e8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="cl-tag" target="cl-submit">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-submit" value="&lt;b&gt;送審&lt;/b&gt;&lt;br&gt;POST .../submit&lt;br&gt;記錄 submitted_by/at&lt;br&gt;狀態 → review_requested&lt;br&gt;⚠ 內容凍結不可再編輯" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;strokeWidth=2;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="320" y="460" width="230" height="75" as="geometry" />
+        </mxCell>
+
+        <!-- Checker 區域 -->
+        <mxCell id="checker-bg" value="&lt;b&gt;Checker（data_reviewer）&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8F0;strokeColor=#D6B656;strokeWidth=1;dashed=1;fontSize=11;fontFamily=Noto Sans TC;verticalAlign=top;spacingTop=5;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="600" y="350" width="550" height="200" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-e9" value="submitted_by ≠ reviewer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#B85450;fontSize=9;fontFamily=Noto Sans TC;fontColor=#B85450;" edge="1" parent="1" source="cl-submit" target="cl-reviewer-check">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-reviewer-check" value="Reviewer 審查內容&lt;br&gt;逐檔檢視去識別化品質" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="620" y="390" width="200" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-e10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="cl-reviewer-check" target="cl-decision">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-decision" value="審核決定" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=11;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="660" y="470" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- 批准 -->
+        <mxCell id="cl-e-approve" value="批准" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;strokeColor=#82B366;fontSize=9;fontFamily=Noto Sans TC;" edge="1" parent="1" source="cl-decision" target="cl-approved">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="cl-approved" value="&lt;b&gt;批准&lt;/b&gt;&lt;br&gt;POST .../approve&lt;br&gt;狀態 → approved&lt;br&gt;記錄 approved_by/at" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;strokeWidth=2;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="850" y="460" width="180" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- 退回 -->
+        <mxCell id="cl-e-reject" value="退回" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;strokeColor=#B85450;fontSize=9;fontFamily=Noto Sans TC;" edge="1" parent="1" source="cl-decision" target="cl-rejected">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="560" />
+              <mxPoint x="720" y="590" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="cl-rejected" value="&lt;b&gt;退回&lt;/b&gt;&lt;br&gt;POST .../reject&lt;br&gt;（必填退回理由）&lt;br&gt;狀態 → pending&lt;br&gt;檔案解凍可重新編輯" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="810" y="560" width="220" height="75" as="geometry" />
+        </mxCell>
+
+        <!-- 退回循環箭頭 -->
+        <mxCell id="cl-e-loop" value="重新編輯→送審" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;dashed=1;strokeColor=#B85450;fontSize=9;fontFamily=Noto Sans TC;" edge="1" parent="1" source="cl-rejected" target="cl-review-file">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="920" y="660" />
+              <mxPoint x="160" y="660" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ========== Phase 3: 送入知識庫 ========== -->
+        <mxCell id="phase3-bg" value="&lt;b&gt;Phase 3：送入 RAG 知識庫&lt;/b&gt;（data_reviewer / admin 執行）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0FFF0;strokeColor=#82B366;strokeWidth=2;dashed=1;fontSize=12;fontFamily=Noto Sans TC;verticalAlign=top;spacingTop=5;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="30" y="820" width="1140" height="190" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-e-ingest-start" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="cl-approved" target="cl-ingest-config">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1080" y="493" />
+              <mxPoint x="1080" y="810" />
+              <mxPoint x="160" y="810" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="cl-ingest-config" value="送入設定&lt;br&gt;額外全域標籤&lt;br&gt;階層式切塊參數" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="70" y="860" width="180" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-e-ingest1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="cl-ingest-config" target="cl-chunk">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-chunk" value="&lt;b&gt;階層式切塊&lt;/b&gt;&lt;br&gt;(Hierarchical Chunker)&lt;br&gt;標題偵測 + 語意邊界" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="300" y="860" width="200" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-e-ingest2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="cl-chunk" target="cl-embed">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-embed" value="&lt;b&gt;向量化嵌入&lt;/b&gt;&lt;br&gt;embedding model&lt;br&gt;+ metadata 保留" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="550" y="860" width="180" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-e-ingest3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="cl-embed" target="cl-qdrant">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-qdrant" value="&lt;b&gt;存入 Qdrant&lt;/b&gt;&lt;br&gt;向量 + BM25 索引&lt;br&gt;+ 更新統計" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="780" y="860" width="180" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-e-ingest4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="cl-qdrant" target="cl-result">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cl-result" value="&lt;b&gt;送入完成&lt;/b&gt;&lt;br&gt;狀態 → ingested&lt;br&gt;顯示結果：&lt;br&gt;files_ingested&lt;br&gt;chunks_created&lt;br&gt;vectors_stored" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;strokeWidth=2;fontSize=10;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="845" width="150" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- 狀態機摘要 -->
+        <mxCell id="cl-state-machine" value="&lt;div style=&quot;text-align:left;font-size:10px;&quot;&gt;&lt;b&gt;📋 審批狀態流轉：&lt;/b&gt;&lt;br&gt;pending → review_requested → approved → ingested&lt;br&gt;　　　　　↓&lt;br&gt;　　　　rejected（退回 → 重新編輯 → pending）&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#999999;fontSize=10;fontFamily=Noto Sans TC;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1030" width="400" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- 稽核軌跡說明 -->
+        <mxCell id="cl-audit-note" value="&lt;div style=&quot;text-align:left;font-size:10px;&quot;&gt;&lt;b&gt;🔒 稽核軌跡：&lt;/b&gt;&lt;br&gt;submitted_by/at、approved_by/at、edited_by/at、reviewed_by/at&lt;br&gt;每步操作皆記錄於 cleaning_audit_logs（由 @CurrentUser JWT 注入）&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#999999;fontSize=10;fontFamily=Noto Sans TC;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="460" y="1030" width="470" height="65" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="api-flow" name="4. API 代理與服務通訊流程">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="api-title" value="&lt;b&gt;API 代理與服務通訊流程&lt;/b&gt;&lt;br&gt;NestJS 作為統一 API Gateway，代理轉發至 FastAPI" style="text;html=1;fontSize=14;fontFamily=Noto Sans TC;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="350" y="10" width="500" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- 前端群組 -->
+        <mxCell id="api-fe" value="&lt;b&gt;前端應用&lt;/b&gt;&lt;br&gt;Admin (5173) / Chatbot (5174) / Cleaner (5175)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="80" y="70" width="400" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- NestJS -->
+        <mxCell id="api-nest" value="&lt;b&gt;NestJS API Gateway&lt;/b&gt;  port: 4000" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;strokeWidth=2;fontSize=12;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="80" y="160" width="400" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="api-e1" value="Vite Proxy /api → :3051" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;fontSize=9;fontFamily=Noto Sans TC;" edge="1" parent="1" source="api-fe" target="api-nest">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 直接處理的端點 -->
+        <mxCell id="api-direct" value="&lt;div style=&quot;text-align:left;font-size:10px;&quot;&gt;&lt;b&gt;NestJS 直接處理（Prisma ORM）：&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;table style=&quot;font-size:9px;border-collapse:collapse;&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:2px 8px;&quot;&gt;&lt;b&gt;/api/auth/*&lt;/b&gt;&lt;/td&gt;&lt;td&gt;登入/註冊/登出/刷新/變更密碼&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:2px 8px;&quot;&gt;&lt;b&gt;/api/users/*&lt;/b&gt;&lt;/td&gt;&lt;td&gt;使用者 CRUD + 角色/狀態管理&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:2px 8px;&quot;&gt;&lt;b&gt;/api/chat/*&lt;/b&gt;&lt;/td&gt;&lt;td&gt;聊天 + SSE 串流 + 回饋 + 對話管理&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:2px 8px;&quot;&gt;&lt;b&gt;/api/prompts/*&lt;/b&gt;&lt;/td&gt;&lt;td&gt;提示詞範本 CRUD + 測試&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:2px 8px;&quot;&gt;&lt;b&gt;/api/audit-logs/*&lt;/b&gt;&lt;/td&gt;&lt;td&gt;稽核日誌查詢 + CSV/JSON 匯出&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:2px 8px;&quot;&gt;&lt;b&gt;/api/websearch/*&lt;/b&gt;&lt;/td&gt;&lt;td&gt;網路搜尋設定&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:2px 8px;&quot;&gt;&lt;b&gt;/health/*&lt;/b&gt;&lt;/td&gt;&lt;td&gt;健康檢查（DB + RAG）&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="80" y="240" width="400" height="200" as="geometry" />
+        </mxCell>
+
+        <mxCell id="api-e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;" edge="1" parent="1" source="api-nest" target="api-direct">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 代理轉發的端點 -->
+        <mxCell id="api-proxy" value="&lt;div style=&quot;text-align:left;font-size:10px;&quot;&gt;&lt;b&gt;NestJS 代理轉發 → FastAPI (8000)：&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;table style=&quot;font-size:9px;border-collapse:collapse;&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:2px 8px;&quot;&gt;&lt;b&gt;/api/v1/upload/*&lt;/b&gt;&lt;/td&gt;&lt;td&gt;檔案上傳（支援 ZIP）&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:2px 8px;&quot;&gt;&lt;b&gt;/api/v1/clean/*&lt;/b&gt;&lt;/td&gt;&lt;td&gt;清洗任務啟動 / 預覽&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:2px 8px;&quot;&gt;&lt;b&gt;/api/v1/tasks/*&lt;/b&gt;&lt;/td&gt;&lt;td&gt;任務列表 / 取消&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:2px 8px;&quot;&gt;&lt;b&gt;/api/v1/review/*&lt;/b&gt;&lt;/td&gt;&lt;td&gt;Maker-Checker 審核流程&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:2px 8px;&quot;&gt;&lt;b&gt;/api/v1/download/*&lt;/b&gt;&lt;/td&gt;&lt;td&gt;清洗結果下載&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:2px 8px;&quot;&gt;&lt;b&gt;/api/v1/analytics/*&lt;/b&gt;&lt;/td&gt;&lt;td&gt;清洗/知識庫/管線統計&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:2px 8px;&quot;&gt;&lt;b&gt;/api/v1/knowledge-base/*&lt;/b&gt;&lt;/td&gt;&lt;td&gt;知識庫瀏覽/搜尋&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:2px 8px;&quot;&gt;&lt;b&gt;/api/datasources/gdrive/*&lt;/b&gt;&lt;/td&gt;&lt;td&gt;Google Drive 同步&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=10;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="560" y="240" width="400" height="220" as="geometry" />
+        </mxCell>
+
+        <mxCell id="api-e3" value="CleaningProxyService&lt;br&gt;+ X-Internal-Token&lt;br&gt;+ @CurrentUser 身份注入" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#D79B00;fontSize=9;fontFamily=Noto Sans TC;fontColor=#D79B00;" edge="1" parent="1" source="api-nest" target="api-proxy">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="530" y="180" />
+              <mxPoint x="530" y="180" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- FastAPI -->
+        <mxCell id="api-fastapi" value="&lt;b&gt;FastAPI RAG Service&lt;/b&gt;  port: 8000" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;strokeWidth=2;fontSize=12;fontFamily=Noto Sans TC;" vertex="1" parent="1">
+          <mxGeometry x="610" y="500" width="300" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="api-e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1.5;strokeColor=#D6B656;" edge="1" parent="1" source="api-proxy" target="api-fastapi">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- LLM + SearXNG（NestJS 直接呼叫） -->
+        <mxCell id="api-ext-note" value="&lt;div style=&quot;text-align:left;font-size:10px;&quot;&gt;&lt;b&gt;NestJS 直接呼叫的外部服務：&lt;/b&gt;&lt;br&gt;• &lt;b&gt;Gemini / OpenAI API&lt;/b&gt;（HTTPS）→ LLM 回答生成&lt;br&gt;• &lt;b&gt;SearXNG (Docker :8080)&lt;/b&gt; → 網路搜尋補充&lt;br&gt;• &lt;b&gt;RAG /retrieve&lt;/b&gt; → 向量檢索（非代理，Chat 內部直呼）&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=10;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="80" y="490" width="400" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- 資料庫連線 -->
+        <mxCell id="api-db-note" value="&lt;div style=&quot;text-align:left;font-size:10px;&quot;&gt;&lt;b&gt;資料庫連線：&lt;/b&gt;&lt;br&gt;• NestJS → PostgreSQL（Prisma ORM, TCP :5432）&lt;br&gt;• FastAPI → PostgreSQL（SQLAlchemy, TCP :5432）— 共用實例&lt;br&gt;• FastAPI → Qdrant（HTTP :6333 / gRPC :6334）&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#999999;fontSize=10;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="80" y="610" width="450" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- 安全機制摘要 -->
+        <mxCell id="api-sec" value="&lt;div style=&quot;text-align:left;font-size:10px;&quot;&gt;&lt;b&gt;🔒 代理安全機制：&lt;/b&gt;&lt;br&gt;1. 前端 → NestJS：JWT Bearer Token&lt;br&gt;2. NestJS → FastAPI：X-Internal-Token（環境變數）&lt;br&gt;3. FastAPI 驗證 X-Internal-Token 來源&lt;br&gt;4. @CurrentUser JWT 解碼後注入 user_id/role 至轉發請求&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=10;fontFamily=Noto Sans TC;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="610" y="580" width="380" height="100" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

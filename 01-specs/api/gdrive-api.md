@@ -25,10 +25,10 @@
 
 | 服務 | Base URL | 說明 |
 |------|----------|------|
-| NestJS Proxy | `http://localhost:4000/api/datasources/gdrive` | 統一入口（建議使用） |
-| FastAPI Direct | `http://localhost:8000/api/v1/gdrive` | 直接存取後端 |
+| NestJS Proxy | `http://localhost:3051/api/datasources/gdrive` | 統一入口（建議使用） |
+| FastAPI Direct | `http://localhost:3502/api/v1/gdrive` | 直接存取後端 |
 
-> **建議**：前端應一律透過 NestJS Proxy（Port 4000）存取，以統一認證與錯誤處理。FastAPI 直連僅供開發除錯使用。
+> **建議**：前端應一律透過 NestJS Proxy（Port 3051）存取，以統一認證與錯誤處理。FastAPI 直連僅供開發除錯使用。
 
 ### 認證方式
 
@@ -155,7 +155,7 @@ Authorization: Bearer <your_jwt_token>
 #### curl 範例
 
 ```bash
-curl -X PUT http://localhost:4000/api/datasources/gdrive/config \
+curl -X PUT http://localhost:3051/api/datasources/gdrive/config \
   -H "Authorization: Bearer <your_jwt_token>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -220,7 +220,7 @@ curl -X PUT http://localhost:4000/api/datasources/gdrive/config \
 #### curl 範例
 
 ```bash
-curl http://localhost:4000/api/datasources/gdrive/config \
+curl http://localhost:3051/api/datasources/gdrive/config \
   -H "Authorization: Bearer <your_jwt_token>"
 ```
 
@@ -261,11 +261,11 @@ curl http://localhost:4000/api/datasources/gdrive/config \
 
 ```bash
 # 僅中斷連線，保留已匯入的資料
-curl -X DELETE "http://localhost:4000/api/datasources/gdrive/config" \
+curl -X DELETE "http://localhost:3051/api/datasources/gdrive/config" \
   -H "Authorization: Bearer <your_jwt_token>"
 
 # 中斷連線並清除所有已匯入的向量資料
-curl -X DELETE "http://localhost:4000/api/datasources/gdrive/config?purge_data=true" \
+curl -X DELETE "http://localhost:3051/api/datasources/gdrive/config?purge_data=true" \
   -H "Authorization: Bearer <your_jwt_token>"
 ```
 
@@ -319,7 +319,7 @@ curl -X DELETE "http://localhost:4000/api/datasources/gdrive/config?purge_data=t
 #### curl 範例
 
 ```bash
-curl -X POST http://localhost:4000/api/datasources/gdrive/sync \
+curl -X POST http://localhost:3051/api/datasources/gdrive/sync \
   -H "Authorization: Bearer <your_jwt_token>"
 ```
 
@@ -408,7 +408,7 @@ curl -X POST http://localhost:4000/api/datasources/gdrive/sync \
 #### curl 範例
 
 ```bash
-curl http://localhost:4000/api/datasources/gdrive/status \
+curl http://localhost:3051/api/datasources/gdrive/status \
   -H "Authorization: Bearer <your_jwt_token>"
 ```
 
@@ -520,11 +520,11 @@ curl http://localhost:4000/api/datasources/gdrive/status \
 
 ```bash
 # 取得前 10 筆同步歷程
-curl "http://localhost:4000/api/datasources/gdrive/history?limit=10&offset=0" \
+curl "http://localhost:3051/api/datasources/gdrive/history?limit=10&offset=0" \
   -H "Authorization: Bearer <your_jwt_token>"
 
 # 取得第二頁
-curl "http://localhost:4000/api/datasources/gdrive/history?limit=10&offset=10" \
+curl "http://localhost:3051/api/datasources/gdrive/history?limit=10&offset=10" \
   -H "Authorization: Bearer <your_jwt_token>"
 ```
 
@@ -625,7 +625,7 @@ curl "http://localhost:4000/api/datasources/gdrive/history?limit=10&offset=10" \
 
 ```bash
 # 取得前 20 筆已同步檔案
-curl "http://localhost:4000/api/datasources/gdrive/files?limit=20&offset=0" \
+curl "http://localhost:3051/api/datasources/gdrive/files?limit=20&offset=0" \
   -H "Authorization: Bearer <your_jwt_token>"
 ```
 
@@ -835,7 +835,7 @@ interface SyncedFilesResponse {
 
 NestJS Proxy 會將請求透明轉發至 FastAPI 後端。以下為兩者的路徑對照：
 
-| 功能 | NestJS Proxy (Port 4000) | FastAPI Direct (Port 8000) |
+| 功能 | NestJS Proxy (Port 3051) | FastAPI Direct (Port 3502) |
 |------|--------------------------|---------------------------|
 | 建立/更新設定 | `PUT /api/datasources/gdrive/config` | `PUT /api/v1/gdrive/config` |
 | 取得設定 | `GET /api/datasources/gdrive/config` | `GET /api/v1/gdrive/config` |

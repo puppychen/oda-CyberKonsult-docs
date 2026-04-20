@@ -8,13 +8,13 @@
                ┌────▼────┐                     ┌─────▼─────┐
                │ NestJS  │                     │ Static    │
                │ API     │──── proxy ────▶     │ Admin +   │
-               │ :4000   │                     │ Chatbot   │
+               │ :3051   │                     │ Chatbot   │
                └────┬────┘                     └───────────┘
                     │
                ┌────▼────┐
                │ FastAPI  │
                │ RAG Svc  │
-               │ :8000    │
+               │ :3502    │
                └────┬────┘
                     │
           ┌────────┼────────┐
@@ -100,7 +100,7 @@ services:
     env_file: .env
     depends_on: [postgres]
     ports:
-      - "4000:4000"
+      - "4000:3051"
 
   rag-service:
     build:
@@ -109,7 +109,7 @@ services:
     env_file: .env
     depends_on: [postgres, qdrant]
     ports:
-      - "8000:8000"
+      - "8000:3502"
 
   nginx:
     image: nginx:alpine
@@ -162,7 +162,7 @@ pm2 start apps/api/dist/main.js --name oda-api
 # RAG Service（使用 gunicorn + uvicorn workers）
 cd python && uv run gunicorn rag_service.api.main:app \
   -k uvicorn.workers.UvicornWorker \
-  -w 2 --bind 0.0.0.0:8000
+  -w 2 --bind 0.0.0.0:3502
 ```
 
 ## 資料庫遷移（正式環境）
@@ -196,7 +196,7 @@ server {
 
     # NestJS API
     location /api/ {
-        proxy_pass http://localhost:4000;
+        proxy_pass http://localhost:3051;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -206,7 +206,7 @@ server {
 
     # Health check
     location /health {
-        proxy_pass http://localhost:4000;
+        proxy_pass http://localhost:3051;
     }
 }
 ```
@@ -216,7 +216,7 @@ server {
 | 端點 | 方法 | 檢查項目 |
 |------|------|----------|
 | `GET /health` | NestJS | API 存活 + DB 連線 |
-| `GET http://rag:8000/health` | FastAPI | RAG 服務 + Qdrant 連線 |
+| `GET http://rag:3502/health` | FastAPI | RAG 服務 + Qdrant 連線 |
 
 建議在 Load Balancer 或容器編排中設定 health check interval = 30s。
 

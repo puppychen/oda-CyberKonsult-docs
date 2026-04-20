@@ -266,7 +266,7 @@
 
 ### 建立新手模式提示詞
 ```bash
-curl -X POST http://localhost:4000/api/prompts \
+curl -X POST http://localhost:3051/api/prompts \
   -H "Authorization: Bearer <admin-token>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -283,7 +283,7 @@ curl -X POST http://localhost:4000/api/prompts \
 
 ### 測試提示詞變數注入
 ```bash
-curl -X POST http://localhost:4000/api/prompts/{prompt-id}/test \
+curl -X POST http://localhost:3051/api/prompts/{prompt-id}/test \
   -H "Authorization: Bearer <admin-token>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -295,7 +295,7 @@ curl -X POST http://localhost:4000/api/prompts/{prompt-id}/test \
 
 ### 查詢特定角色與模式的啟用提示詞
 ```bash
-curl -X GET "http://localhost:4000/api/prompts?role=consultant&mode=expert&isActive=true" \
+curl -X GET "http://localhost:3051/api/prompts?role=consultant&mode=expert&isActive=true" \
   -H "Authorization: Bearer <admin-token>"
 ```
 

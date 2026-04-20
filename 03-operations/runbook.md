@@ -13,9 +13,9 @@
 ```
 使用者 ──→ [Nginx/Caddy :80/443]
                │
-               ├──→ NestJS API (:4000)
+               ├──→ NestJS API (:3051)
                │         │
-               │         ├──→ RAG Service / FastAPI (:8000)
+               │         ├──→ RAG Service / FastAPI (:3502)
                │         │         │
                │         │         ├──→ Qdrant (:6333/6334)
                │         │         └──→ PostgreSQL (:5432)
@@ -24,23 +24,23 @@
                │         ├──→ SearXNG (:8080, Docker 內部)
                │         └──→ PostgreSQL (:5432)
                │
-               ├──→ Admin Dashboard (靜態, :5173 dev)
-               ├──→ Chatbot UI (靜態, :5174 dev)
-               └──→ Cleaner App (靜態, :5175 dev)
+               ├──→ Admin Dashboard (靜態, :5501 dev)
+               ├──→ Chatbot UI (靜態, :5502 dev)
+               └──→ Cleaner App (靜態, :5503 dev)
 ```
 
 ### 服務清單
 
 | 服務 | Port | 技術 | 管理方式 | 關鍵性 |
 |------|------|------|---------|--------|
-| NestJS API | 4000 | NestJS 11 | PM2 / Docker | 核心 |
-| RAG Service | 8000 | FastAPI | Gunicorn + Uvicorn / Docker | 核心 |
+| NestJS API | 3051 | NestJS 11 | PM2 / Docker | 核心 |
+| RAG Service | 3502 | FastAPI | Gunicorn + Uvicorn / Docker | 核心 |
 | PostgreSQL | 5432 | PostgreSQL 17 | Docker / Cloud SQL | 核心 |
 | Qdrant | 6333/6334 | Qdrant | Docker | 核心 |
 | SearXNG | 8080 | SearXNG | Docker（僅內部） | 輔助 |
-| Admin Dashboard | 5173 (dev) | React + Vite | Nginx 靜態 | 管理 |
-| Chatbot UI | 5174 (dev) | React + Vite | Nginx 靜態 | 使用者面向 |
-| Cleaner App | 5175 (dev) | React + Vite | Nginx 靜態 | 管理 |
+| Admin Dashboard | 5501 (dev) | React + Vite | Nginx 靜態 | 管理 |
+| Chatbot UI | 5502 (dev) | React + Vite | Nginx 靜態 | 使用者面向 |
+| Cleaner App | 5503 (dev) | React + Vite | Nginx 靜態 | 管理 |
 
 ---
 
@@ -56,7 +56,7 @@
 
 ```bash
 # 快速檢查
-curl -s http://localhost:4000/health | python3 -m json.tool
+curl -s http://localhost:3051/health | python3 -m json.tool
 
 # 預期回應
 # {
@@ -71,7 +71,7 @@ curl -s http://localhost:4000/health | python3 -m json.tool
 ### 2.2 RAG Service (FastAPI)
 
 ```bash
-curl -s http://localhost:8000/health
+curl -s http://localhost:3502/health
 # {"status":"ok","service":"CyberKonsult RAG Service"}
 ```
 
@@ -96,14 +96,14 @@ pg_isready -h localhost -p 5432
 livenessProbe:
   httpGet:
     path: /health/live
-    port: 4000
+    port: 3051
   initialDelaySeconds: 10
   periodSeconds: 30
 
 readinessProbe:
   httpGet:
     path: /health/ready
-    port: 4000
+    port: 3051
   initialDelaySeconds: 5
   periodSeconds: 10
 ```
@@ -114,10 +114,10 @@ readinessProbe:
 
 ### 3.1 NestJS API 無回應
 
-**症狀**：`curl http://localhost:4000/health` 無回應或超時
+**症狀**：`curl http://localhost:3051/health` 無回應或超時
 
 **排查步驟**：
-1. 檢查程序是否存在：`lsof -i :4000` 或 `pm2 status`
+1. 檢查程序是否存在：`lsof -i :3051` 或 `pm2 status`
 2. 檢查日誌：`pm2 logs oda-api --lines 50` 或 `docker logs <container>`
 3. 檢查 DB 連線：確認 `DATABASE_URL` 環境變數正確
 4. 檢查記憶體：`free -m`，NestJS 建議至少 512MB
@@ -135,7 +135,7 @@ docker restart oda-api
 **症狀**：`/health` 回傳 `ragService: { status: "down" }`
 
 **排查步驟**：
-1. 確認 RAG Service 運行中：`lsof -i :8000`
+1. 確認 RAG Service 運行中：`lsof -i :3502`
 2. 確認 `FASTAPI_BASE_URL` 環境變數指向正確位址
 3. 檢查 RAG Service 日誌：查看是否有 Qdrant 連線錯誤
 4. 確認 Qdrant 運行中：`curl http://localhost:6333/healthz`
@@ -144,7 +144,7 @@ docker restart oda-api
 ```bash
 # 重啟 RAG Service
 cd python/rag-service
-uv run uvicorn rag_service.api.main:app --reload --host 127.0.0.1 --port 8000
+uv run uvicorn rag_service.api.main:app --reload --host 127.0.0.1 --port 3502
 
 # 重啟 Qdrant
 docker restart qdrant
@@ -203,7 +203,7 @@ df -h
 ls -la uploads/
 
 # 手動取消卡住的任務
-curl -X DELETE http://localhost:4000/api/v1/tasks/<task_id> \
+curl -X DELETE http://localhost:3051/api/v1/tasks/<task_id> \
   -H "Authorization: Bearer <token>"
 ```
 
@@ -261,11 +261,11 @@ RAG_DEBUG=true uv run uvicorn rag_service.api.main:app --reload
 
 ```bash
 # 透過 API 查詢（需 Admin JWT）
-curl "http://localhost:4000/api/audit-logs?limit=20" \
+curl "http://localhost:3051/api/audit-logs?limit=20" \
   -H "Authorization: Bearer <admin_token>"
 
 # 匯出 CSV
-curl "http://localhost:4000/api/audit-logs/export?format=csv&start_date=2026-03-01" \
+curl "http://localhost:3051/api/audit-logs/export?format=csv&start_date=2026-03-01" \
   -H "Authorization: Bearer <admin_token>" -o audit_logs.csv
 
 # 直接 SQL 查詢
@@ -346,7 +346,7 @@ openssl rand -base64 64
 pm2 restart oda-api
 
 # 4. 查閱異常操作
-curl "http://localhost:4000/api/audit-logs?start_date=<leak_time>" \
+curl "http://localhost:3051/api/audit-logs?start_date=<leak_time>" \
   -H "Authorization: Bearer <new_admin_token>"
 ```
 
@@ -366,7 +366,7 @@ curl "http://localhost:4000/api/audit-logs?start_date=<leak_time>" \
 
 ```bash
 # 刪除含 PII 的知識庫向量（透過 Cleaner App 或 API）
-curl -X DELETE "http://localhost:8000/api/v1/rag/documents/by-source/<source>" \
+curl -X DELETE "http://localhost:3502/api/v1/rag/documents/by-source/<source>" \
   -H "X-Internal-Token: <token>"
 ```
 
