@@ -376,6 +376,92 @@ RAG 知識庫無法涵蓋所有資安知識（尤其是最新法規修正、新�
 
 ---
 
+## ADR-011：契約即程式碼（Contracts as Code）— 跨層常數 SSoT
+
+| 項目 | 內容 |
+|------|------|
+| **狀態** | Accepted（試點期；D5 驗收 2026-05-06） |
+| **日期** | 2026-04-29 |
+| **決策者** | 平台架構 + 後端 + Python（plan dazzling-wiggling-hopper §B 任務） |
+
+### 背景
+
+4/13 系統稽核 + 4/18 cross-validation 揭露 6 項規格-實作數值漂移：Expert maxTokens 8192 vs 4096、ZIP 限制、history 注入輪數 2 vs 5、tokenVersion 失效、RRF 閾值「過濾 vs 信心度」雙語意混淆等。已修 4 項，但根因「PRD 數值由開發者人工複製到代碼」未解；未來必再發生。同時 cross-language 場景（NestJS + Python rag-service）下，TS `as const` 與 Python TypedDict 各自定義導致跨端值不一致風險。
+
+### 決策
+
+建立**三層常數管理機制**：
+
+1. **規格 SSoT**（root `contracts/*.yml`）
+   - `contracts/thresholds.yml` 收 7 個 RAG 閾值（hybrid/cosine_filter_min、rrf_detect_max、web_search_score_min、rrf/cosine_high/low_confidence）
+   - `contracts/enums.yml` 收 user_roles 7 角色
+   - 開頭註解明列規格來源（PRD 行號）+ 實作對應位置 + 雙語意警告
+
+2. **TS workspace**（`packages/contracts/` 套件 `@oda-cyber/contracts`）
+   - 用 Zod schema 啟動期驗證 yml + 凍結匯出 `RAG_THRESHOLDS` / `USER_ROLES`
+   - `apps/api/tsconfig.json` paths 解析；NestJS 模組透過 `import { RAG_THRESHOLDS } from '@oda-cyber/contracts'` 使用
+
+3. **Python loader**（`python/shared/contracts.py` + `python/tests/test_contract_parity.py`）
+   - 載入相同 yml 並轉 TypedDict
+   - 跨語言 parity test：deep-equal 比對 TS 端與 Python 端載入結果
+
+### 邊界明確（不遷移）
+
+下列已 SSoT 化的常數**不**收進 contracts/，避免反向劣化：
+- `chat.service.ts:18-31 MODE_CONFIG`（已 TS const，IDE jump 完整）
+- `prompts/dto/create-prompt.dto.ts PROMPT_ROLES` / `PROMPT_MODES`
+- `packages/shared-types/src/cleaning.ts` 全部 enum（StrategyType / TaskStatus / ApprovalStatus / PipelineStatus）
+- `audit-log.interceptor.ts AUDIT_ACTIONS`（已內聚於 `audit-actions.ts`）
+- `password-strength.validator.ts` 密碼政策
+- `python/.../config.py` 上傳/ZIP 限制（已 Pydantic dataclass 化）
+
+完整邊界宣告見 `contracts/README.md`。
+
+### 備選方案
+
+| 方案 | 棄用理由 |
+|------|---------|
+| TS const 集中於 `packages/shared-types` | 失去跨語言能力；Python 端仍須各自定義 |
+| JSON Schema + 各語言 codegen | 編譯期複雜度高；缺型別系統表達能力 |
+| **YAML + Zod (TS) + TypedDict (Python)** | ✅ 入選：可讀性高、跨語言、parity test 即可驗證 |
+
+### 反漂移驗證機制
+
+1. **行為驗證測試**（`apps/api/src/modules/chat/services/chat.service.contract.spec.ts`）：jest.mock 注入 0.999 極端值，斷言 service 行為改變 → 證明真的從 contracts 載入而非硬編碼。5/5 ✅
+2. **跨語言 parity test**（`python/tests/test_contract_parity.py`）：載入同一 yml 在兩端，deep-equal 驗證。7/7 ✅
+3. **Spec pack 試點 lint**（`pnpm lint:spec-pack`）：D5 gate 阻擋第二個 spec pack 提早擴散
+
+### 理由
+
+1. **根因解決**：「PRD 數值由開發者人工複製到代碼」鏈路被切斷 — 規格與實作共讀同一 yml
+2. **跨語言 SSoT**：TS 與 Python 從同一檔案載入，parity test 自動驗
+3. **邊界明確**：`contracts/README.md` 列出哪些**不**收進 yml，避免過度集中化（反向劣化）
+4. **與 spec pack 試點協同**：chat-rag spec pack 三件套引用 contracts 為實作 SSoT；任一機制驗證失敗則整套撤除
+
+### 試點與驗收
+
+- **+7 天驗收**（2026-05-06）：陪同 chat-rag spec pack D5（plan §D5 三題：人審查面、AI context、D0 紅線）
+- **驗收結果處置**：
+  - 全 ✅ → 正式 Accepted，推廣 cleaning-maker-checker（第 2 試點）
+  - 任一 ❌ → 撤除：`rm -rf contracts/ packages/contracts/ docs/04-features/chat-rag/`、回退 chat.service.ts magic number、移除 RTM v1.6.0 變更記錄
+
+### 後果
+
+- **正面**：
+  - 7 個 RAG 閾值漂移路徑被切斷；未來閾值微調 single-edit
+  - 跨語言一致性自動驗證
+  - 邊界文件化避免「大集中陷阱」
+- **負面**：
+  - 多一層 yaml runtime 載入（啟動期成本 ~10ms，可忽略）
+  - 新增 mode 或 role 時需同步改 yml + Zod schema（流程稍長）
+- **相關文件**：
+  - `contracts/README.md`（邊界宣告）
+  - `docs/04-features/chat-rag/design.md` KD-1（功能級設計決策）
+  - RTM v1.6.0 變更記錄
+  - `~/.claude/skills/process-ai-native-sdlc/references/three-tier-ssot-architecture.md`（跨專案通用設計）
+
+---
+
 ## ADR 索引
 
 | ADR | 標題 | 狀態 | 相關 FR |
@@ -390,6 +476,7 @@ RAG 知識庫無法涵蓋所有資安知識（尤其是最新法規修正、新�
 | ADR-008 | SearXNG 網路搜尋 | Accepted | FR-02 |
 | ADR-009 | Presidio PII 偵測 | Accepted | FR-04 |
 | ADR-010 | 階層式 Chunking | Accepted | FR-02, FR-17 |
+| ADR-011 | Contracts as Code 跨層常數 SSoT | Accepted（試點期，D5 2026-05-06）| FR-02, 全域 |
 
 ---
 
