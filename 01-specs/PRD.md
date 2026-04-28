@@ -51,6 +51,7 @@
 | AC-01-01-02 | 登入失敗顯示「帳號或密碼錯誤」，不洩漏具體失敗原因 |
 | AC-01-01-03 | 密碼錯誤超過 5 次鎖定帳號 15 分鐘，回傳 423 狀態碼 |
 | AC-01-01-04 | 密碼符合資通安全「普」級政策：8 碼以上、含大小寫+數字+特殊字元、90 天過期、歷史 2 代不重複 |
+| AC-01-01-05 | 密碼變更後 `tokenVersion` 遞增，所有既發 JWT access/refresh token 立即失效；後續憑舊 token 之請求一律回 401。實作見 `auth.service.ts changePassword()` + `JwtAuthGuard` 比對 token.tokenVersion 與 DB 當前值（fd20f53 修復；CLAUDE_LESSONS「Credential Rotation 事件窮舉」） |
 
 ### US-01-02：使用者帳號管理
 
@@ -579,7 +580,7 @@
 | AC-23-01-01 | 每則 AI 回覆旁顯示三級彩色標籤（🟢 知識庫來源 / 🟡 混合來源 / 🔴 網路補充） |
 | AC-23-01-02 | 高信心度（🟢）：cosine best_score >= 0.7 或 RRF best_score >= 0.01，且未觸發 web search |
 | AC-23-01-03 | 中信心度（🟡）：cosine best_score 0.3~0.7 或 RRF best_score 0.003~0.01，或觸發 web search |
-| AC-23-01-04 | 低信心度（🔴）：cosine best_score < 0.3 或 RRF best_score < 0.003，或僅依賴 web search |
+| AC-23-01-04 | 低信心度（🔴）：cosine best_score < 0.3 或 RRF best_score < 0.003，或僅依賴 web search<br/>※ 此為**信心度判定閾值**（對過濾後留存結果分級用）；**過濾閾值**見 AC-02-05-01（RRF < 0.005 / cosine < 0.3）。兩者語意不同，詳見 line 127-131 閾值語意說明 |
 | AC-23-01-05 | hover 顯示 tooltip 說明各等級含義 |
 
 ---

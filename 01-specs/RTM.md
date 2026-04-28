@@ -2,9 +2,9 @@
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**
 >
-> 文件版本：1.4.0
+> 文件版本：1.6.0
 > 建立日期：2026-03-01
-> 最後更新：2026-04-18
+> 最後更新：2026-04-29
 > 文件類型：需求追溯矩陣（Requirements Traceability Matrix）
 
 ---
@@ -18,6 +18,9 @@
 | v1.2.0 | 2026-03-11 | 新增 US-05-03 ZIP 追溯、更新角色定義為 7 角色、測試覆蓋統計更新（107 test files） |
 | v1.3.0 | 2026-03-16 | ML-15：新增 FR-22 回饋機制追溯、FR-23 信心度追溯；驗收案例 TC-05-006/007 確認 |
 | v1.4.0 | 2026-04-18 | **Wave 1-5 功能 + 機制修正追溯同步**：<br/>① 新增 19 項 Wave 功能追溯（標籤範本/報告模板/Demo 問題庫/Golden Test/測試執行器/法規版本管理）<br/>② gap-analysis P1 修補映射（GAP-01 ~ GAP-05 全數 closed）<br/>③ 記錄本 session 揭露的 Maker-Checker UUID 比較 bug 修復、changePassword tokenVersion 補齊、Expert maxTokens 規格校正、ZIP 閾值校正、query history 5 輪修正、RejectTaskRequest validator、file content audit log、SELECT FOR UPDATE 行鎖<br/>④ 新增反偽測試覆蓋率指標（舊 15 處 `inspect.getsource()` 已識別，待 Q2 取代）<br/>⑤ 補充 AC-02-05 vs AC-23-01 閾值語意差異說明<br/>⑥ 明確標註 3 項 NFR 未驗證項目（PII 95% 召回率、P95 < 10s、10 files/分吞吐量） |
+| v1.6.0 | 2026-04-29 | **SDD contracts SSoT + spec pack 試點（B+D 任務批次）**：<br/>① **`contracts/` 跨層級 SSoT 建立**：root `contracts/thresholds.yml` 收 7 個 RAG 閾值常數；`contracts/enums.yml` 收 user_roles 7 角色；`packages/contracts` workspace 提供 TS 載入；`python/shared/contracts.py` Python stub<br/>② **`chat.service.ts` 7 處 magic number 替換**為 `RAG_THRESHOLDS.*`（line 326/341/385-386）；`create-user.dto.ts` 改用 `USER_ROLES`<br/>③ **anti-drift 行為驗證**：`chat.service.contract.spec.ts` 用 jest.mock 注入 0.999 極端值（5/5 綠）；`python/tests/test_contract_parity.py` 跨語言 schema parity（7/7 綠）<br/>④ **chat-rag 試點 spec pack**：`docs/04-features/chat-rag/{requirements,design,tasks}.md` 守 D0 紅線（指針 + 功能特殊規則 + 踩坑歷史，禁止複製 PRD）<br/>⑤ **+7 天驗收期**：CLAUDE_TASK.md 持續追蹤條目（D5 三題：人審查/AI context/D0 紅線；任一 ❌ 即撤除試點）<br/>⑥ 對應 ai-native-sdlc skill QG-3 強化（references/qg3-defense-lines.md）+ pattern-anti-pseudo-test 自動載入 + domain-code-review IDOR 4-checklist |
+| v1.5.1 | 2026-04-29 | **文件對齊（A 任務批次）**：<br/>① **PRD AC-23-01-04 補閾值語意交叉註腳**（PRD line 582）：明示「過濾閾值 vs 信心度判定閾值」兩層不同語意，引用 line 127-131 閾值語意說明<br/>② **system-cross-validation-2026-04-18.md §1.2「矛盾 1」+ §3.2「飄移 #6」校正撤回**：經 PRD line 127-131 確認 0.005/0.003 為兩層獨立閾值（filterLowScoreResults vs determineConfidenceLevel 兩函式），原稽核判斷錯誤已標註撤回；保留軌跡供後續 reviewer 追溯<br/>③ **新增 AC-01-01-05 tokenVersion 失效規格**：補 fd20f53 修復對應的規格條文（密碼變更後 tokenVersion 遞增、既發 JWT 立即失效）。CLAUDE_LESSONS「Credential Rotation 事件窮舉」對應 |
+| v1.5.0 | 2026-04-22 | **codex 稽核 4 項 + 自我稽核 2 項「文件完成 ≠ 實作完成」缺陷修正**：<br/>① **變數注入**（AC-03-01-03）：context-builder 僅處理 `{context}`，補齊 `{user_name}` / `{query}` 替換，新增共用 `prompt-renderer.util.ts`，chat.service fetch `users.getDisplayName` 注入 user_name<br/>② **提示詞測試 vs 正式執行格式統一**（US-03-03）：prompts.service.testPrompt 原用 `{{key}}` 雙括號與正式 `{key}` 單括號不符，統一改用單括號 renderer，新增 `prompts.service.spec.ts` 等價性 golden test 保證未來兩路徑不再分歧<br/>③ **三層模式 topK 差異化**（AC-16-02-01~03）：chatbot 前端固定送 `topK: 5` 覆蓋後端 mode-aware fallback (3/5/8)，移除硬編碼，新增 `useChat.test.ts` smoke test<br/>④ **Prompt UI 角色擴充**（AC-01-02-03）：admin PromptsPage 補齊 `basic_user` / `it_user` 角色（colors / labels / filters / Select options 四處），使 SRS §4.4 規定的「it_user 專屬提示詞」得以透過 UI 建立<br/>⑤ **UpdatePromptDto `it_user` 遺漏補齊**（自我稽核發現）：create-prompt.dto.ts 已列 5 角色，但兄弟 update-prompt.dto.ts 只列 4 角色——意即 it_user 提示詞可建立、不可編輯；同時兩份 DTO spec 的 it.each 也遺漏了 it_user。修復方案：提煉 `PROMPT_ROLES` / `PROMPT_MODES` 共用常數於 create-prompt.dto.ts，create/update DTO 與兩份 spec 全部引用同一來源，根除列舉雙源漂移<br/>⑥ **SRS §5.17.3 表格校正**：原「it_user | standard | beginner, standard」與 PRD v1.5.0 版本歷史 line 21「it_user 開放 expert 模式」矛盾，seed.ts 已有 it_user expert 提示詞；表格更新為「beginner, standard, expert」<br/>⑦ 本次修正對應的測試新增：`prompt-renderer.util.spec`、`prompts.service.spec`、`context-builder.service.spec`（新增變數替換案例）、`useChat.test`；既有 `create-prompt.dto.spec` / `update-prompt.dto.spec` 改為引用 PROMPT_ROLES 常數驅動<br/>⑧ CLAUDE_LESSONS.md 新增「規格漂移與驗證漏洞」段落記錄四項通用教訓（含新增的「Create/Update DTO 兄弟對稱 + 列舉覆蓋測試漂移」） |
 
 ---
 
@@ -75,6 +78,8 @@ User Story (PRD.md)
 
 ### FR-02：RAG 智慧問答 ✅
 
+> 📦 **Spec Pack**（試點功能）：[`docs/04-features/chat-rag/`](../04-features/chat-rag/) — requirements / design / tasks 三件套；含 SEC-IDOR-01、SEM-THRESHOLD-01、CONTRACTS-01 三條功能特殊規則；於 2026-04-29 建立，+7 天驗收（D5 plan）。
+
 | US | 說明 | API 端點 | NestJS 模組 | NestJS 測試 | Python 測試 | TC | Screen | Security | 狀態 |
 |----|------|----------|------------|-------------|-------------|-----|--------|----------|------|
 | US-02-01 | 自然語言資安查詢 | `POST /api/chat` | chat/ | chat.service.spec, rag-proxy.service.spec, context-builder.service.spec | test_rag_chain, test_retriever | TC-02-001 | Chatbot 主畫面 | JWT, Input Validation, Rate Limit | ✅ |
@@ -94,9 +99,9 @@ User Story (PRD.md)
 
 | US | 說明 | API 端點 | NestJS 模組 | NestJS 測試 | Python 測試 | TC | Screen | Security | 狀態 |
 |----|------|----------|------------|-------------|-------------|-----|--------|----------|------|
-| US-03-01 | 提示詞範本 CRUD | `GET/POST/PUT/DELETE /api/prompts` | prompts/ | create-prompt.dto.spec, update-prompt.dto.spec | — | — | Admin `/prompts` | JWT, RBAC(admin), Input Validation | ✅ |
-| US-03-02 | 角色差異化回應 | （提示詞+chat 配合） | prompts/ + chat/ | — | test_prompts | — | Admin `/prompts` | JWT, RBAC(admin), Input Validation | ✅ |
-| US-03-03 | 提示詞測試 | `POST /api/prompts/test` | prompts/ | test-prompt.dto.spec | — | — | Admin `/prompts` | JWT, RBAC(admin), Input Validation | ✅ |
+| US-03-01 | 提示詞範本 CRUD | `GET/POST/PUT/DELETE /api/prompts` | prompts/ | create-prompt.dto.spec, update-prompt.dto.spec, prompt-renderer.util.spec | — | — | Admin `/prompts` | JWT, RBAC(admin), Input Validation | ✅ |
+| US-03-02 | 角色差異化回應 | （提示詞+chat 配合） | prompts/ + chat/ | context-builder.service.spec（變數注入） | test_prompts | — | Admin `/prompts` | JWT, RBAC(admin), Input Validation | ✅ |
+| US-03-03 | 提示詞測試 | `POST /api/prompts/test` | prompts/ | test-prompt.dto.spec, prompts.service.spec（含等價性 golden test） | — | — | Admin `/prompts` | JWT, RBAC(admin), Input Validation | ✅ |
 | US-03-04 | 角色×模式組合 | `POST /api/prompts`（role+mode） | prompts/ | create-prompt.dto.spec | — | — | Admin `/prompts` | JWT, RBAC(admin), Input Validation | 🔄 |
 
 ---
@@ -164,7 +169,7 @@ User Story (PRD.md)
 | US | 說明 | API 端點 | NestJS 模組 | NestJS 測試 | Python 測試 | TC | Screen | Security | 狀態 |
 |----|------|----------|------------|-------------|-------------|-----|--------|----------|------|
 | US-16-01 | 角色預設模式 | `GET /api/chat/modes` | chat/ | chat.dto.spec | — | — | Chatbot 主畫面, Admin `/prompts` | JWT, Input Validation | ✅ |
-| US-16-02 | 模式切換+差異化 | `POST /api/chat`（mode 參數） | chat/ + llm/ | chat.service.spec, llm.service.spec | test_llm_temperature, test_retriever | — | Chatbot 主畫面, Admin `/prompts` | JWT, Input Validation | ✅ |
+| US-16-02 | 模式切換+差異化 | `POST /api/chat`（mode 參數） | chat/ + llm/ | chat.service.spec, llm.service.spec, chatbot useChat.test（前端不覆蓋 topK） | test_llm_temperature, test_retriever | — | Chatbot 主畫面, Admin `/prompts` | JWT, Input Validation | ✅ |
 | US-16-03 | 模式提示詞管理 | `GET/PUT /api/prompts` | prompts/ | create-prompt.dto.spec | test_prompts | — | Chatbot 主畫面, Admin `/prompts` | JWT, Input Validation | 🔄 |
 
 ---
@@ -359,12 +364,16 @@ User Story (PRD.md)
 - [x] 雙語言服務（NestJS + Python）皆有獨立測試
 - [x] 驗收案例 TC-01~06 全數有對應測試
 - [x] 安全性檢核項全數通過（SRS-T §11.3）
+- [x] SEC-IDOR-01：Chat conversation ownership verification（`chat.service.ts:231-234`，防止 IDOR 跨用戶存取對話）
+- [x] SEC-RATE-01：ThrottlerGuard APP_GUARD 全域 60req/min + auth 端點 per-endpoint 5req/min（`app.module.ts:52` + `auth.controller.ts`）
+- [x] SEC-AUDIT-01：Audit interceptor 增強 — AuditEvent decorator + before/after 變更追蹤 + required 阻斷 + auditRead 敏感讀取（`audit-log.interceptor.ts` + `audit-actions.ts` + `audit-details.ts`）
 - [ ] 行覆蓋率量測（NestJS ≥80%、Python ≥80%）— 規劃中
 
 ### 6.2 Phase 2（目標）
 
 - [ ] 效能測試基準建立（k6 壓力測試）
-- [ ] 前端元件測試導入（Vitest + RTL）
+- [x] 前端元件測試導入（Vitest + RTL）— 已完成 134 tests
+- [x] E2E 測試基礎建設（supertest + rate-limit e2e）— 26/31 通過
 - [ ] E2E 自動化擴充（Playwright）
 - [ ] CI/CD 整合測試閘門
 
