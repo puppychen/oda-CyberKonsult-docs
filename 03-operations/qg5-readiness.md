@@ -36,7 +36,7 @@
 - Dev Environment and service registry are captured in `PROJECT_CONTEXT.md`.
 - Runbook, deployment, backup, DR checklist, and staging setup documents exist.
 - Health endpoints and operational scripts exist for local verification.
-- Spec Pack and contracts lint gates are available for SDD-specific drift prevention.
+- Docs lint gate (`pnpm lint:docs`) covers broken-link checks and Tier 1 long-line drift prevention for contracts SSoT.
 
 ## Blocking Gaps
 

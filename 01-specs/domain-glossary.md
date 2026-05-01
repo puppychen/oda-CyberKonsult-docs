@@ -1,6 +1,6 @@
 # Domain Glossary
 
-> Audience: human + AI. This document is the ubiquitous language SSoT for ODA Cyber Konsult. Code, PRD, SRS, API docs, and spec packs should use these terms consistently.
+> Audience: human + AI. This document is the ubiquitous language SSoT for ODA Cyber Konsult. Code, PRD, SRS, and API docs should use these terms consistently.
 
 ## Core Terms
 
@@ -35,7 +35,6 @@
 | Internal Token | Shared service credential carried by NestJS to FastAPI in `X-Internal-Token`. | Service Boundary | service token |
 | Audit Log | Persisted operational record for security-relevant or administrative action. | Audit | operation log |
 | Contract Constant | Cross-language or cross-module value stored in `contracts/*.yml`. | SSoT | shared config |
-| Spec Pack | Feature-level requirements/design/tasks working memory for high-risk features. | AI-Native SDLC | mini spec, feature docs |
 
 ## Subdomain Classification
 

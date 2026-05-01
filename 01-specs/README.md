@@ -38,6 +38,5 @@ PRD → SRS_BUSINESS/SRS_TECHNICAL → domain-glossary/context-map
 
 - 新增/修改 User Story 或 AC：先改 `PRD.md`，再同步 `SRS_TECHNICAL.md` 與 `RTM.md`。
 - 新增跨上下文或跨服務規則：同步檢查 `domain-glossary.md`、`context-map.md`、`threat-model.md`。
-- 新增高風險功能工作記憶：只在觸發條件成立時建立 `../04-features/{feature}/`，並在 `RTM.md` 對應 FR 區塊加 spec pack 指針。
 - 不在 Tier 1 複製 `contracts/*.yml` 的完整內容；只引用其用途與值來源。
-- 自動驗證：Tier 2A `contracts/*.yml` 與 Tier 2B `04-features/*` 變更後跑 `pnpm lint:spec-pack`（三件套完整性 / D0 紅線 / D5 gate；實作見 [`../../scripts/spec-pack-lint.mjs`](../../scripts/spec-pack-lint.mjs)）。
+- 自動驗證：`contracts/*.yml` 變更後跑 `pnpm lint:docs`（broken-link 檢查 + Tier 1 long-line copy 偵測；實作見 [`../../scripts/docs-lint.mjs`](../../scripts/docs-lint.mjs)）。

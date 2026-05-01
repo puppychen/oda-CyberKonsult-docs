@@ -10,4 +10,4 @@
 
 ## Placement Rule
 
-Use this directory for explanatory notes about existing implementation. New work should update PRD/SRS/RTM/spec pack first, then code and tests.
+Use this directory for explanatory notes about existing implementation. New work should update PRD/SRS/RTM first, then code and tests.

@@ -349,7 +349,7 @@ curl -H "Authorization: Bearer <admin-token>" http://localhost:3051/api/audit?li
 - [NestJS 官方文件](https://docs.nestjs.com/)
 - [Prisma Client API](https://www.prisma.io/docs/reference/api-reference/prisma-client-reference)
 - [Socket.IO 文件](https://socket.io/docs/v4/)
-- [專案 API 文件](./api/audit-users-api.md)
+- [專案 API 文件](../api/audit-users-api.md)
 
 ---
 

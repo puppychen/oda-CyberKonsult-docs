@@ -1,6 +1,8 @@
 # AI-Native SDLC Alignment Review - 2026-04-29
 
 > Audience: human + AI. Workspace alignment review against the current `process-ai-native-sdlc` skill.
+>
+> **2026-05-02 撤回說明（Tier 2B Spec Pack 部分）**：本 review 中關於 Tier 2B Spec Pack 的對齊評估（`Tier 2B spec pack` 列、`04-features` index 整合、`spec-pack-lint.mjs` 引用、`docs/04-features/chat-rag/` D5 pilot 等）已被廢除 — 詳見 RTM v1.6.2 + CLAUDE_LESSONS「Spec Pack 試點失敗（2026-05-02）」段。文件其餘內容（contracts SSoT / QG-3 / QG-5 等）保留為當時對齊狀態快照。
 
 ## Scope
 

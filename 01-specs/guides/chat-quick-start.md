@@ -505,8 +505,8 @@ function StreamChatComponent({ token }: { token: string }) {
 
 ## 10. 下一步
 
-1. **探索完整 API 文件**：[docs/api/chat-api.md](/docs/01-specs/api/chat-api.md)
-2. **檢視實作細節**：[docs/implementation/chat-module-summary.md](/docs/01-specs/implementation/chat-module-summary.md)
+1. **探索完整 API 文件**：[docs/01-specs/api/chat-api.md](/docs/01-specs/api/chat-api.md)
+2. **檢視實作細節**：[docs/01-specs/implementation/chat-module.md](/docs/01-specs/implementation/chat-module.md)
 3. **整合 Chatbot UI**：參考前端專案 `apps/chatbot`
 4. **開發單元測試**：使用 Jest + NestJS Testing
 
@@ -563,4 +563,4 @@ export class SendMessageDto {
 - [NestJS 官方文件](https://docs.nestjs.com/)
 - [Prisma 官方文件](https://www.prisma.io/docs)
 - [Server-Sent Events 規範](https://html.spec.whatwg.org/multipage/server-sent-events.html)
-- [RAG System Blueprint](/docs/RAG_SYSTEM_BLUEPRINT.md)
+- [系統架構與 ADR](/docs/01-specs/architecture/ARCH.md)

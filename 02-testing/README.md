@@ -46,5 +46,5 @@ api-e2e-testing（自動化 E2E 實作）
 |------|------|------|
 | `apps/api/src/modules/chat/services/chat.service.contract.spec.ts` | Anti-drift 行為測試（jest.mock 注入極端值，驗證 service 真的從 contracts 載入而非硬編碼）| ADR-011 反漂移驗證機制 §1 |
 | `python/tests/test_contract_parity.py` | 跨語言 schema parity（TS/Python 載入結果 deep-equal）| ADR-011 §2 |
-| `scripts/spec-pack-lint.mjs` | spec pack 三件套完整性 + D0 紅線 + D5 gate | `pnpm lint:spec-pack` |
+| `scripts/docs-lint.mjs` | 文件 lint（broken-link 檢查 + Tier 1 long-line copy 偵測）| `pnpm lint:docs` |
 | `scripts/mypy-pr-diff.sh` | QG-3 mypy patch-strict（PR diff 觸及的 Python 模組嚴格型別檢查）| QG-3 三道防線 §2 |

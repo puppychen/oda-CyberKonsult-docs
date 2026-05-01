@@ -384,9 +384,9 @@ RAG 知識庫無法涵蓋所有資安知識（尤其是最新法規修正、新�
 
 | 項目 | 內容 |
 |------|------|
-| **狀態** | Accepted（試點期；D5 驗收 2026-05-06） |
+| **狀態** | Accepted |
 | **日期** | 2026-04-29 |
-| **決策者** | 平台架構 + 後端 + Python（plan dazzling-wiggling-hopper §B 任務） |
+| **決策者** | 平台架構 + 後端 + Python |
 
 ### 背景
 
@@ -433,21 +433,13 @@ RAG 知識庫無法涵蓋所有資安知識（尤其是最新法規修正、新�
 
 1. **行為驗證測試**（`apps/api/src/modules/chat/services/chat.service.contract.spec.ts`）：jest.mock 注入 0.999 極端值，斷言 service 行為改變 → 證明真的從 contracts 載入而非硬編碼。5/5 ✅
 2. **跨語言 parity test**（`python/tests/test_contract_parity.py`）：載入同一 yml 在兩端，deep-equal 驗證。7/7 ✅
-3. **Spec pack 試點 lint**（`pnpm lint:spec-pack`）：D5 gate 阻擋第二個 spec pack 提早擴散
+3. **文件 lint**（`pnpm lint:docs`）：broken-link 檢查 + Tier 1 long-line copy 偵測（防 PRD 內容被複製到下游檔案）
 
 ### 理由
 
 1. **根因解決**：「PRD 數值由開發者人工複製到代碼」鏈路被切斷 — 規格與實作共讀同一 yml
 2. **跨語言 SSoT**：TS 與 Python 從同一檔案載入，parity test 自動驗
 3. **邊界明確**：`contracts/README.md` 列出哪些**不**收進 yml，避免過度集中化（反向劣化）
-4. **與 spec pack 試點協同**：chat-rag spec pack 三件套引用 contracts 為實作 SSoT；任一機制驗證失敗則整套撤除
-
-### 試點與驗收
-
-- **+7 天驗收**（2026-05-06）：陪同 chat-rag spec pack D5（plan §D5 三題：人審查面、AI context、D0 紅線）
-- **驗收結果處置**：
-  - 全 ✅ → 正式 Accepted，推廣 cleaning-maker-checker（第 2 試點）
-  - 任一 ❌ → 撤除：`rm -rf contracts/ packages/contracts/ docs/04-features/chat-rag/`、回退 chat.service.ts magic number、移除 RTM v1.6.0 變更記錄
 
 ### 後果
 
@@ -460,9 +452,8 @@ RAG 知識庫無法涵蓋所有資安知識（尤其是最新法規修正、新�
   - 新增 mode 或 role 時需同步改 yml + Zod schema（流程稍長）
 - **相關文件**：
   - `contracts/README.md`（邊界宣告）
-  - `docs/04-features/chat-rag/design.md` KD-1（功能級設計決策）
   - RTM v1.6.0 變更記錄
-  - `~/.claude/skills/process-ai-native-sdlc/references/three-tier-ssot-architecture.md`（跨專案通用設計）
+  - `~/.claude/skills/process-ai-native-sdlc/references/two-tier-ssot-architecture.md`（跨專案通用設計）
 
 ---
 
@@ -480,7 +471,7 @@ RAG 知識庫無法涵蓋所有資安知識（尤其是最新法規修正、新�
 | ADR-008 | SearXNG 網路搜尋 | Accepted | FR-02 |
 | ADR-009 | Presidio PII 偵測 | Accepted | FR-04 |
 | ADR-010 | 階層式 Chunking | Accepted | FR-02, FR-17 |
-| ADR-011 | Contracts as Code 跨層常數 SSoT | Accepted（試點期，D5 2026-05-06）| FR-02, 全域 |
+| ADR-011 | Contracts as Code 跨層常數 SSoT | Accepted | FR-02, 全域 |
 
 ---
 
