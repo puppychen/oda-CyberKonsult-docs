@@ -8,7 +8,8 @@ audience: both
 > 不是 PRD/SRS/RTM 的副本，**只放它們不該寫但開發必知的功能特殊規則**。
 >
 > 起點：2026-04-29（Codex 獨立稽核建議 + 4/13 / 4/18 / 4/24 三組漂移事件驅動）。
-> 試點：chat-rag（單一）— D5 限時驗收 2026-05-06。
+> 試點 #1：chat-rag — D5 三題提前通過（2026-05-02 修正版 dry-run 全 ✅，原 +7 天驗收 2026-05-06 改為補強觀察期）。
+> 試點 #2：cleaning-maker-checker — 2026-05-02 啟動，D5 +7 天補強觀察期至 2026-05-09。
 
 ---
 
@@ -131,15 +132,21 @@ Tier 3（實作）          apps/api, packages/contracts, python/*
 
 | 候選功能 | 觸發條件評分 | 狀態 | 備註 |
 |---------|-------------|------|------|
-| **chat-rag** | 4/4（4/24 IDOR + 4/22 dual-track + 4/18 漂移；NestJS+Python；安全；複雜）| ✅ 試點中 | 2026-05-06 D5 驗收 |
-| **cleaning-maker-checker** | 4/4（4/18 UUID bug；NestJS+Python；Maker-Checker；多狀態流轉）| 🟡 暫緩 | 等 chat-rag 通過驗收 |
+| **chat-rag** | 4/4（4/24 IDOR + 4/22 dual-track + 4/18 漂移；NestJS+Python；安全；複雜）| ✅ 試點通過 | 2026-05-02 修正版 D5 dry-run 全 ✅；補強觀察期至 2026-05-06 |
+| **cleaning-maker-checker** | 4/4（4/18 UUID bug；NestJS+Python；Maker-Checker；多狀態流轉）| ✅ 試點中 | 2026-05-02 啟動；D5 +7 天補強觀察期至 2026-05-09 |
 | **auth-credential-rotation** | 2/4（無近期事件；單服務；安全敏感；中度複雜）| 🟡 暫緩 | RTM v1.4.0 ③ 已完整記錄，邊際價值低 |
 | prompts-crud | 0/4 | ❌ 不建 | 純 CRUD |
 | audit-logs | 0/4 | ❌ 不建 | 已 SSoT 化（`audit-actions.ts`） |
 | websearch-config | 0/4 | ❌ 不建 | 純 CRUD |
 | health-check | 0/4 | ❌ 不建 | 簡單端點 |
 
-**推廣節奏**：chat-rag D5 通過（3 題全 ✅）→ cleaning-maker-checker 啟動第 2 試點 → 再評估 auth。
+**推廣節奏**：chat-rag D5 通過（3 題全 ✅，2026-05-02 修正版 dry-run）→ cleaning-maker-checker 啟動第 2 試點（2026-05-02）→ 第 2 試點 D5 通過（最早 2026-05-09）→ 再評估 auth-credential-rotation。
+
+**修正版 D5 機制**（取代「+7 天等真實 PR」假設）：
+- Q1 對人 self-review：選既有 commit dry-run（不等真實事件），檢查 spec pack 規則是否能 30 秒鎖定 PR 觸碰範圍
+- Q2 對 AI 協作：開新 session 給虛構 bug 任務，觀察是否 30-50 行 spec pack 建立完整 context
+- Q3 D0 紅線：`grep` 抽 5 段，自問「這資訊在 PRD/SRS/RTM/CLAUDE_LESSONS 已有嗎？」
+- +7 天為**補強觀察期**（被動記錄真實 commit 是否使用 spec pack），不是必要等待
 
 ---
 
