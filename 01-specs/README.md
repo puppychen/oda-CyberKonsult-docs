@@ -1,81 +1,43 @@
-# 規格與設計文件（Outer Loop）
+# 規格文件（Outer Loop / Tier 1 SSoT）
 
-> ODA Cyber Konsult — 需求定義、架構設計、API 規格、實作說明
+> ODA Cyber Konsult — 需求、領域模型、架構、安全、API 與追溯矩陣。
 
-本目錄涵蓋系統「做什麼」與「怎麼做」的所有規格文件，對應 AI-Native SDLC 的 Outer Loop 階段。
-
----
-
-## 文件清單
-
-### 需求與追溯
-
-| 文件 | 說明 | 更新日期 |
-|------|------|---------|
-| [PRD.md](./PRD.md) | 產品需求文件 — 41 個 User Story、85 個驗收條件、優先級與角色矩陣 | 2026-03-01 |
-| [SRS_BUSINESS.md](./SRS_BUSINESS.md) | 商業需求規格書 — 使用情境、利害關係人、KPI 指標 | 2026-02-17 |
-| [SRS_TECHNICAL.md](./SRS_TECHNICAL.md) | 技術需求規格書 — FR-01~21 功能需求、§11 驗收標準（功能/效能/安全） | 2026-02-13 |
-| [RTM.md](./RTM.md) | 需求追溯矩陣 — User Story → FR → API 端點 → 模組 → 測試的完整追溯鏈 | 2026-03-01 |
-| [threat-model.md](./threat-model.md) | 威脅模型 — STRIDE 分析、7 個攻擊面、風險矩陣、22 項緩解措施追蹤 | 2026-03-01 |
-
-### 架構設計（architecture/）
-
-| 文件 | 說明 | 更新日期 |
-|------|------|---------|
-| [ARCH.md](./architecture/ARCH.md) | 架構決策紀錄 — 10 個 ADR（Monorepo、Gateway、Hybrid Search 等） | 2026-03-01 |
-| [system-overview.md](./architecture/system-overview.md) | 系統架構圖、服務拓撲、通訊矩陣 | 2026-02-17 |
-| [rag-system-blueprint.md](./architecture/rag-system-blueprint.md) | RAG 系統 9 階段建構指南 | 2026-02-24 |
-| [rag-pipeline.md](./architecture/rag-pipeline.md) | RAG 管線流程 — 載入 → 切塊 → 索引 → 檢索 | 2026-02-24 |
-| [rag-enhancements.md](./architecture/rag-enhancements.md) | RAG 品質優化策略 — Query 改寫、分數過濾、Reranking | 2026-02-24 |
-| [data-cleaning-workflow.md](./architecture/data-cleaning-workflow.md) | 資料去識別化工作流程設計 | 2026-02-12 |
-
-### API 規格（api/）
-
-| 文件 | 說明 | 路徑前綴 | 更新日期 |
-|------|------|---------|---------|
-| [README.md](./api/README.md) | API 總索引 — 認證規範、流程圖、通用格式 | — | 2026-02-24 |
-| [auth-api.md](./api/auth-api.md) | 認證與授權（登入/註冊/Token/密碼變更） | `/api/auth` | 2026-02-24 |
-| [chat-api.md](./api/chat-api.md) | 聊天與對話管理（SSE/模式切換） | `/api/chat` | 2026-02-24 |
-| [audit-users-api.md](./api/audit-users-api.md) | 使用者管理 + 稽核日誌 | `/api/users`, `/api/audit-logs` | 2026-02-09 |
-| [prompts-api.md](./api/prompts-api.md) | 提示詞範本 CRUD + 測試 | `/api/prompts` | 2026-02-11 |
-| [health-api.md](./api/health-api.md) | 健康檢查（DB/RAG/Kubernetes 探針） | `/health` | 2026-02-11 |
-| [cleaning-proxy.md](./api/cleaning-proxy.md) | NestJS 清洗代理層設計 | `/api/v1/*` | 2026-02-09 |
-| [cleaning-api.md](./api/cleaning-api.md) | FastAPI 去識別化處理 | `/api/v1/*` | 2026-02-23 |
-| [review-api.md](./api/review-api.md) | 審核工作流（審核/標籤/批准/送入 RAG） | `/api/v1/review` | 2026-02-11 |
-| [analytics-api.md](./api/analytics-api.md) | 資料分析統計（清洗/知識庫/時間軸） | `/api/v1/analytics` | 2026-02-11 |
-| [knowledge-base-api.md](./api/knowledge-base-api.md) | 知識庫文件瀏覽與管理 | `/api/v1/knowledge-base` | 2026-02-12 |
-| [rag-api.md](./api/rag-api.md) | RAG 查詢與文件管理（Retrieve/Ingest） | `/api/v1/rag` | 2026-02-24 |
-| [websearch-api.md](./api/websearch-api.md) | 網路搜尋設定與整合 | `/api/websearch` | 2026-02-13 |
-| [gdrive-api.md](./api/gdrive-api.md) | Google Drive 資料來源 | `/api/datasources/gdrive` | 2026-02-11 |
-| [data-pipeline-loaders-api.md](./api/data-pipeline-loaders-api.md) | 文件解析器 API（PDF/DOCX/XLSX/PPTX） | `data_pipeline.loaders` | 2026-02-11 |
-
-### 實作說明（implementation/）
-
-| 文件 | 說明 | 更新日期 |
-|------|------|---------|
-| [nestjs-modules.md](./implementation/nestjs-modules.md) | NestJS 模組架構總覽 — 分層設計、依賴注入 | 2026-02-09 |
-| [chat-module.md](./implementation/chat-module.md) | 聊天模組實作細節 — SSE 串流、RAG 編排、多輪對話 | 2026-02-09 |
-| [chatbot-frontend.md](./implementation/chatbot-frontend.md) | Chatbot UI 前端實作 — 元件結構、狀態管理 | 2026-02-09 |
-
-### 操作指南（guides/）
-
-| 文件 | 說明 | 更新日期 |
-|------|------|---------|
-| [chat-quick-start.md](./guides/chat-quick-start.md) | 聊天功能快速上手 — 使用者導向操作手冊 | 2026-02-09 |
-| [rag-cookbook.md](./guides/rag-cookbook.md) | RAG + 清洗整合食譜 — 開發者導向實戰指引 | 2026-02-13 |
-
----
+本目錄是 AI-Native SDLC 的 **Outer Loop** 與 Three-Tier SSoT 的 **Tier 1**。此層回答「系統做什麼、為什麼做、可如何驗收」，下游設計、程式、測試與運維文件都應回指此層。
 
 ## 文件鏈
 
+```text
+PRD → SRS_BUSINESS/SRS_TECHNICAL → domain-glossary/context-map
+    → architecture/ARCH.md → threat-model.md → RTM.md
+    → api/ + implementation/ + downstream testing/operations
 ```
-SRS_BUSINESS → SRS_TECHNICAL → PRD（US/AC 萃取）→ RTM（追溯串連）
-                    ↓                                    ↓
-             threat-model（安全分析）              ARCH（架構決策）
-                                                    ↓
-                                        rag-*/data-cleaning-*（子系統設計）
-                                                    ↓
-                                              api/（端點規格）
-                                                    ↓
-                                         implementation/（實作說明）
-```
+
+## 核心文件
+
+| 文件 | Audience | 說明 | 狀態 |
+|------|----------|------|------|
+| [`PRD.md`](./PRD.md) | human-primary | User Story、Acceptance Criteria、優先級、角色矩陣 | Active SSoT |
+| [`SRS_BUSINESS.md`](./SRS_BUSINESS.md) | human-primary | 商業需求、使用情境、KPI、風險假設 | Active SSoT |
+| [`SRS_TECHNICAL.md`](./SRS_TECHNICAL.md) | AI + dev | FR/NFR、資料模型、API 總覽、驗收標準 | Active SSoT |
+| [`domain-glossary.md`](./domain-glossary.md) | human + AI | 通用語言、核心術語、避免同義詞漂移 | Active SSoT |
+| [`context-map.md`](./context-map.md) | human + AI | Bounded Context、上下游關係、ACL 與 Shared Kernel | Active SSoT |
+| [`architecture/ARCH.md`](./architecture/ARCH.md) | human + AI | ADR、系統級架構決策與後果 | Active SSoT |
+| [`threat-model.md`](./threat-model.md) | human + AI | STRIDE 威脅模型、攻擊面、緩解措施 | Active SSoT |
+| [`RTM.md`](./RTM.md) | AI + QA | US → FR → API → Module → Test → Security 追溯 | Active SSoT |
+
+## 子目錄
+
+| 子目錄 | 說明 |
+|--------|------|
+| [`api/`](./api/) | API 規格與端點索引 |
+| [`architecture/`](./architecture/) | 架構圖、ADR、RAG/清洗子系統設計 |
+| [`implementation/`](./implementation/) | 既有實作說明；不作為新需求 SSoT |
+| [`guides/`](./guides/) | 操作導引與開發 cookbook |
+
+## 追溯與變更規則
+
+- 新增/修改 User Story 或 AC：先改 `PRD.md`，再同步 `SRS_TECHNICAL.md` 與 `RTM.md`。
+- 新增跨上下文或跨服務規則：同步檢查 `domain-glossary.md`、`context-map.md`、`threat-model.md`。
+- 新增高風險功能工作記憶：只在觸發條件成立時建立 `../04-features/{feature}/`，並在 `RTM.md` 對應 FR 區塊加 spec pack 指針。
+- 不在 Tier 1 複製 `contracts/*.yml` 的完整內容；只引用其用途與值來源。
+- 自動驗證：Tier 2A `contracts/*.yml` 與 Tier 2B `04-features/*` 變更後跑 `pnpm lint:spec-pack`（三件套完整性 / D0 紅線 / D5 gate；實作見 [`../../scripts/spec-pack-lint.mjs`](../../scripts/spec-pack-lint.mjs)）。
