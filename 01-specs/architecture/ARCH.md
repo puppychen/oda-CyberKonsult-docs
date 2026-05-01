@@ -1,3 +1,7 @@
+---
+audience: both
+---
+
 # 架構決策紀錄 (ADR)
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**

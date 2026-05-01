@@ -1,3 +1,7 @@
+---
+audience: ai-primary
+---
+
 # chat-rag — Design
 
 > 守 D0 紅線：架構/技術細節若已在 ARCH.md / SRS-T，本檔只放指針；只記錄**功能級設計決策**與 trade-off。

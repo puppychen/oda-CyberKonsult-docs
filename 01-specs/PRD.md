@@ -1,3 +1,7 @@
+---
+audience: human-primary
+---
+
 # 產品需求文件 (PRD)
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**

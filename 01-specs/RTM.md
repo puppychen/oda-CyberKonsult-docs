@@ -1,3 +1,7 @@
+---
+audience: ai-primary
+---
+
 # 需求追溯矩陣 (RTM)
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**

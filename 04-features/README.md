@@ -1,3 +1,7 @@
+---
+audience: both
+---
+
 # docs/04-features/ — 功能級 Spec Pack 規約
 
 > **此目錄存放「功能級」三件套**：requirements.md / design.md / tasks.md。

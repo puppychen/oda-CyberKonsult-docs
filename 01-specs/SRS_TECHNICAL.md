@@ -1,3 +1,7 @@
+---
+audience: ai-primary
+---
+
 # 軟體需求規格書 (SRS) - 完整技術規格
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**

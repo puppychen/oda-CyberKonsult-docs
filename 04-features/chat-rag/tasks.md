@@ -1,3 +1,7 @@
+---
+audience: ai-primary
+---
+
 # chat-rag — Tasks
 
 > 此檔記錄 chat-rag **功能級的待辦/已完成清單**，不是完整 sprint backlog（後者見 CLAUDE_TASK.md）。

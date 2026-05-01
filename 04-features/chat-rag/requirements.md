@@ -1,3 +1,7 @@
+---
+audience: ai-primary
+---
+
 # chat-rag — Requirements
 
 > **Spec Pack 試點功能**（plan §D 唯一試點）
