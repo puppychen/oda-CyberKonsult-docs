@@ -83,17 +83,15 @@ cp .env.example .env
 | `RAG_OPENAI_API_KEY` | OpenAI API Key | OpenAI Platform 取得 |
 | `RAG_EMBEDDING_PROVIDER` | 嵌入向量提供者 | `openai`（建議）或 `gemini` |
 
-### Step 3：啟動 Docker 基礎設施
+### Step 3：啟動 Docker 基礎設施 + 確認本機 PostgreSQL
 
 ```bash
-# PostgreSQL 17
-docker run -d --name oda-postgres \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=oda_cyber \
-  -p 5432:5432 \
-  --restart unless-stopped \
-  postgres:17
+# PostgreSQL 17：本機運行（不由本專案啟動容器）
+# 假設本機 5432 已就緒，例：
+#   brew services start postgresql@17
+# 或啟動其他 ECMap 子專案既有的 PG 容器
+nc -z localhost 5432 || echo "請先啟動本機 PostgreSQL 17"
+# dev-start.sh / setup-dev-env.sh 會自動 createdb oda_cyber（不存在時）
 
 # Qdrant 向量資料庫
 docker run -d --name oda-qdrant \
@@ -353,7 +351,7 @@ curl -X POST http://localhost:3502/api/v1/rag/retrieve \
 | 問題 | 原因 | 解決方式 |
 |------|------|---------|
 | `pnpm dev` 報錯 | Node 版本不對 | `nvm use` |
-| Prisma migrate 失敗 | PostgreSQL 未啟動 | `docker start oda-postgres` |
+| Prisma migrate 失敗 | 本機 PostgreSQL 未啟動 | `brew services start postgresql@17`，或啟動既有 PG 容器 |
 | RAG Service 401 | 缺少 X-Internal-Token | 確認 .env 的 RAG_INTERNAL_API_KEY |
 | Embedding 429 | Gemini 免費額度用完 | `.env` 改 `RAG_EMBEDDING_PROVIDER=openai` |
 | Chatbot 無回應 | RAG Service 未啟動 | 第二終端啟動 FastAPI |

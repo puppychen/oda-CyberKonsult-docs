@@ -99,18 +99,13 @@ SEARXNG_URL=http://localhost:8080
 
 > **STG 安全原則**：`JWT_SECRET` 和 `INTERNAL_API_KEY` 必須與 Dev 環境不同，使用 `openssl rand -hex 32` 獨立產生。
 
-#### Step 3：啟動 Docker 基礎設施
+#### Step 3：啟動 Docker 基礎設施 + 確認 STG 主機 PostgreSQL
 
 ```bash
-# PostgreSQL
-docker run -d --name oda-postgres \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=<密碼> \
-  -e POSTGRES_DB=oda_cyber \
-  -p 5432:5432 \
-  -v pg_data:/var/lib/postgresql/data \
-  --restart unless-stopped \
-  postgres:17-alpine
+# PostgreSQL：STG 主機本機已運行（不由本專案啟動容器）
+# 確認 5432 可連通；若否，依該主機方式啟動 PG（systemd / brew / 既有容器）
+nc -z localhost 5432 || { echo "請先確認 STG 主機 PostgreSQL 17 服務"; exit 1; }
+# 之後 setup-dev-env.sh / dev-start.sh 會自動 createdb oda_cyber
 
 # Qdrant 向量資料庫
 docker run -d --name oda-qdrant \
@@ -125,6 +120,8 @@ docker run -d --name oda-searxng \
   --restart unless-stopped \
   searxng/searxng:latest
 ```
+
+> **STG PostgreSQL 帳密**：與 Dev 不同。請確保本機 PG 既有的 postgres 角色密碼與 `.env` 內 `DATABASE_URL` 一致；若不同，更新 `.env` 帳密欄位（不要修改 PG 角色密碼以免影響其他專案）。
 
 驗證容器狀態：
 
@@ -251,7 +248,7 @@ uv run uvicorn rag_service.api.main:app --host 0.0.0.0 --port 3502 --reload &
 | Admin Dashboard | `http://localhost:5501` | 登入頁面 |
 | Chatbot UI | `http://localhost:5502` | 登入頁面 |
 | Cleaner App | `http://localhost:5503` | 登入頁面 |
-| PostgreSQL | `docker exec oda-postgres pg_isready -U postgres` | accepting connections |
+| PostgreSQL | `nc -z localhost 5432` 或 `pg_isready -h localhost -p 5432` | 5432 可連通 |
 | Qdrant | `http://localhost:6333/healthz` | `true` |
 
 一鍵健康檢查：

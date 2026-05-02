@@ -39,13 +39,11 @@ uv --version
 ### 3. Docker 服務
 
 ```bash
-# PostgreSQL 17
-docker run -d --name oda-postgres \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=oda_cyber \
-  -p 5432:5432 \
-  postgres:17
+# PostgreSQL 17：本機運行（dev-start 不啟動 PG 容器）
+# 假設本機 5432 已就緒，例：
+#   brew services start postgresql@17
+# 或啟動其他 ECMap 子專案既有的 PG 容器
+# 之後 dev-start.sh 會自動 createdb oda_cyber（不存在時）
 
 # Qdrant 向量資料庫
 docker run -d --name oda-qdrant \
