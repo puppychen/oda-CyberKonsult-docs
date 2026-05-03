@@ -483,7 +483,7 @@ audience: human-primary
 |---------|----------|
 | AC-18-11-01 | data_reviewer 可在任務審核頁按下「退回」按鈕 |
 | AC-18-11-02 | 退回時必須填寫理由（rejection_reason），空白無法送出 |
-| AC-18-11-03 | 退回後任務狀態變回 `pending`，檔案解除凍結，cleaner 可重新編輯 |
+| AC-18-11-03 | 退回後任務狀態為 `rejected`（保留審核軌跡），檔案解除凍結；cleaner 可重新編輯後再次送審（rejected → review_requested 由 submit_for_review 處理） |
 | AC-18-11-04 | 退回理由記錄於稽核軌跡，可供追溯 |
 
 ### US-18-12：Maker-Checker 職責分離 ✅

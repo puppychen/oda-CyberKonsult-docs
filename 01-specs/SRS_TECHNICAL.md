@@ -2075,7 +2075,7 @@ ALTER TABLE conversations ADD COLUMN response_mode VARCHAR(50) DEFAULT 'standard
                ┌──────────────┐
                │   pending    │ (待審核)
                └──────┬───────┘
-                      │ 送審
+                      │ 送審 (submit_for_review)
                       ▼
                ┌──────────────┐
                │  review_requested  │ (已送審：等待審核)
@@ -2087,13 +2087,26 @@ ALTER TABLE conversations ADD COLUMN response_mode VARCHAR(50) DEFAULT 'standard
     ┌──────────────┐    ┌──────────────┐
     │   approved   │    │   rejected   │
     │  (已批准)     │    │  (已駁回)     │
-    └──────┬───────┘    └──────────────┘
+    └──────┬───────┘    └──────┬───────┘
+           │                   │ 重新編輯後再次送審
+           │                   │ (submit_for_review 重設
+           │                   │  file review_status → pending
+           │                   │  且不清除 review_note)
+           │                   ▼
+           │           ┌──────────────┐
+           │           │ review_requested │ (重送)
+           │           └──────────────┘
            │ 送入 RAG (data_reviewer / admin)
            ▼
     ┌──────────────┐
     │   ingested   │
     │ (已匯入知識庫) │
     └──────────────┘
+
+註：rejected 狀態保留作為審核歷史軌跡，不會自動回到 pending。
+   重送由 submit_for_review 處理：rejected → review_requested。
+   並發保護：approve / reject / ingest / update_file_review_status
+   均使用 SELECT ... FOR UPDATE 鎖定 task 列（PR-2 起）。
 ```
 
 #### 5.19.5 Review API 規格（7 支 API）
@@ -2375,7 +2388,7 @@ CREATE INDEX idx_tasks_approval_status ON tasks(approval_status);
 | task_files | reviewed_by | UUID | 審核人員 ID (FK → users) |
 | task_files | reviewed_at | TIMESTAMP | 審核時間 |
 | task_files | review_note | TEXT | 審核備註 |
-| tasks | approval_status | VARCHAR(50) | 任務批准狀態：pending / approved / rejected / ingested |
+| tasks | approval_status | VARCHAR(50) | 任務批准狀態：pending / review_requested / approved / rejected / ingested |
 | tasks | submitted_by | UUID | 送審提交者 ID (FK → users)，Maker-Checker 中的 Maker |
 | tasks | submitted_at | TIMESTAMP | 送審提交時間 |
 | tasks | approved_by | UUID | 批准人員 ID (FK → users)，Maker-Checker 中的 Checker |
@@ -3050,7 +3063,7 @@ Response 200:
 | TC-05-004 | 任務批准 | 審核完成後批准任務 | 任務狀態更新為 approved |
 | TC-05-005 | 送入 RAG | Admin 將批准任務送入知識庫 | 文件向量化成功，顯示結果 |
 | TC-05-006 | Maker-Checker 送審 | data_cleaner 登入 → 完成清洗任務 → 送審 → 確認 submitted_by 記錄 | 任務狀態變更為 review_requested，submitted_by = cleaner ID |
-| TC-05-007 | Maker-Checker 退回 | data_reviewer 登入 → 開啟已送審任務 → 退回（附理由）→ 確認狀態 | 任務狀態變回 pending，記錄 rejection_reason |
+| TC-05-007 | Maker-Checker 退回 | data_reviewer 登入 → 開啟已送審任務 → 退回（附理由）→ 確認狀態 | 任務狀態變更為 `rejected`（保留審核軌跡），檔案解除凍結，記錄 rejection_reason 與 review_note；cleaner 可重新編輯並再送審（rejected → review_requested） |
 | TC-06-001 | 清洗統計 | 查看 Analytics 清洗統計頁面 | 顯示任務完成率、PII 分佈 |
 | TC-06-002 | 時間軸統計 | 查看時間軸趨勢圖表 | 圖表正確顯示每日處理量 |
 
