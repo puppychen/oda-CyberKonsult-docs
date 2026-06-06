@@ -2,9 +2,9 @@
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**
 >
-> 文件版本：1.3.0
+> 文件版本：1.4.0
 > 建立日期：2026-03-01
-> 最後更新：2026-03-16
+> 最後更新：2026-06-06
 > 文件類型：威脅模型（Threat Model）
 
 ---
@@ -79,6 +79,7 @@
 | **Information Disclosure（資訊洩漏）** | 敏感資料未經授權被存取 | PII 外洩、未授權存取他人對話、內部 API Token 洩漏 | PII 去識別化管線（Presidio + 20 種實體）、RBAC Guard 角色存取控制、X-Internal-Token 內部 API 認證、使用者僅能存取自身對話 | ✅ 已緩解 |
 | **Denial of Service（阻斷服務）** | 攻擊者耗盡系統資源導致服務不可用 | 大量請求灌爆 API、上傳超大檔案、LLM API 配額耗盡、ZIP bomb 壓縮炸彈 | ThrottlerModule 60 req/min 限流、50MB 檔案上傳大小限制、Nginx 反向代理層額外防護、ZIP 解壓縮安全驗證 | ✅ 已緩解 |
 | **Elevation of Privilege（權限提升）** | 低權限使用者存取高權限功能 | 一般使用者存取管理功能、繞過密碼變更要求 | RBAC Guard + @Roles 裝飾器強制角色檢查、PasswordChangeRequiredGuard 全域攔截過期密碼、前端路由守衛 + 後端雙重驗證 | ✅ 已緩解 |
+| **LLM Prompt Injection（提示注入）** | 攻擊者透過使用者輸入或 RAG 文件夾帶指令操控 LLM | 直接注入（覆寫系統提示、越獄）、間接注入（被污染的知識庫文件/網路搜尋結果夾帶指令）、提示洩漏（誘導吐出系統提示）、跨模式越權（誘導 LLM 回應超出角色模式範圍） | 系統提示與使用者輸入分離（結構化 prompt）、RAG 來源限定為經 Maker-Checker 審核的知識庫、SearXNG 結果作為「參考資料」而非指令注入點、回應模式由後端 ChatModeGuard 強制（非 LLM 自決） | ⚠️ 部分緩解（見 §3.4） |
 
 ### 3.2 STRIDE 深度分析
 
@@ -87,9 +88,9 @@
 | 攻擊向量 | 風險等級 | 緩解措施 | 實作位置 |
 |----------|---------|---------|---------|
 | JWT Token 竊取 | 高 | Access Token 短效期、Refresh Token 單次使用 | `apps/api/src/modules/auth/` |
-| 密碼暴力破解 | 中 | bcrypt 12 rounds + 帳號鎖定（5 次 / 15 分鐘） | `apps/api/src/modules/auth/auth.service.ts` |
+| 密碼暴力破解 | 中 | bcrypt 12 rounds + 帳號鎖定（5 次 / 15 分鐘） | `apps/api/src/modules/auth/services/auth.service.ts` |
 | Token 偽造 | 高 | JWT_SECRET >= 64 字元 + HS256 簽章驗證 | `apps/api/src/common/guards/jwt-auth.guard.ts` |
-| 密碼重複使用 | 中 | password_histories 2 代不重複檢查 | `apps/api/src/modules/auth/auth.service.ts` |
+| 密碼重複使用 | 中 | password_histories 2 代不重複檢查 | `apps/api/src/modules/auth/services/auth.service.ts` |
 
 #### T — Tampering（竄改）
 
@@ -115,7 +116,7 @@
 | 攻擊向量 | 風險等級 | 緩解措施 | 實作位置 |
 |----------|---------|---------|---------|
 | PII 原始資料外洩 | 極高 | Presidio 偵測 + 6 種去識別化策略 | `python/data-pipeline/anonymizer/` |
-| 跨使用者對話存取 | 高 | 查詢條件強制綁定 userId | `apps/api/src/modules/chat/chat.service.ts` |
+| 跨使用者對話存取 | 高 | 查詢條件強制綁定 userId | `apps/api/src/modules/chat/services/chat.service.ts` |
 | 內部服務暴露 | 高 | FastAPI/Qdrant/SearXNG 僅內部存取 | Docker 網路隔離 + 防火牆 |
 | 錯誤訊息洩漏 | 低 | HttpExceptionFilter 統一格式化，不暴露 stack trace | `apps/api/src/common/filters/` |
 
@@ -148,6 +149,20 @@ Maker-Checker 職責分離機制引入獨立攻擊面，以下為各威脅類別
 | **Repudiation** | 操作者否認審核決定（批准或退回） | 中 | 完整稽核軌跡：`submitted_by/at`、`approved_by/at`、`edited_by/at`、`reviewed_by/at` 皆記錄於 task/task_files 表；cleaning_audit_logs 記錄所有操作 | `python/rag-service/src/rag_service/db/models.py` |
 | **Info Disclosure** | 透過 reject 理由洩漏 PII 資訊 | 低 | reject 理由由 reviewer 手動輸入，不含系統生成的 PII 內容；稽核日誌僅限 admin 存取 | 流程設計 + RBAC |
 | **Elevation** | cleaner 直接呼叫 approve/ingest API 繞過角色限制 | 高 | NestJS method-level `@Roles('admin', 'data_reviewer')` Guard 強制檢查；FastAPI 端同步驗證 `user_role` | `apps/api/src/modules/cleaning/controllers/review.controller.ts` |
+
+### 3.4 LLM / RAG 特有威脅 — Prompt Injection 分析
+
+本系統核心為 RAG + LLM 問答（三層回應模式），LLM 攻擊面為 STRIDE 之外的獨立風險類別（對應 OWASP LLM Top 10 之 LLM01: Prompt Injection），於 v1.4.0 補入。
+
+| 攻擊向量 | 風險等級 | 說明 | 緩解措施 | 狀態 | 實作位置 |
+|----------|---------|------|---------|------|---------|
+| 直接提示注入 / 越獄 | 高 | 使用者於對話輸入「忽略先前指令」「你現在是…」覆寫系統提示，誘導 LLM 脫離資安顧問角色或洩漏系統提示 | 系統提示與使用者輸入以結構化分層組裝；回應模式參數（topK/temperature/maxTokens/rerank）由後端依角色固定，LLM 不可自選 | ⚠️ 部分緩解 | `apps/api/src/modules/chat/services/chat.service.ts` |
+| 間接提示注入（RAG 文件夾帶） | 高 | 被污染的知識庫文件內含「對 AI 的指令」，於檢索後注入 prompt 操控回答 | 知識庫文件須經 Maker-Checker（送審者 ≠ 審批者）審核才能 ingest，惡意文件不易進入；建議再加「檢索內容以引用區塊包裹、明示為資料非指令」 | ⚠️ 部分緩解（依賴審核流程） | `python/rag-service` ingest + `chat.service.ts` 組裝 |
+| 網路搜尋結果注入 / SSRF | 中 | SearXNG 補充結果含惡意指令或誘導 LLM 抓取內部資源 | SearXNG 僅內部存取、結果作為「參考資料」標示；WebFetcher 限定外部 URL | ⚠️ 部分緩解 | `apps/api/src/modules/websearch/` |
+| 跨模式越權（誘導逾越角色模式） | 中 | 誘導 LLM 提供超出該角色 mode 範圍的深度（如 user 誘導取得 expert 級法規分析） | 回應模式授權由 `ChatModeGuard` + `ROLE_MODE_MATRIX` 後端強制（非 LLM 自決），即使 LLM 被誘導，mode 參數已在伺服器端鎖定 | ✅ 已緩解 | `apps/api/src/modules/chat/guards/chat-mode.guard.ts`、`policies/role-mode.policy.ts` |
+| 提示洩漏（System Prompt Leak） | 低 | 誘導 LLM 吐出系統提示或內部設定 | 系統提示不含機密（無金鑰/內部路徑）；提示模板由 prompts 模組管理 | ⚠️ 殘留風險（POC 可接受） | `apps/api/src/modules/prompts/` |
+
+**結論**：跨模式越權已由後端 `ChatModeGuard` 硬性緩解（攻擊面驗證已確認 it_user 無法取得 expert 模式）；直接/間接注入屬**部分緩解**，主要依賴「知識庫經 Maker-Checker 審核」與「mode 後端強制」兩道結構性防線，建議 Phase 2 補強檢索內容的指令/資料分離標記與輸出側過濾。
 
 ---
 
@@ -301,6 +316,9 @@ Maker-Checker 職責分離機制引入獨立攻擊面，以下為各威脅類別
 | M-027 | DoS | ZIP 解壓縮安全驗證（壓縮比 ≤ 20:1、檔案數 ≤ 100、解壓後總大小 ≤ 200MB） | ✅ 已實作 | FastAPI ZIP 上傳處理 | test_zip_bomb_protection |
 | M-028 | Tampering | ZIP 路徑穿越驗證（拒絕含 `../` 路徑的檔案） | ✅ 已實作 | FastAPI ZIP 上傳處理 | test_zip_slip_protection |
 | M-029 | Tampering | CORS 白名單 + CSP 內容安全政策 | 📋 規劃中 | 基礎設施 | Phase 2 |
+| M-030 | Prompt Injection | 回應模式後端強制（ChatModeGuard + ROLE_MODE_MATRIX），LLM 不可自選 mode，防跨模式越權 | ✅ 已實作 | chat/guards/chat-mode.guard.ts、policies/role-mode.policy.ts | chat-mode.guard.spec、cleaning-authz.spec |
+| M-031 | Prompt Injection | RAG 知識庫 ingest 須經 Maker-Checker 審核，降低間接注入（被污染文件夾帶指令）風險 | ⚠️ 部分緩解 | cleaning review API + rag-service ingest | test_review_api |
+| M-032 | Prompt Injection | 檢索內容指令/資料分離標記 + 輸出側過濾 | 📋 規劃中 | chat.service.ts | Phase 2 |
 
 ---
 
@@ -324,6 +342,7 @@ Maker-Checker 職責分離機制引入獨立攻擊面，以下為各威脅類別
 | v1.1.0 | 2026-03-06 | 新增 Maker-Checker 審核流程 STRIDE 分析、M-023~M-026 緩解措施 |
 | v1.2.0 | 2026-03-11 | 新增 ZIP bomb 與 Zip Slip 威脅分析及緩解措施（M-027、M-028） |
 | v1.3.0 | 2026-03-16 | ML-15：PII 實體數量確認 20 種；新增 CORS/CSP 威脅分析（M-029） |
+| v1.4.0 | 2026-06-06 | 新增 §3.4 LLM/RAG Prompt Injection 分析（OWASP LLM01）+ M-030~M-032；校準 STRIDE 表中 chat/auth service 實作路徑至 `services/` 子目錄 |
 
 ---
 
