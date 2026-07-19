@@ -1,6 +1,13 @@
+---
+audience: human-primary
+purpose: runbook
+status: approved
+owner: ODA Cyber Konsult
+---
+
 # CyberKonsult 開發測試環境設定指南
 
-> 最後更新：2026-03-28
+> 最後更新：2026-07-17
 > 適用版本：ODA Cyber Konsult v1.x
 > 目的：讓開發者或 AI 代理能在 10 分鐘內建立完整可運行的開發測試環境
 
@@ -28,7 +35,7 @@
 | Chatbot UI | 5502 | 聊天介面（React + TailwindCSS） |
 | Cleaner App | 5503 | 清洗審核管理（React + Ant Design） |
 | FastAPI RAG | 3502 | RAG 檢索 + 資料清洗 |
-| PostgreSQL | 5432 | 關聯式資料庫 |
+| PostgreSQL | 由 `.env` 決定（目前 5234） | 關聯式資料庫；可使用本機服務或既有容器 |
 | Qdrant REST | 6333 | 向量資料庫 |
 | Qdrant gRPC | 6334 | 向量資料庫（gRPC） |
 | SearXNG | 8080 | 網路搜尋引擎（Docker 內部） |
@@ -74,24 +81,26 @@ cp .env.example .env
 
 | 變數 | 說明 | 範例 |
 |------|------|------|
-| `DATABASE_URL` | PostgreSQL 連線 | `postgresql://postgres:postgres@localhost:5432/oda_cyber?schema=public` |
+| `DATABASE_URL` | Prisma 使用的 PostgreSQL 連線 | `postgresql://postgres:postgres@localhost:5234/oda_cyber?schema=public` |
+| `RAG_DATABASE_URL` | SQLAlchemy asyncpg 使用的同一資料庫連線 | `postgresql+asyncpg://postgres:postgres@localhost:5234/oda_cyber` |
 | `JWT_SECRET` | JWT 簽章密鑰 | 隨機 64 字元字串 |
+| `JWT_ACCESS_EXPIRES_IN` | Access Token 效期 | `60m` |
+| `JWT_REFRESH_EXPIRES_IN` | Refresh Token 效期 | `7d` |
 | `INTERNAL_API_KEY` | NestJS→FastAPI 認證 | 隨機 64 字元 hex |
 | `RAG_INTERNAL_API_KEY` | 同上（Python 端讀取） | 與 INTERNAL_API_KEY 相同 |
 | `LLM_PROVIDER` | LLM 提供者 | `gemini` 或 `openai` |
 | `RAG_GOOGLE_API_KEY` | Gemini API Key | Google AI Studio 取得 |
 | `RAG_OPENAI_API_KEY` | OpenAI API Key | OpenAI Platform 取得 |
 | `RAG_EMBEDDING_PROVIDER` | 嵌入向量提供者 | `openai`（建議）或 `gemini` |
+| `SEARXNG_URL` | SearXNG 服務位址 | `http://localhost:8080` |
 
-### Step 3：啟動 Docker 基礎設施 + 確認本機 PostgreSQL
+### Step 3：啟動 Docker 基礎設施 + 確認 PostgreSQL
 
 ```bash
-# PostgreSQL 17：本機運行（不由本專案啟動容器）
-# 假設本機 5432 已就緒，例：
-#   brew services start postgresql@17
-# 或啟動其他 ECMap 子專案既有的 PG 容器
-nc -z localhost 5432 || echo "請先啟動本機 PostgreSQL 17"
-# dev-start.sh / setup-dev-env.sh 會自動 createdb oda_cyber（不存在時）
+# PostgreSQL 由 .env 指定，本專案不主動建立或啟動 PostgreSQL 容器。
+# 目前開發環境使用既有 boodion-database 容器：localhost:5234 → 5432。
+bash scripts/health-check.sh
+# setup-dev-env.sh 會依 DATABASE_URL 檢查連線，資料庫不存在時才建立同名資料庫。
 
 # Qdrant 向量資料庫
 docker run -d --name oda-qdrant \
@@ -124,6 +133,14 @@ cd ../..
 # Seed 預設資料（7 使用者 + 8 提示詞範本 + 搜尋設定 + demo 對話）
 cd apps/api && pnpm seed && cd ../..
 ```
+
+`0010_remove_websearch_url_default` 會移除 `web_search_configs.searxng_url` 的資料庫預設值，避免將本機 URL 帶到其他環境。套用後可在專案根目錄執行：
+
+```bash
+./scripts/verify-migration-0010.sh
+```
+
+既有設定若仍是舊版 `http://localhost:8888`，API 第一次讀取時會改成 `.env` 的 `SEARXNG_URL`；管理者已設定的其他 URL 會保留。
 
 ### Step 5：啟動全部服務
 
@@ -162,7 +179,6 @@ open http://localhost:5503  # Cleaner
 | reviewer@oda-cyber.com | OdaPoc2026! | data_reviewer | Cleaner |
 | consultant@oda-cyber.com | OdaPoc2026! | consultant | Chatbot |
 | user@oda-cyber.com | OdaPoc2026! | user | Chatbot |
-| ituser@oda-cyber.com | OdaPoc2026! | it_user | Chatbot |
 | basic@oda-cyber.com | OdaPoc2026! | basic_user | Chatbot（僅新手模式） |
 
 > 首次登入系統會要求變更密碼（資通安全「普」級密碼政策）
@@ -351,7 +367,7 @@ curl -X POST http://localhost:3502/api/v1/rag/retrieve \
 | 問題 | 原因 | 解決方式 |
 |------|------|---------|
 | `pnpm dev` 報錯 | Node 版本不對 | `nvm use` |
-| Prisma migrate 失敗 | 本機 PostgreSQL 未啟動 | `brew services start postgresql@17`，或啟動既有 PG 容器 |
+| Prisma migrate 失敗 | `.env` 指定的 PostgreSQL 未啟動或連線資訊不符 | 執行 `bash scripts/health-check.sh`，再啟動對應服務或修正 `DATABASE_URL`／`RAG_DATABASE_URL` |
 | RAG Service 401 | 缺少 X-Internal-Token | 確認 .env 的 RAG_INTERNAL_API_KEY |
 | Embedding 429 | Gemini 免費額度用完 | `.env` 改 `RAG_EMBEDDING_PROVIDER=openai` |
 | Chatbot 無回應 | RAG Service 未啟動 | 第二終端啟動 FastAPI |

@@ -1,0 +1,96 @@
+<!--
+---
+audience: human-primary
+purpose: decision
+status: review
+owner: Jake
+---
+-->
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin 現有風格功能調整 Mockup</title>
+  <style>
+    :root { --primary:#1677ff; --text:#000000e0; --secondary:#00000073; --border:#f0f0f0; --content:#f5f5f5; --sider:#001529; --success:#52c41a; }
+    * { box-sizing:border-box; letter-spacing:0; }
+    body { margin:0; color:var(--text); background:#dfe3e8; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHei",sans-serif; }
+    button,input,select,textarea { font:inherit; }
+    .review-tools { min-height:52px; padding:8px 16px; display:flex; align-items:center; justify-content:center; gap:8px; border-bottom:1px solid #cbd1d8; background:#e8ebef; }
+    .review-tools span { margin-right:6px; color:#475569; font-size:13px; font-weight:700; }
+    .review-tools button { min-height:34px; padding:0 13px; border:1px solid #b7bec8; border-radius:6px; background:#fff; cursor:pointer; }
+    .review-tools button.active { color:#fff; border-color:var(--primary); background:var(--primary); }
+    .app { width:min(1400px,100%); min-height:calc(100vh - 52px); margin:auto; display:grid; grid-template-columns:200px 1fr; background:var(--content); box-shadow:0 10px 34px rgba(0,0,0,.13); }
+    aside { background:var(--sider); color:#ffffffa6; }
+    .logo { min-height:82px; padding:16px 24px; border-bottom:1px solid rgba(255,255,255,.12); background:#fff; }
+    .logo img { width:120px; }
+    .logo small { display:block; margin-top:3px; color:#666; font-size:13px; }
+    nav { padding:8px 0; }
+    nav button { width:100%; min-height:40px; padding:0 20px; border:0; color:#ffffffa6; background:transparent; text-align:left; cursor:pointer; }
+    nav button.active { color:#fff; background:var(--primary); }
+    .right { min-width:0; }
+    header { height:64px; padding:0 24px; display:flex; align-items:center; justify-content:flex-end; border-bottom:1px solid var(--border); background:#fff; }
+    .user { min-height:34px; padding:0 12px; display:flex; align-items:center; gap:8px; border:0; background:#fff; }
+    .content { min-height:calc(100vh - 116px); padding:24px; background:var(--content); }
+    .view[hidden] { display:none; }
+    .card { padding:24px; border:1px solid var(--border); border-radius:8px; background:#fff; }
+    .toolbar { margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:14px; }
+    h1 { margin:0; font-size:24px; font-weight:600; }
+    h2 { margin:0; font-size:16px; }
+    .actions { display:flex; gap:8px; }
+    .control { min-height:32px; padding:0 11px; border:1px solid #d9d9d9; border-radius:6px; background:#fff; cursor:pointer; }
+    .control.primary { color:#fff; border-color:var(--primary); background:var(--primary); }
+    .search { width:250px; padding-left:12px; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th,td { padding:16px; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }
+    th { background:#fafafa; font-weight:600; }
+    select { width:160px; min-height:32px; padding:0 8px; border:1px solid #d9d9d9; border-radius:6px; background:#fff; }
+    .tag { display:inline-block; padding:1px 7px; border:1px solid #b7eb8f; border-radius:6px; color:#389e0d; background:#f6ffed; font-size:12px; }
+    .link { color:var(--primary); border:0; background:transparent; cursor:pointer; }
+    .settings { max-width:720px; }
+    .settings > h1 { margin-bottom:24px; }
+    .settings-card { margin-bottom:24px; border:1px solid var(--border); border-radius:8px; background:#fff; }
+    .settings-head { padding:14px 24px; border-bottom:1px solid var(--border); font-weight:600; }
+    .settings-body { padding:24px; }
+    .alert { margin-bottom:20px; padding:10px 14px; border:1px solid #91caff; border-radius:8px; background:#e6f4ff; color:#0958d9; line-height:1.55; }
+    .field { max-width:330px; margin-bottom:20px; }
+    label { display:block; margin-bottom:8px; font-size:14px; }
+    .field input { width:100%; min-height:32px; padding:0 11px; border:1px solid #d9d9d9; border-radius:6px; }
+    .help { margin-top:5px; color:var(--secondary); font-size:12px; line-height:1.5; }
+    dialog { width:min(700px,calc(100vw - 32px)); padding:0; border:0; border-radius:8px; box-shadow:0 18px 55px rgba(0,0,0,.25); }
+    dialog::backdrop { background:rgba(0,0,0,.45); }
+    .modal-head,.modal-foot { padding:16px 24px; border-bottom:1px solid var(--border); }
+    .modal-foot { display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--border); border-bottom:0; }
+    .modal-body { padding:24px; }
+    textarea { width:100%; min-height:210px; padding:10px; border:1px solid #d9d9d9; border-radius:6px; resize:vertical; }
+    @media (max-width:900px) { .app { grid-template-columns:1fr; } aside { display:none; } .content { padding:12px; overflow:auto; } .card { min-width:820px; } .review-tools { flex-wrap:wrap; } }
+  </style>
+</head>
+<body>
+  <div class="review-tools"><span>Mockup 頁面（正式介面不顯示）</span><button class="active" data-view="users">使用者管理</button><button data-view="prompts">提示詞管理</button><button data-view="settings">系統設定</button></div>
+  <div class="app">
+    <aside><div class="logo"><img src="../../../apps/admin/src/assets/cyberkonsult-logo.png" alt="CyberKonsult"><small>Data Cleaning</small></div><nav><button>⌂　首頁</button><button>☷　任務中心</button><button>▥　資料分析</button><button class="active" data-nav="users">♙　使用者管理</button><button data-nav="prompts">✎　提示詞管理</button><button>☵　對話記錄</button><button>⌕　稽核日誌</button><button>☁　資料來源</button><button data-nav="settings">⚙　系統設定</button><button>↗　清洗管理</button></nav></aside>
+    <section class="right"><header><button class="user">♙　System Admin　⌄</button></header><main class="content">
+      <section id="users" class="view"><div class="card"><div class="toolbar"><h1>使用者管理</h1><div class="actions"><input class="control search" placeholder="⌕  搜尋姓名或 Email"><button class="control">↻　重新整理</button><button class="control primary">＋　新增使用者</button></div></div><table><thead><tr><th>姓名</th><th>Email</th><th>角色</th><th>狀態</th><th>最後登入</th><th>建立時間</th><th>操作</th></tr></thead><tbody><tr><td>Basic User</td><td>basic@oda-cyber.com</td><td><select><option selected>新手（Free）</option><option>一般（Plus）</option><option>顧問（Pro）</option><option>資料清洗人員</option><option>資料審查人員</option><option>管理員</option></select></td><td><span class="tag">啟用</span></td><td>2026/7/11 09:15</td><td>2026/3/11 10:00</td><td><button class="control">✎　編輯</button></td></tr><tr><td>Demo User</td><td>user@oda-cyber.com</td><td><select><option>新手（Free）</option><option selected>一般（Plus）</option><option>顧問（Pro）</option><option>資料清洗人員</option><option>資料審查人員</option><option>管理員</option></select></td><td><span class="tag">啟用</span></td><td>2026/7/11 09:20</td><td>2026/2/24 14:30</td><td><button class="control">✎　編輯</button></td></tr></tbody></table></div></section>
+      <section id="prompts" class="view" hidden><div class="card"><div class="toolbar"><h1>提示詞管理</h1><div class="actions"><button class="control">↻　重新整理</button></div></div><table><thead><tr><th>名稱</th><th>對應回應層級</th><th>狀態</th><th>建立時間</th><th>操作</th></tr></thead><tbody><tr><td>新手提示詞</td><td>新手</td><td><span class="tag">啟用</span></td><td>2026/7/11 10:20</td><td><button class="link">⚗　測試</button><button class="link edit" data-level="新手">✎　編輯</button></td></tr><tr><td>一般提示詞</td><td>一般</td><td><span class="tag">啟用</span></td><td>2026/7/11 10:20</td><td><button class="link">⚗　測試</button><button class="link edit" data-level="一般">✎　編輯</button></td></tr><tr><td>顧問提示詞</td><td>顧問</td><td><span class="tag">啟用</span></td><td>2026/7/11 10:20</td><td><button class="link">⚗　測試</button><button class="link edit" data-level="顧問">✎　編輯</button></td></tr></tbody></table></div></section>
+      <section id="settings" class="view settings" hidden><h1>系統設定</h1><div class="settings-card"><div class="settings-head">Demo 模式視覺調整</div><div class="settings-body" style="color:var(--secondary)">既有設定卡片維持原樣</div></div><div class="settings-card"><div class="settings-head">Chatbot 方案設定</div><div class="settings-body"><div class="alert">Free 方案的每日 Chatbot 提問額度；一般、顧問與內部帳號不受此限制。</div><div class="field"><label for="freeLimit">Free 每日提問額度</label><input id="freeLimit" type="number" min="1" max="1000" value="20"><div class="help">允許 1–1000 次，Asia/Taipei 每日 00:00 重設。</div></div><button class="control primary">▣　儲存設定</button></div></div><div class="settings-card"><div class="settings-head">網路搜尋補充</div><div class="settings-body" style="color:var(--secondary)">既有設定卡片維持原樣</div></div></section>
+    </main></section>
+  </div>
+  <dialog id="editor"><div class="modal-head"><strong id="modalTitle">編輯提示詞</strong></div><div class="modal-body"><label for="promptText">提示詞內容</label><textarea id="promptText">你是 CyberKonsult 資安顧問助手。
+
+參考資料：
+{context}</textarea></div><div class="modal-foot"><button class="control" id="cancel">取消</button><button class="control primary">儲存</button></div></dialog>
+  <script>
+    function showView(id) {
+      document.querySelectorAll('.view').forEach((view) => { view.hidden = view.id !== id; });
+      document.querySelectorAll('[data-view]').forEach((button) => button.classList.toggle('active', button.dataset.view === id));
+      document.querySelectorAll('[data-nav]').forEach((button) => button.classList.toggle('active', button.dataset.nav === id));
+    }
+    document.querySelectorAll('[data-view],[data-nav]').forEach((button) => button.addEventListener('click', () => showView(button.dataset.view || button.dataset.nav)));
+    const editor = document.getElementById('editor');
+    document.querySelectorAll('.edit').forEach((button) => button.addEventListener('click', () => { document.getElementById('modalTitle').textContent = `編輯${button.dataset.level}提示詞`; editor.showModal(); }));
+    document.getElementById('cancel').addEventListener('click', () => editor.close());
+  </script>
+</body>
+</html>

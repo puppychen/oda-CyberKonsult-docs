@@ -1,6 +1,14 @@
+---
+audience: ai-primary
+purpose: api-reference
+status: approved
+owner: ODA Cyber Konsult
+---
+
 # WebSearch API 文件
 
 > ODA Cyber Konsult WebSearch 系統 API - SearXNG 整合與 RAG 檢索
+> 最後更新：2026-07-13
 
 Base URL (NestJS): `http://localhost:3051/api`
 Base URL (FastAPI): `http://localhost:3502/api/v1`
@@ -68,9 +76,10 @@ LLM 生成回答
 | 組件 | 說明 |
 |------|------|
 | **SearXNG** | 元搜尋引擎（整合 Google、Bing、DuckDuckGo 等） |
-| **WebFetchService** | 網頁內容擷取與清理服務 |
-| **RAG Service** | 知識庫檢索與回答生成 |
-| **NestJS Proxy** | WebSearch Config 管理 API（Admin 專用） |
+| **WebFetcherService** | 網頁內容擷取與清理服務 |
+| **RAG Service** | 知識庫檢索服務，不負責 WebSearch 設定與回答生成 |
+| **NestJS Chat** | 判斷是否觸發網路搜尋、合併上下文並呼叫 LLM |
+| **NestJS Config API** | WebSearch Config 管理 API（Admin 專用） |
 
 ---
 
@@ -89,13 +98,13 @@ LLM 生成回答
   "success": true,
   "data": {
     "enabled": true,
-    "minResultsThreshold": 3,
-    "minScoreThreshold": 0.7,
+    "minResultsThreshold": 5,
+    "minScoreThreshold": 0.5,
     "maxResults": 5,
-    "searxngUrl": "http://localhost:8888",
+    "searxngUrl": "http://localhost:8080",
     "webFetchMaxLength": 3000,
-    "webFetchTimeout": 30,
-    "categories": ["general"],
+    "webFetchTimeout": 15,
+    "categories": "general",
     "language": "zh-TW"
   },
   "timestamp": "2026-02-13T10:00:00.000Z"
@@ -113,8 +122,8 @@ LLM 生成回答
 | `searxngUrl` | string | SearXNG 服務位址 |
 | `webFetchMaxLength` | integer | 網頁擷取最大長度（500-10000 字元） |
 | `webFetchTimeout` | integer | 網頁擷取超時時間（5-60 秒） |
-| `categories` | string[] | SearXNG 搜尋分類 |
-| `language` | string | 搜尋語言（zh-TW / en-US） |
+| `categories` | string | SearXNG 搜尋分類；多分類時使用 SearXNG 接受的字串格式 |
+| `language` | string | 傳給 SearXNG 的搜尋語言，預設 `zh-TW` |
 
 ---
 
@@ -129,13 +138,13 @@ LLM 生成回答
 ```json
 {
   "enabled": true,
-  "minResultsThreshold": 3,
-  "minScoreThreshold": 0.7,
+  "minResultsThreshold": 5,
+  "minScoreThreshold": 0.5,
   "maxResults": 5,
-  "searxngUrl": "http://localhost:8888",
+  "searxngUrl": "http://localhost:8080",
   "webFetchMaxLength": 3000,
-  "webFetchTimeout": 30,
-  "categories": ["general", "news"],
+  "webFetchTimeout": 15,
+  "categories": "general",
   "language": "zh-TW"
 }
 ```
@@ -148,11 +157,11 @@ LLM 生成回答
 | `minResultsThreshold` | 選填，整數 0-50 |
 | `minScoreThreshold` | 選填，浮點數 0-1 |
 | `maxResults` | 選填，整數 1-20 |
-| `searxngUrl` | 選填，必須為有效 URL |
+| `searxngUrl` | 選填，字串；管理者須提供目前環境可連線的 HTTP(S) 位址 |
 | `webFetchMaxLength` | 選填，整數 500-10000 |
 | `webFetchTimeout` | 選填，整數 5-60 |
-| `categories` | 選填，字串陣列 |
-| `language` | 選填，字串（zh-TW / en-US / en / zh） |
+| `categories` | 選填，字串 |
+| `language` | 選填，字串 |
 
 **Response (200 OK):**
 
@@ -161,13 +170,13 @@ LLM 生成回答
   "success": true,
   "data": {
     "enabled": true,
-    "minResultsThreshold": 3,
-    "minScoreThreshold": 0.7,
+    "minResultsThreshold": 5,
+    "minScoreThreshold": 0.5,
     "maxResults": 5,
-    "searxngUrl": "http://localhost:8888",
+    "searxngUrl": "http://localhost:8080",
     "webFetchMaxLength": 3000,
-    "webFetchTimeout": 30,
-    "categories": ["general", "news"],
+    "webFetchTimeout": 15,
+    "categories": "general",
     "language": "zh-TW"
   },
   "timestamp": "2026-02-13T10:05:00.000Z"
@@ -180,7 +189,7 @@ LLM 生成回答
 
 ### POST `/api/v1/rag/retrieve`
 
-執行 RAG 檢索（**僅檢索，不生成回答**），用於測試 WebSearch 觸發邏輯。
+執行 RAG 檢索（**僅檢索，不生成回答**）。此端點只提供知識庫結果與 metadata；是否觸發 WebSearch 由 NestJS `ChatService` 根據 metadata 與後台設定判斷。
 
 **Base URL**: FastAPI (`http://localhost:3502`)
 
@@ -245,12 +254,14 @@ LLM 生成回答
 **觸發 WebSearch 判斷:**
 
 ```python
-# 假設 Config: minResultsThreshold=3, minScoreThreshold=0.7
+# 假設 Config: minResultsThreshold=5, minScoreThreshold=0.5
 
-# 範例 1: count=2 < 3 → 觸發 WebSearch
-# 範例 2: count=5, best_score=0.65 < 0.7 → 觸發 WebSearch
-# 範例 3: count=5, best_score=0.85 → 不觸發 WebSearch
+# 範例 1: count=2 < 5 → 觸發 WebSearch
+# 範例 2: count=5, cosine best_score=0.4 < 0.5 → 觸發 WebSearch
+# 範例 3: count=5, cosine best_score=0.85 → 不觸發 WebSearch
 ```
+
+Hybrid RRF 分數通常低於 cosine 分數。當 `0 < best_score < 0.05` 時，系統將其視為 RRF，分數門檻採 `min(後台 minScoreThreshold, 0.005)`，避免把正常 RRF 結果一律誤判為不足；結果數量門檻仍照後台設定。
 
 ---
 
@@ -265,7 +276,7 @@ WebSearch 整合後，LLM 生成回答時會同時使用知識庫與網路搜尋
 | `LLM_PROVIDER` | `gemini` | LLM 提供者（`gemini` / `openai`） |
 | `GEMINI_API_KEY` | - | Google AI API Key（使用 Gemini 時必填） |
 | `OPENAI_API_KEY` | - | OpenAI API Key（使用 OpenAI 時必填） |
-| `LLM_MODEL_GEMINI` | `gemini-2.0-flash-exp` | Gemini 模型名稱 |
+| `LLM_MODEL_GEMINI` | `gemini-2.0-flash` | Gemini 模型名稱 |
 | `LLM_MODEL_OPENAI` | `gpt-4o-mini` | OpenAI 模型名稱 |
 | `LLM_TEMPERATURE` | `0.1` | 生成溫度（0-2） |
 | `LLM_MAX_TOKENS` | `2048` | 最大生成 Token 數 |
@@ -297,23 +308,20 @@ services:
   searxng:
     image: searxng/searxng:latest
     container_name: oda-searxng
-    networks:
-      - oda-network
+    networks: [oda-internal]
     # 不映射外部 Port
-    environment:
-      - SEARXNG_BASE_URL=http://searxng:8888
     volumes:
-      - ./config/searxng:/etc/searxng
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+      - ./searxng/limiter.toml:/etc/searxng/limiter.toml:ro
 
-  rag-service:
+  api:
     environment:
-      - WEBSEARCH_ENABLED=true
-      - SEARXNG_URL=http://searxng:8888  # Docker 內部互連
+      - SEARXNG_URL=http://searxng:8080  # Docker 內部互連
     depends_on:
       - searxng
 ```
 
-**內部連線**: RAG Service 透過 Docker network (`oda-network`) 存取 SearXNG，外部無法直接訪問。
+**內部連線**：NestJS API 透過 Docker network 存取 SearXNG，外部無法直接訪問。正式 compose 的 SearXNG 容器使用內部 port 8080。
 
 ---
 
@@ -323,29 +331,26 @@ services:
 
 ```bash
 # WebSearch 設定
-WEBSEARCH_ENABLED=true
-SEARXNG_URL=http://localhost:8888
-WEBSEARCH_MIN_RESULTS=3
-WEBSEARCH_MIN_SCORE=0.7
-WEBSEARCH_MAX_RESULTS=5
-WEBSEARCH_FETCH_TIMEOUT=30
-WEBSEARCH_FETCH_MAX_LENGTH=3000
+SEARXNG_URL=http://localhost:8080
 ```
+
+功能開關、觸發門檻、搜尋結果上限、擷取長度與逾時由管理後台「系統設定」寫入 PostgreSQL，不使用 `WEBSEARCH_*` 環境變數。
 
 **啟動 SearXNG**:
 
 ```bash
 docker run -d \
-  --name searxng \
-  -p 8888:8080 \
-  -v $(pwd)/config/searxng:/etc/searxng \
+  --name oda-searxng \
+  -p 8080:8080 \
+  -v "$(pwd)/docker/searxng/settings.yml:/etc/searxng/settings.yml:ro" \
+  -v "$(pwd)/docker/searxng/limiter.toml:/etc/searxng/limiter.toml:ro" \
   searxng/searxng:latest
 ```
 
 **測試連線**:
 
 ```bash
-curl http://localhost:8888/search?q=cybersecurity&format=json
+curl 'http://localhost:8080/search?q=cybersecurity&format=json'
 ```
 
 ---
@@ -363,7 +368,7 @@ curl http://localhost:8888/search?q=cybersecurity&format=json
 **範例日誌**:
 
 ```
-[WARN] WebSearch request failed: Connection refused (http://localhost:8888)
+[WARN] WebSearch request failed: Connection refused (http://localhost:8080)
 [INFO] Falling back to RAG-only results
 ```
 
@@ -436,8 +441,8 @@ curl -X PUT http://localhost:3051/api/websearch/config \
   -H "Content-Type: application/json" \
   -d '{
     "enabled": true,
-    "minResultsThreshold": 3,
-    "minScoreThreshold": 0.7,
+    "minResultsThreshold": 5,
+    "minScoreThreshold": 0.5,
     "maxResults": 5,
     "webFetchTimeout": 30
   }'
@@ -508,8 +513,8 @@ print(f"Results count: {data['metadata']['count']}")
 print(f"Best score: {data['metadata']['best_score']}")
 
 # 判斷是否會觸發 WebSearch
-min_results = 3
-min_score = 0.7
+min_results = 5
+min_score = 0.5
 
 if data['metadata']['count'] < min_results or data['metadata']['best_score'] < min_score:
     print("✓ Would trigger WebSearch")
@@ -524,13 +529,14 @@ else:
 1. **權限控制**: Config 管理端點（`/api/websearch/config`）僅限 Admin 角色存取。
 2. **觸發邏輯**: 雙閾值採用 **OR 邏輯**（任一條件成立即觸發），非 AND。
 3. **優雅降級**: SearXNG 離線不影響系統正常運作，會自動回退至知識庫結果。
-4. **網頁擷取超時**: 預設 30 秒，可透過 `webFetchTimeout` 調整（5-60 秒）。
+4. **網頁擷取超時**: 預設 15 秒，可透過 `webFetchTimeout` 調整（5-60 秒）。
 5. **內容長度限制**: 預設擷取前 3000 字元，可透過 `webFetchMaxLength` 調整（500-10000）。
 6. **語言設定**: 支援 `zh-TW`（繁體中文）、`en-US`（英文）等 SearXNG 標準語言代碼。
-7. **分類設定**: SearXNG 支援多種分類（general、news、science、tech 等），可依需求調整。
+7. **分類設定**: `categories` 是字串，預設 `general`；如需多分類，使用 SearXNG 接受的字串格式。
 8. **正式環境安全**: SearXNG 不對外開放，僅供 Docker 內部服務使用。
-9. **開發環境**: 本機測試時需手動啟動 SearXNG Docker 容器並映射 Port 8888。
+9. **開發環境**: 本機測試時啟動 SearXNG Docker 容器並映射 Port 8080。
 10. **RAG Retrieve**: 此端點不生成回答，僅返回檢索結果與元資料，適合測試觸發邏輯。
+11. **環境 URL**：`SEARXNG_URL` 只作為建立設定及舊版 `localhost:8888` 校正的環境預設；管理者設定的其他 URL 不會被環境值覆寫。
 
 ---
 

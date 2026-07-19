@@ -1,17 +1,26 @@
+---
+audience: both
+purpose: spec
+status: approved
+owner: ODA Cyber Konsult
+---
+
 # 威脅模型 (Threat Model)
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**
 >
-> 文件版本：1.4.0
+> 文件版本：1.6.0
 > 建立日期：2026-03-01
-> 最後更新：2026-06-06
+> 最後更新：2026-07-13
 > 文件類型：威脅模型（Threat Model）
 
 ---
 
 ## 1. 文件目的
 
-本文件以 STRIDE 方法論分析系統面臨的安全威脅，識別攻擊面與風險等級，並追蹤緩解措施的實作狀態。適用對象為安全審查人員、架構師與運維團隊。
+> **TL;DR**：認證工作階段以 `sid` 識別、以 `tokenUse` 隔離用途，並以 Refresh `jti` 單次輪替；撤銷狀態由資料庫即時驗證。前端跨分頁只允許一個刷新者，暫時性服務錯誤不得被誤判為使用者登出。
+
+本文件以 STRIDE 方法論分析系統面臨的安全威脅，識別攻擊面與風險等級，並追蹤緩解措施的實作狀態。適用對象為安全審查人員、架構師與維運團隊。
 
 ---
 
@@ -60,8 +69,9 @@
 | 資料類型 | 敏感等級 | 儲存位置 | 保護措施 |
 |----------|---------|---------|---------|
 | 密碼 hash | 極高 | PostgreSQL (users.password) | bcrypt 12 rounds |
-| JWT Access Token | 高 | 客戶端記憶體 | 短效期 + HTTPS Only |
-| JWT Refresh Token | 高 | 客戶端 / PostgreSQL | 單次使用 + 過期機制 |
+| JWT Access Token | 高 | 瀏覽器各應用程式 localStorage + 相容性 httpOnly Cookie | 60 分鐘效期 + HTTPS + CSP + `sid` 撤銷檢查 + `tokenUse=access` |
+| JWT Refresh Token | 高 | 瀏覽器各應用程式 localStorage + PostgreSQL 雜湊 | 7 天效期 + `jti` 單次輪替 + bcrypt 雜湊 + 應用程式隔離 + `tokenUse=refresh` |
+| 工作階段紀錄 | 高 | PostgreSQL (`auth_sessions`) | 每帳號最多 10 個、撤銷時間、到期時間、client type 白名單 |
 | 密碼歷史 hash | 高 | PostgreSQL (password_histories) | bcrypt 12 rounds + 僅存 2 代 |
 | X-Internal-Token | 高 | 環境變數 (.env) | HMAC 驗證 + 不對外暴露 |
 
@@ -73,13 +83,13 @@
 
 | 威脅類別 | 威脅描述 | 攻擊情境 | 現有緩解措施 | 狀態 |
 |----------|---------|---------|-------------|------|
-| **Spoofing（偽冒）** | 攻擊者冒充合法使用者存取系統 | 竊取或偽造 JWT Token、暴力破解密碼 | JWT 認證（access + refresh token）、bcrypt 12 rounds 密碼雜湊、帳號鎖定（5 次失敗鎖 15 分鐘） | ✅ 已緩解 |
+| **Spoofing（偽冒）** | 攻擊者冒充合法使用者存取系統 | 竊取或偽造 JWT Token、Refresh Token 冒充 Access／重播、暴力破解密碼 | JWT 認證、`tokenUse` 用途隔離、Access `sid` session 驗證、Refresh `jti` 原子輪替、bcrypt 密碼雜湊、帳號鎖定 | ✅ 已緩解 |
 | **Tampering（竄改）** | 攻擊者竄改請求資料或資料庫內容 | SQL Injection、XSS、API 參數竄改、ZIP 路徑穿越（Zip Slip） | ValidationPipe + class-validator 輸入驗證、Prisma/SQLAlchemy 參數化查詢、HMAC 內部 API 簽章、ZIP 路徑穿越驗證 | ✅ 已緩解 |
 | **Repudiation（否認）** | 使用者否認曾執行特定操作 | 刪除清洗任務後否認、修改審核結果後否認 | AuditLog Interceptor 全域攔截記錄、稽核日誌含使用者 ID + 時間戳 + 操作詳情、日誌不可刪除（僅 admin 可查詢匯出） | ✅ 已緩解 |
 | **Information Disclosure（資訊洩漏）** | 敏感資料未經授權被存取 | PII 外洩、未授權存取他人對話、內部 API Token 洩漏 | PII 去識別化管線（Presidio + 20 種實體）、RBAC Guard 角色存取控制、X-Internal-Token 內部 API 認證、使用者僅能存取自身對話 | ✅ 已緩解 |
 | **Denial of Service（阻斷服務）** | 攻擊者耗盡系統資源導致服務不可用 | 大量請求灌爆 API、上傳超大檔案、LLM API 配額耗盡、ZIP bomb 壓縮炸彈 | ThrottlerModule 60 req/min 限流、50MB 檔案上傳大小限制、Nginx 反向代理層額外防護、ZIP 解壓縮安全驗證 | ✅ 已緩解 |
 | **Elevation of Privilege（權限提升）** | 低權限使用者存取高權限功能 | 一般使用者存取管理功能、繞過密碼變更要求 | RBAC Guard + @Roles 裝飾器強制角色檢查、PasswordChangeRequiredGuard 全域攔截過期密碼、前端路由守衛 + 後端雙重驗證 | ✅ 已緩解 |
-| **LLM Prompt Injection（提示注入）** | 攻擊者透過使用者輸入或 RAG 文件夾帶指令操控 LLM | 直接注入（覆寫系統提示、越獄）、間接注入（被污染的知識庫文件/網路搜尋結果夾帶指令）、提示洩漏（誘導吐出系統提示）、跨模式越權（誘導 LLM 回應超出角色模式範圍） | 系統提示與使用者輸入分離（結構化 prompt）、RAG 來源限定為經 Maker-Checker 審核的知識庫、SearXNG 結果作為「參考資料」而非指令注入點、回應模式由後端 ChatModeGuard 強制（非 LLM 自決） | ⚠️ 部分緩解（見 §3.4） |
+| **LLM Prompt Injection（提示注入）** | 攻擊者透過使用者輸入或 RAG 文件夾帶指令操控 LLM | 直接注入（覆寫系統提示、越獄）、間接注入（被污染的知識庫文件/網路搜尋結果夾帶指令）、提示洩漏（誘導吐出系統提示）、跨層級越權（誘導 LLM 回應超出角色可用層級） | 系統提示與使用者輸入分離（結構化 prompt）、RAG 來源限定為經 Maker-Checker 審核的知識庫、SearXNG 結果作為「參考資料」而非指令注入點、回應層級由後端 ChatModeGuard 強制（非 LLM 自決） | ⚠️ 部分緩解（見 §3.4） |
 
 ### 3.2 STRIDE 深度分析
 
@@ -88,7 +98,12 @@
 | 攻擊向量 | 風險等級 | 緩解措施 | 實作位置 |
 |----------|---------|---------|---------|
 | JWT Token 竊取 | 高 | Access Token 短效期、Refresh Token 單次使用 | `apps/api/src/modules/auth/` |
-| 密碼暴力破解 | 中 | bcrypt 12 rounds + 帳號鎖定（5 次 / 15 分鐘） | `apps/api/src/modules/auth/services/auth.service.ts` |
+| Refresh Token 冒充 Access | 高 | Token Payload 明確標記 `tokenUse`；JWT Strategy 在查詢使用者前拒絕 Refresh Token | `token.service.ts`、`jwt.strategy.ts` |
+| Refresh Token 重播 | 高 | `auth_sessions.current_jti` 唯一索引；條件更新失敗即撤銷該 session | `auth-session.repository.ts`、`auth.service.ts` |
+| 跨分頁同時刷新／切換帳號 | 中 | 同分頁共用 Promise；跨分頁 Web Locks／Bakery-style 多鍵競爭者租約；回應落地前重驗認證快照，不清除或覆寫不同使用者 Token | 三個前端 `api/client.ts`、`crossTabMutex.ts` |
+| 重新登入切換成他人帳號 | 高 | 重新登入帳號欄唯讀，回傳使用者 ID 必須與原工作階段相同；拒絕不同帳號並撤銷該次新工作階段 | 三個前端 `useAuth.ts`、`SessionRecovery.tsx` |
+| 已撤銷 Access Token 持續使用 | 高 | JWT Strategy 每次驗證 `sid` 所屬使用者、`revoked_at` 與 `expires_at` | `jwt.strategy.ts` |
+| 密碼暴力破解 | 中 | bcrypt 12 rounds + 帳號鎖定（5 次 / 15 分鐘）；失敗計數採 PostgreSQL 原子更新避免並行覆寫 | `apps/api/src/modules/auth/services/auth.service.ts` |
 | Token 偽造 | 高 | JWT_SECRET >= 64 字元 + HS256 簽章驗證 | `apps/api/src/common/guards/jwt-auth.guard.ts` |
 | 密碼重複使用 | 中 | password_histories 2 代不重複檢查 | `apps/api/src/modules/auth/services/auth.service.ts` |
 
@@ -156,13 +171,13 @@ Maker-Checker 職責分離機制引入獨立攻擊面，以下為各威脅類別
 
 | 攻擊向量 | 風險等級 | 說明 | 緩解措施 | 狀態 | 實作位置 |
 |----------|---------|------|---------|------|---------|
-| 直接提示注入 / 越獄 | 高 | 使用者於對話輸入「忽略先前指令」「你現在是…」覆寫系統提示，誘導 LLM 脫離資安顧問角色或洩漏系統提示 | 系統提示與使用者輸入以結構化分層組裝；回應模式參數（topK/temperature/maxTokens/rerank）由後端依角色固定，LLM 不可自選 | ⚠️ 部分緩解 | `apps/api/src/modules/chat/services/chat.service.ts` |
+| 直接提示注入 / 越獄 | 高 | 使用者於對話輸入「忽略先前指令」「你現在是…」覆寫系統提示，誘導 LLM 脫離資安顧問角色或洩漏系統提示 | 系統提示與使用者輸入以結構化分層組裝；回應層級參數（topK/temperature/maxTokens/rerank）由後端依選定層級固定，LLM 不可自選 | ⚠️ 部分緩解 | `apps/api/src/modules/chat/services/chat.service.ts` |
 | 間接提示注入（RAG 文件夾帶） | 高 | 被污染的知識庫文件內含「對 AI 的指令」，於檢索後注入 prompt 操控回答 | 知識庫文件須經 Maker-Checker（送審者 ≠ 審批者）審核才能 ingest，惡意文件不易進入；建議再加「檢索內容以引用區塊包裹、明示為資料非指令」 | ⚠️ 部分緩解（依賴審核流程） | `python/rag-service` ingest + `chat.service.ts` 組裝 |
 | 網路搜尋結果注入 / SSRF | 中 | SearXNG 補充結果含惡意指令或誘導 LLM 抓取內部資源 | SearXNG 僅內部存取、結果作為「參考資料」標示；WebFetcher 限定外部 URL | ⚠️ 部分緩解 | `apps/api/src/modules/websearch/` |
-| 跨模式越權（誘導逾越角色模式） | 中 | 誘導 LLM 提供超出該角色 mode 範圍的深度（如 user 誘導取得 expert 級法規分析） | 回應模式授權由 `ChatModeGuard` + `ROLE_MODE_MATRIX` 後端強制（非 LLM 自決），即使 LLM 被誘導，mode 參數已在伺服器端鎖定 | ✅ 已緩解 | `apps/api/src/modules/chat/guards/chat-mode.guard.ts`、`policies/role-mode.policy.ts` |
+| 跨層級越權（誘導逾越角色權限） | 中 | 誘導 LLM 提供超出該角色 mode 範圍的深度（如 user 誘導取得 expert 級法規分析） | 回應層級授權由 `ChatModeGuard` + `ROLE_MODE_MATRIX` 後端強制（非 LLM 自決），即使 LLM 被誘導，mode 參數已在伺服器端鎖定 | ✅ 已緩解 | `apps/api/src/modules/chat/guards/chat-mode.guard.ts`、`policies/role-mode.policy.ts` |
 | 提示洩漏（System Prompt Leak） | 低 | 誘導 LLM 吐出系統提示或內部設定 | 系統提示不含機密（無金鑰/內部路徑）；提示模板由 prompts 模組管理 | ⚠️ 殘留風險（POC 可接受） | `apps/api/src/modules/prompts/` |
 
-**結論**：跨模式越權已由後端 `ChatModeGuard` 硬性緩解（攻擊面驗證已確認 it_user 無法取得 expert 模式）；直接/間接注入屬**部分緩解**，主要依賴「知識庫經 Maker-Checker 審核」與「mode 後端強制」兩道結構性防線，建議 Phase 2 補強檢索內容的指令/資料分離標記與輸出側過濾。
+**結論**：跨層級越權已由後端 `ChatModeGuard` 硬性緩解（basic_user 僅 beginner、user 僅 beginner/standard、consultant 可使用三層級）；直接/間接注入屬**部分緩解**，主要依賴「知識庫經 Maker-Checker 審核」與「mode 後端強制」兩道結構性防線，建議 Phase 2 補強檢索內容的指令/資料分離標記與輸出側過濾。
 
 ---
 
@@ -231,6 +246,7 @@ Maker-Checker 職責分離機制引入獨立攻擊面，以下為各威脅類別
 - Helmet HTTP headers
 - 前端路由守衛 + 後端 RBAC Guard 雙重驗證
 - Vite proxy 統一指向 NestJS API
+- 同頁重新登入鎖定原帳號；暫時性錯誤與稍後處理均保留頁面狀態
 
 ---
 
@@ -270,6 +286,8 @@ Maker-Checker 職責分離機制引入獨立攻擊面，以下為各威脅類別
 |----------|------|--------|---------|---------|
 | PII 原始資料外洩 | 嚴重 | 低 | 高 | ✅ Presidio 去識別化 + RBAC |
 | JWT Token 洩漏 | 高 | 中 | 高 | ✅ 短效期 + Refresh 機制 |
+| Refresh Token 重播／競態 | 高 | 低 | 中 | ✅ 唯一 `jti` + 原子輪替 + 跨分頁協調 |
+| 下游 401 誤觸 UI 登出 | 中 | 低 | 低 | ✅ NestJS 將 FastAPI 401 正規化為 502；前端僅以 Refresh 400／401 判定失效 |
 | SQL Injection | 高 | 低 | 中 | ✅ ORM 參數化查詢 |
 | API 洪水攻擊 | 中 | 高 | 高 | ✅ ThrottlerModule 60 req/min |
 | 密碼暴力破解 | 高 | 中 | 高 | ✅ bcrypt + 帳號鎖定 |
@@ -289,7 +307,7 @@ Maker-Checker 職責分離機制引入獨立攻擊面，以下為各威脅類別
 |------|---------|---------|---------|---------|---------|
 | M-001 | Spoofing | JWT 認證（access + refresh token） | ✅ 已實作 | auth/ | auth.service.spec + E2E |
 | M-002 | Spoofing | bcrypt 12 rounds 密碼雜湊 | ✅ 已實作 | auth/ | auth.service.spec |
-| M-003 | Spoofing | 帳號鎖定（5 次失敗 / 15 分鐘） | ✅ 已實作 | auth/ | auth.service.spec |
+| M-003 | Spoofing | 帳號鎖定（5 次失敗 / 15 分鐘）與並行原子計數 | ✅ 已實作 | auth/ | auth.service.spec、auth-login-lock-postgres.integration.ts |
 | M-004 | Spoofing | 密碼歷史 2 代不重複 | ✅ 已實作 | auth/ | auth.service.spec |
 | M-005 | Spoofing | 密碼複雜度（8 碼 + 大小寫 + 數字 + 特殊字元） | ✅ 已實作 | common/validators/ | password-strength.validator.spec |
 | M-006 | Tampering | ValidationPipe + class-validator | ✅ 已實作 | common/ | DTO spec（15+ 檔案） |
@@ -319,6 +337,10 @@ Maker-Checker 職責分離機制引入獨立攻擊面，以下為各威脅類別
 | M-030 | Prompt Injection | 回應模式後端強制（ChatModeGuard + ROLE_MODE_MATRIX），LLM 不可自選 mode，防跨模式越權 | ✅ 已實作 | chat/guards/chat-mode.guard.ts、policies/role-mode.policy.ts | chat-mode.guard.spec、cleaning-authz.spec |
 | M-031 | Prompt Injection | RAG 知識庫 ingest 須經 Maker-Checker 審核，降低間接注入（被污染文件夾帶指令）風險 | ⚠️ 部分緩解 | cleaning review API + rag-service ingest | test_review_api |
 | M-032 | Prompt Injection | 檢索內容指令/資料分離標記 + 輸出側過濾 | 📋 規劃中 | chat.service.ts | Phase 2 |
+| M-033 | Spoofing | `auth_sessions` + JWT `sid` 驗證撤銷／到期／使用者歸屬 | ✅ 已實作 | auth repository、jwt.strategy.ts | auth-session.repository.spec、jwt.strategy.spec |
+| M-034 | Spoofing | Refresh `jti` 唯一索引與原子條件輪替；重播只撤銷該 session | ✅ 已實作 | auth.service.ts、Prisma 0009 | auth.service.spec、verify-migration-0009.sh |
+| M-035 | DoS / Spoofing | Web Locks／Bakery-style localStorage 競爭者租約；lease claim 寫入後讀回 owner，失敗即重新競爭；認證協定 Header 以 426 fence 舊頁面；所有認證 Token 寫入共用同一鎖；HTTP 回應與 JSON 解析後重驗認證快照，避免刷新風暴、誤判重播及舊回應覆寫新帳號 | ✅ 已實作 | AuthController、Admin／Cleaner／Chatbot client | auth.controller.spec、三端 client.test／crossTabMutex.test、auth-session-postgres.integration.ts、Chromium 雙分頁互斥測試 |
+| M-036 | Availability | Refresh 網路／429／5xx 保留憑證與畫面；FastAPI 401 轉 502 | ✅ 已實作 | 三端 client、cleaning proxy | 三端 client.test、cleaning-proxy.service.spec |
 
 ---
 
@@ -343,6 +365,8 @@ Maker-Checker 職責分離機制引入獨立攻擊面，以下為各威脅類別
 | v1.2.0 | 2026-03-11 | 新增 ZIP bomb 與 Zip Slip 威脅分析及緩解措施（M-027、M-028） |
 | v1.3.0 | 2026-03-16 | ML-15：PII 實體數量確認 20 種；新增 CORS/CSP 威脅分析（M-029） |
 | v1.4.0 | 2026-06-06 | 新增 §3.4 LLM/RAG Prompt Injection 分析（OWASP LLM01）+ M-030~M-032；校準 STRIDE 表中 chat/auth service 實作路徑至 `services/` 子目錄 |
+| v1.5.0 | 2026-07-13 | 新增獨立 auth session、Refresh 重播與競態、撤銷驗證、前端不中斷復原及下游 401 正規化威脅與 M-033~M-036 |
+| v1.6.0 | 2026-07-13 | 補 Token 用途隔離、同帳號重新登入、跨分頁租約續期與誤登入工作階段撤銷 |
 
 ---
 

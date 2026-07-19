@@ -1,3 +1,10 @@
+---
+audience: both
+purpose: reference
+status: approved
+owner: ODA Cyber Konsult
+---
+
 # 資料清洗工作流
 
 ## 完整資料流程

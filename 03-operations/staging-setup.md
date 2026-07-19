@@ -1,3 +1,10 @@
+---
+audience: human-primary
+purpose: runbook
+status: approved
+owner: ODA Cyber Konsult
+---
+
 # Staging 環境建置與展示資料指南
 
 > 最後更新：2026-04-24
@@ -86,6 +93,8 @@ RAG_DATABASE_URL="postgresql+asyncpg://postgres:<密碼>@<host>:5432/oda_cyber"
 
 # === 安全金鑰（每個環境獨立產生）===
 JWT_SECRET=$(openssl rand -hex 32)
+JWT_ACCESS_EXPIRES_IN=60m
+JWT_REFRESH_EXPIRES_IN=7d
 INTERNAL_API_KEY=$(openssl rand -hex 32)
 RAG_INTERNAL_API_KEY=<同 INTERNAL_API_KEY>
 
@@ -131,20 +140,27 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 #### Step 4：資料庫遷移
 
+先建立可還原的 PostgreSQL 備份並記錄目前版本；migration 是非冪等狀態操作，只能由單一 release job 執行一次。
+
 ```bash
 # Prisma（NestJS 端：users, conversations, messages 等）
 cd apps/api
 pnpm prisma:generate
-npx prisma migrate deploy    # STG 用 deploy（非 dev）
+pnpm exec prisma migrate deploy    # STG 用 deploy（非 dev）
 cd ../..
 
 # Alembic（Python 端：files, tasks, task_files 等）
 cd python/rag-service
 uv run alembic upgrade head
+uv run alembic current
 cd ../..
 ```
 
 > `prisma migrate deploy` 只套用已存在的 migration，不會建立新的 migration 檔案——這是非開發環境的正確做法。
+>
+> Prisma 套用後回到專案根目錄執行 `ENV_FILE=.env ./scripts/verify-migration-0010.sh`；預期 `searxng_url` 已無資料庫預設值。STG 必須明確設定 `SEARXNG_URL`，舊版 `localhost:8888` 會在 API 第一次讀取時依環境值校正，其他管理者自訂 URL 不變。
+>
+> 套用至 `012` 後，`SELECT version_num FROM alembic_version;` 預期為 `012`；`SELECT COUNT(*) FROM files WHERE regulation_type IS NULL;` 預期為 `0`；`tasks.task_name` 預期為 nullable `varchar(100)`。若 `012` 驗證失敗，停止部署並依備份還原；只回復任務名稱功能時可在舊版應用程式啟動前執行 `uv run alembic downgrade 011`，但會刪除已填寫的任務名稱。
 
 #### Step 5：載入種子資料
 
@@ -371,7 +387,12 @@ docker ps | grep searxng
 
 # 確認 .env 中 SEARXNG_URL 與實際 port 一致
 # 本機 Docker：SEARXNG_URL=http://localhost:8080
+
+# 驗證資料庫未綁定環境 URL 預設值
+ENV_FILE=.env ./scripts/verify-migration-0010.sh
 ```
+
+若資料庫仍保存舊版 `http://localhost:8888`，啟動新版 API 並讀取一次網路搜尋設定後會依 `SEARXNG_URL` 校正。其他自訂 URL 不會自動變更。
 
 ### Q5：密碼已過期
 
@@ -404,6 +425,8 @@ cd apps/api && pnpm seed
 
 | 變數 | 預設值 | 說明 |
 |------|--------|------|
+| `JWT_ACCESS_EXPIRES_IN` | 60m | Access Token 效期 |
+| `JWT_REFRESH_EXPIRES_IN` | 7d | Refresh Token 效期 |
 | `LLM_PROVIDER` | gemini | LLM 提供者 |
 | `RAG_EMBEDDING_PROVIDER` | gemini | 向量嵌入提供者 |
 | `RAG_EMBEDDING_DIMENSION` | 1536 | 向量維度 |

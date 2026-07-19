@@ -1,0 +1,117 @@
+<!--
+---
+audience: human-primary
+purpose: decision
+status: superseded
+owner: Jake
+---
+-->
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>管理後台角色與提示詞 Mockup</title>
+  <style>
+    :root { --ink:#172b4d; --muted:#667085; --line:#d8dee8; --surface:#fff; --canvas:#f3f5f7; --nav:#263238; --brand:#087f8c; --blue:#2563eb; --purple:#6d4bd1; --green:#26734d; --amber:#b45309; }
+    * { box-sizing:border-box; letter-spacing:0; }
+    body { margin:0; color:var(--ink); background:var(--canvas); font-family:"Microsoft JhengHei",system-ui,sans-serif; }
+    button,select { font:inherit; }
+    .shell { min-height:100vh; display:grid; grid-template-columns:220px 1fr; }
+    aside { padding:24px 16px; color:#fff; background:var(--nav); }
+    .logo { margin:0 10px 28px; font-size:18px; font-weight:800; }
+    .nav { display:grid; gap:6px; }
+    .nav button { min-height:44px; padding:0 12px; border:0; border-radius:6px; color:#dce4e8; background:transparent; text-align:left; cursor:pointer; }
+    .nav button.active { color:#fff; background:#087f8c; }
+    main { padding:28px; min-width:0; }
+    .toolbar { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:18px; }
+    h1 { margin:0; font-size:26px; }
+    .annotation { margin:0 0 18px; padding:10px 12px; border-left:4px solid #f59e0b; background:#fffbeb; color:#7c4a03; font-size:13px; line-height:1.55; }
+    .panel { overflow:hidden; background:var(--surface); border:1px solid var(--line); border-radius:8px; box-shadow:0 8px 20px rgba(23,43,77,.06); }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th,td { padding:13px 14px; border-bottom:1px solid #e7ebf0; text-align:left; vertical-align:middle; }
+    th { background:#f8fafc; color:#475569; font-weight:700; }
+    select { min-height:38px; padding:0 32px 0 10px; border:1px solid #aab4c3; border-radius:5px; background:#fff; }
+    .tag { display:inline-block; padding:4px 8px; border-radius:4px; color:#fff; font-size:12px; font-weight:700; }
+    .free { background:var(--green); } .plus { background:var(--blue); } .pro { background:var(--purple); }
+    .status { color:var(--green); font-weight:700; }
+    .action { min-height:36px; padding:0 10px; border:1px solid #98a2b3; border-radius:5px; color:#344054; background:#fff; cursor:pointer; }
+    .primary { color:#fff; border-color:var(--brand); background:var(--brand); }
+    .view[hidden] { display:none; }
+    .prompt-title { display:flex; align-items:center; gap:10px; }
+    .prompt-title strong { min-width:56px; }
+    .footnote { margin:16px; color:var(--muted); font-size:13px; line-height:1.6; }
+    dialog { width:min(720px,calc(100vw - 28px)); border:0; border-radius:8px; padding:0; box-shadow:0 22px 70px rgba(0,0,0,.28); }
+    dialog::backdrop { background:rgba(23,43,77,.45); }
+    .dialog-head,.dialog-foot { padding:16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); }
+    .dialog-foot { justify-content:flex-end; gap:10px; border-top:1px solid var(--line); border-bottom:0; }
+    .dialog-body { padding:20px; }
+    label { display:block; margin-bottom:8px; font-weight:700; }
+    textarea { width:100%; min-height:220px; padding:12px; resize:vertical; border:1px solid #aab4c3; border-radius:6px; font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; }
+    code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .settings-card { max-width:720px; padding:22px; background:#fff; border:1px solid var(--line); border-radius:8px; box-shadow:0 8px 20px rgba(23,43,77,.06); }
+    .settings-card h2 { margin:0 0 8px; font-size:18px; }
+    .settings-card p { margin:0 0 20px; color:var(--muted); line-height:1.6; }
+    .field { max-width:360px; margin-bottom:20px; }
+    .field label { margin-bottom:8px; }
+    .field input { width:100%; min-height:42px; padding:0 12px; border:1px solid #aab4c3; border-radius:6px; font:inherit; }
+    .help { margin-top:7px; color:var(--muted); font-size:12px; }
+    @media (max-width:820px) { .shell { grid-template-columns:1fr; } aside { padding:12px; } .logo { margin:0 4px 12px; } .nav { grid-template-columns:repeat(3,1fr); } main { padding:18px 12px; } .panel { overflow:auto; } table { min-width:760px; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside><div class="logo">CyberKonsult Admin</div><nav class="nav"><button class="active" data-view="users">使用者管理</button><button data-view="prompts">提示詞管理</button><button data-view="settings">系統設定</button></nav></aside>
+    <main>
+      <section id="users" class="view">
+        <div class="toolbar"><h1>使用者管理</h1><button class="action primary">新增使用者</button></div>
+        <p class="annotation">命名確認：客戶角色保留三種顯示名稱；內部值建議沿用 <code>basic_user</code>、<code>user</code>、<code>consultant</code>。<code>it_user</code> 合併至 <code>user</code>。</p>
+        <div class="panel"><table><thead><tr><th>姓名</th><th>Email</th><th>角色</th><th>方案</th><th>狀態</th></tr></thead><tbody>
+          <tr><td>陳小安</td><td>starter@example.com</td><td><select><option selected>新手</option><option>一般</option><option>顧問</option><option>資料清洗人員</option><option>資料審查人員</option><option>管理員</option></select></td><td><span class="tag free">Free</span></td><td class="status">啟用</td></tr>
+          <tr><td>王工程師</td><td>mis@example.com</td><td><select><option>新手</option><option selected>一般</option><option>顧問</option><option>資料清洗人員</option><option>資料審查人員</option><option>管理員</option></select></td><td><span class="tag plus">Plus</span></td><td class="status">啟用</td></tr>
+          <tr><td>林顧問</td><td>consultant@example.com</td><td><select><option>新手</option><option>一般</option><option selected>顧問</option><option>資料清洗人員</option><option>資料審查人員</option><option>管理員</option></select></td><td><span class="tag pro">Pro</span></td><td class="status">啟用</td></tr>
+          <tr><td>資料審查者</td><td>reviewer@example.com</td><td><select><option>新手</option><option>一般</option><option>顧問</option><option>資料清洗人員</option><option selected>資料審查人員</option><option>管理員</option></select></td><td>內部帳號</td><td class="status">啟用</td></tr>
+        </tbody></table></div>
+      </section>
+      <section id="prompts" class="view" hidden>
+        <div class="toolbar"><h1>提示詞管理</h1></div>
+        <p class="annotation">直接對應確認：固定三份提示詞，每個回應層級一份；不再顯示「適用角色 × 適用模式」，也不提供新增或刪除。</p>
+        <div class="panel"><table><thead><tr><th>對應回應層級</th><th>用途</th><th>狀態</th><th>更新時間</th><th>操作</th></tr></thead><tbody>
+          <tr><td><div class="prompt-title"><span class="tag free">新手</span><strong>新手提示詞</strong></div></td><td>白話、案例、下一步</td><td class="status">啟用</td><td>2026-07-11 10:20</td><td><button class="action edit" data-level="新手">編輯</button> <button class="action">測試</button></td></tr>
+          <tr><td><div class="prompt-title"><span class="tag plus">一般</span><strong>一般提示詞</strong></div></td><td>IT／MIS 操作與技術建議</td><td class="status">啟用</td><td>2026-07-11 10:20</td><td><button class="action edit" data-level="一般">編輯</button> <button class="action">測試</button></td></tr>
+          <tr><td><div class="prompt-title"><span class="tag pro">顧問</span><strong>顧問提示詞</strong></div></td><td>法規、風險與顧問建議</td><td class="status">啟用</td><td>2026-07-11 10:20</td><td><button class="action edit" data-level="顧問">編輯</button> <button class="action">測試</button></td></tr>
+        </tbody></table><p class="footnote">每個回應層級固定存在一份提示詞；修改由既有稽核日誌保留前後差異。提示詞查找只使用所選回應層級。</p></div>
+      </section>
+      <section id="settings" class="view" hidden>
+        <div class="toolbar"><h1>系統設定</h1></div>
+        <p class="annotation">設定名稱確認：<code>freeDailyMessageLimit</code>，只限制新手／Free 帳號；調整後立即套用至後續提問。</p>
+        <div class="settings-card">
+          <h2>Chatbot 方案設定</h2>
+          <p>控制 Free 方案每日可送出的 Chatbot 提問次數。一般、顧問與內部帳號不受此每日額度限制。</p>
+          <div class="field"><label for="freeLimit">Free 每日提問額度</label><input id="freeLimit" type="number" min="1" max="1000" value="20"><div class="help">允許 1–1000 次；依 Asia/Taipei 時區每日 00:00 重設。</div></div>
+          <button class="action primary">儲存 Chatbot 設定</button>
+        </div>
+      </section>
+    </main>
+  </div>
+  <dialog id="editor"><div class="dialog-head"><strong id="dialogTitle">編輯提示詞</strong><button class="action" id="closeDialog" aria-label="關閉">關閉</button></div><div class="dialog-body"><label for="promptContent">提示詞內容</label><textarea id="promptContent">你是 CyberKonsult 資安顧問助手。請依目前回應層級提供清楚、可執行的建議。
+
+參考資料：
+{context}</textarea></div><div class="dialog-foot"><button class="action" id="cancelDialog">取消</button><button class="action primary">儲存</button></div></dialog>
+  <script>
+    const views = document.querySelectorAll('.view');
+    document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => {
+      document.querySelectorAll('[data-view]').forEach((item) => item.classList.remove('active'));
+      button.classList.add('active');
+      views.forEach((view) => { view.hidden = view.id !== button.dataset.view; });
+    }));
+    const editor = document.getElementById('editor');
+    document.querySelectorAll('.edit').forEach((button) => button.addEventListener('click', () => {
+      document.getElementById('dialogTitle').textContent = `編輯${button.dataset.level}提示詞`;
+      editor.showModal();
+    }));
+    document.getElementById('closeDialog').addEventListener('click', () => editor.close());
+    document.getElementById('cancelDialog').addEventListener('click', () => editor.close());
+  </script>
+</body>
+</html>

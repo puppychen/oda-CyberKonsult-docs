@@ -1,0 +1,93 @@
+<!--
+---
+audience: human-primary
+purpose: decision
+status: review
+owner: Jake
+---
+-->
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chatbot 現有風格功能調整 Mockup</title>
+  <style>
+    :root {
+      --ck-surface-0:#f4f7fb; --ck-surface-1:#fff; --ck-surface-2:#edf2f9;
+      --ck-ink-1:#0f1e33; --ck-ink-2:#47536b; --ck-ink-3:#8a94a8;
+      --ck-border:#dce4f0; --ck-border-strong:#c3cfe0; --ck-brand:#1e3a8a;
+      --ck-accent:#0891b2; --ck-danger:#dc2626;
+    }
+    * { box-sizing:border-box; letter-spacing:0; }
+    body { margin:0; background:#e6ebf2; color:var(--ck-ink-1); font-family:system-ui,"Microsoft JhengHei",sans-serif; }
+    button,input,textarea { font:inherit; }
+    .review-tools { min-height:52px; padding:8px 16px; display:flex; align-items:center; justify-content:center; gap:8px; background:#dde4ed; border-bottom:1px solid #c7d0dc; }
+    .review-tools span { margin-right:6px; color:#475569; font-size:13px; font-weight:700; }
+    .review-tools button { min-height:34px; padding:0 12px; border:1px solid #aab6c5; border-radius:6px; color:#475569; background:#fff; cursor:pointer; }
+    .review-tools button.active { color:#fff; border-color:var(--ck-brand); background:var(--ck-brand); }
+    .app { width:min(1280px,100%); height:calc(100vh - 52px); min-height:660px; margin:auto; display:flex; overflow:hidden; background:var(--ck-surface-0); box-shadow:0 10px 36px rgba(15,30,51,.14); }
+    .sidebar { width:288px; flex:0 0 288px; display:flex; flex-direction:column; background:var(--ck-surface-2); border-right:1px solid var(--ck-border); }
+    .sidebar-head { height:57px; padding:12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--ck-border); }
+    .sidebar-head strong { color:var(--ck-ink-2); font-size:14px; }
+    .icons { display:flex; gap:4px; color:var(--ck-ink-2); font-size:18px; }
+    .search { margin:8px; height:34px; padding:0 12px; border:1px solid var(--ck-border); border-radius:6px; background:var(--ck-surface-1); color:var(--ck-ink-1); }
+    .conversation { padding:11px 12px; border-bottom:1px solid rgba(220,228,240,.7); font-size:14px; }
+    .conversation.active { border-left:2px solid var(--ck-accent); background:var(--ck-surface-1); }
+    .conversation small { display:block; margin-top:4px; color:var(--ck-ink-3); }
+    .main { min-width:0; flex:1; display:flex; flex-direction:column; }
+    header { min-height:61px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid var(--ck-border); background:rgba(255,255,255,.94); }
+    .brand { display:flex; align-items:center; gap:12px; min-width:0; }
+    .brand img { width:132px; height:auto; }
+    .brand h1 { margin:0; font-size:16px; color:var(--ck-brand); }
+    .levels { padding:4px; display:flex; gap:4px; border-radius:8px; background:var(--ck-surface-2); }
+    .level { height:30px; padding:0 12px; border:0; border-radius:6px; color:var(--ck-ink-2); background:transparent; font-size:12px; font-weight:600; cursor:pointer; }
+    .level.active { color:var(--ck-brand); background:var(--ck-surface-1); box-shadow:0 1px 3px rgba(15,30,51,.12); }
+    .account { display:flex; align-items:center; gap:10px; color:var(--ck-ink-2); font-size:13px; }
+    .theme,.account-name { min-height:34px; padding:0 10px; display:flex; align-items:center; border:1px solid var(--ck-border); border-radius:8px; background:#fff; }
+    .chat { flex:1; overflow:auto; padding:30px 24px; }
+    .empty { max-width:680px; margin:70px auto 0; text-align:center; }
+    .empty h2 { margin:0 0 10px; font-size:24px; }
+    .empty p { margin:0; color:var(--ck-ink-2); line-height:1.7; }
+    .examples { margin-top:26px; display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .example { padding:14px; border:1px solid var(--ck-border); border-radius:8px; background:var(--ck-surface-1); color:var(--ck-ink-2); font-size:13px; text-align:left; }
+    .input-area { padding:16px; border-top:1px solid var(--ck-border); background:var(--ck-surface-1); }
+    .input-wrap { max-width:768px; margin:auto; }
+    .input-card { min-height:52px; padding:8px 10px 8px 14px; display:flex; align-items:center; gap:8px; border:1px solid var(--ck-border); border-radius:16px; background:#fff; }
+    .input-card textarea { flex:1; border:0; outline:0; resize:none; color:var(--ck-ink-1); }
+    .send { height:36px; padding:0 15px; border:0; border-radius:12px; color:#fff; background:linear-gradient(90deg,var(--ck-brand),var(--ck-accent)); font-size:13px; font-weight:600; }
+    .helper { margin-top:6px; display:flex; justify-content:center; gap:8px; color:var(--ck-ink-3); font-size:11px; }
+    .quota { color:var(--ck-brand); font-weight:700; }
+    @media (max-width:760px) { .sidebar { display:none; } .brand img { width:110px; } .brand h1 { display:none; } header { align-items:flex-start; flex-wrap:wrap; } .account-name { display:none; } .examples { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="review-tools"><span>Mockup 情境（正式介面不顯示）</span><button class="active" data-role="basic">新手／Free</button><button data-role="general">一般／Plus</button><button data-role="consultant">顧問／Pro</button></div>
+  <div class="app">
+    <aside class="sidebar"><div class="sidebar-head"><strong>對話記錄</strong><div class="icons">＋　‹</div></div><input class="search" placeholder="搜尋對話..."><div class="conversation active">如何辨識釣魚信件？<small>2026/7/11</small></div><div class="conversation">個資安全維護計畫<small>2026/7/10</small></div></aside>
+    <section class="main">
+      <header><div class="brand"><img src="../../../apps/chatbot/src/assets/cyberkonsult-logo.png" alt="CyberKonsult"><h1>資安助手</h1><div class="levels" aria-label="回應層級"><button class="level active" data-level="beginner">新手</button><button class="level" data-level="standard">一般</button><button class="level" data-level="expert">顧問</button></div></div><div class="account"><span class="theme" title="切換深色模式">☾</span><span class="account-name" id="accountName">Basic User⌄</span></div></header>
+      <main class="chat"><div class="empty"><h2>有什麼資安問題需要協助？</h2><p>我會依目前選擇的回應層級，從知識庫與可信來源整理適合您的建議。</p><div class="examples"><div class="example">如何判斷收到的信件是不是釣魚信？</div><div class="example">公司應如何建立個資安全維護計畫？</div></div></div></main>
+      <footer class="input-area"><div class="input-wrap"><div class="input-card"><textarea rows="1" placeholder="輸入您的資安問題..."></textarea><button class="send">➤　送出</button></div><div class="helper"><span>Enter 送出 · Shift+Enter 換行</span><span class="quota" id="quota">· 今日剩餘 20 次</span></div></div></footer>
+    </section>
+  </div>
+  <script>
+    const roleConfig = {
+      basic: { account:'Basic User⌄', levels:['beginner'], selected:'beginner', quota:true },
+      general: { account:'Demo User⌄', levels:['beginner','standard'], selected:'standard', quota:false },
+      consultant: { account:'Demo Consultant⌄', levels:['beginner','standard','expert'], selected:'expert', quota:false }
+    };
+    document.querySelectorAll('[data-role]').forEach((button) => button.addEventListener('click', () => {
+      document.querySelectorAll('[data-role]').forEach((item) => item.classList.remove('active'));
+      button.classList.add('active');
+      const config = roleConfig[button.dataset.role];
+      document.getElementById('accountName').textContent = config.account;
+      document.getElementById('quota').hidden = !config.quota;
+      document.querySelectorAll('[data-level]').forEach((level) => {
+        level.hidden = !config.levels.includes(level.dataset.level);
+        level.classList.toggle('active', level.dataset.level === config.selected);
+      });
+    }));
+  </script>
+</body>
+</html>

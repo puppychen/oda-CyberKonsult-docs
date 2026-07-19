@@ -1,3 +1,10 @@
+---
+audience: ai-primary
+purpose: reference
+status: approved
+owner: ODA Cyber Konsult
+---
+
 # API 文件
 
 本目錄包含 ODA Cyber Konsult 專案的完整 API 文件。
@@ -11,7 +18,7 @@ NestJS 後端提供以下核心功能：
 | 文件 | 說明 | 路徑前綴 |
 |------|------|----------|
 | [health-api.md](./health-api.md) | 健康檢查端點 | `/health` |
-| [auth-api.md](./auth-api.md) | 認證與授權 | `/api/auth` |
+| [auth-api.md](./auth-api.md) | 認證、Token 用途隔離、獨立 Session、Refresh 輪替、SSO 與登出 | `/api/auth` |
 | [chat-api.md](./chat-api.md) | 聊天與對話管理 | `/api/chat` |
 | [audit-users-api.md](./audit-users-api.md) | 使用者管理（Admin） | `/api/users` |
 | [prompts-api.md](./prompts-api.md) | 提示詞管理（Admin） | `/api/prompts` |
@@ -29,7 +36,7 @@ Python FastAPI 提供 RAG（檢索增強生成）相關功能：
 | 文件 | 說明 | 路徑前綴 |
 |------|------|----------|
 | [rag-api.md](./rag-api.md) | RAG 查詢與文件管理 | `/api/v1/rag` |
-| [cleaning-api.md](./cleaning-api.md) | 資料去識別化處理 | `/api/v1/*` |
+| [cleaning-api.md](./cleaning-api.md) | 資料去識別化、來源審核狀態／先篩選後分頁、邏輯刪除、已刪除查閱與 UTC／台北時間契約 | `/api/v1/*` |
 | [data-pipeline-loaders-api.md](./data-pipeline-loaders-api.md) | 文件解析器 API | `data_pipeline.loaders` |
 
 ## 快速導覽
@@ -182,7 +189,6 @@ Authorization: Bearer <accessToken>
 |------|------|
 | `basic_user` | 基本聊天（僅 beginner 模式） |
 | `user` | 基本聊天功能（beginner/standard 模式） |
-| `it_user` | IT 進階功能（偏技術風格提示詞） |
 | `consultant` | 顧問模式（beginner/standard/expert） |
 | `data_cleaner` | 清洗資料編輯與送審（Cleaner App） |
 | `data_reviewer` | 清洗資料審核與批准（Cleaner App） |

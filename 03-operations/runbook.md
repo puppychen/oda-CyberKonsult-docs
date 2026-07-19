@@ -1,10 +1,20 @@
+---
+audience: both
+purpose: runbook
+status: approved
+owner: ODA Cyber Konsult
+---
+
 # 運維手冊 (Runbook)
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**
 >
-> 文件版本：1.0.0
+> 文件版本：1.2.1
 > 建立日期：2026-03-01
+> 最後更新：2026-07-13
 > 文件類型：運維手冊（Operations Runbook）
+
+> **TL;DR**：先用 `/health` 區分服務故障，再依 `sessionId` 查操作紀錄與 `auth_sessions`。Access Token 60 分鐘到期會自動刷新；只有 Refresh 400／401 才要求同頁重新登入，網路／429／5xx 不應清空頁面。
 
 ---
 
@@ -166,10 +176,45 @@ docker restart qdrant
 docker start <container_name>
 
 # 檢查 Prisma migration
-cd apps/api && npx prisma migrate status
+pnpm exec dotenv -e .env -- pnpm --filter @oda-cyber/api exec prisma migrate status
 ```
 
-### 3.4 SSE 串流中斷
+### 3.4 使用期間突然要求重新登入
+
+**正常機制**：Access Token 效期 60 分鐘。下一次 API 請求收到 401 時，前端自動以 Refresh Token 輪替並重送；使用者持續打字本身不會呼叫 API，但 Chatbot 草稿與目前對話 ID 會保留在 `sessionStorage`。
+
+**異常症狀**：短暫停留後整頁重載、資料消失，或 FastAPI 故障時被誤判登出。
+
+**排查步驟**：
+
+1. 在瀏覽器 Network 確認 `/api/auth/refresh` 的狀態碼。只有 400／401 代表 Refresh 已失效；426 代表頁面認證協定過舊，應保留目前內容並重新整理；429、5xx 或網路錯誤屬暫時性問題。新版請求應帶 `X-ODA-Auth-Session-Protocol: 2`。
+2. 在「操作紀錄」查看 `details.sessionId` 與 `details.failureReason`，確認是否為 `SESSION_EXPIRED`、`SESSION_REVOKED` 或 `SESSION_REUSE_DETECTED`。
+3. 以唯讀 SQL 檢查該帳號工作階段：
+
+```sql
+SELECT id, client_type, expires_at, revoked_at, last_used_at
+FROM auth_sessions
+WHERE user_id = '<user-id>'
+ORDER BY last_used_at DESC;
+```
+
+4. 若清洗代理收到 FastAPI 內部 401，對 UI 應回 502「清洗服務認證失敗」，不可回 401。檢查 `INTERNAL_API_KEY` 與 `RAG_INTERNAL_API_KEY` 是否一致。
+5. 若多分頁同時刷新，確認瀏覽器支援 Web Locks；不支援時應看到 `oda_*_refresh_lease:contender:*` 競爭者紀錄與 `oda_*_refresh_lease` 短期租約，不能出現多個 Refresh 請求同時送出。若滾動部署期間舊版分頁在競爭末段寫入單鍵 lease，或新版分頁寫入 lease 後未讀回自己的 owner，新版分頁應移除自己的 contender、等待 lease 釋放後重新競爭。
+6. 解碼測試 Token 的 Payload：Access 應為 `tokenUse=access`，Refresh 應為 `tokenUse=refresh`。若 Refresh Token 可呼叫 `/api/users/me`，代表 API 尚未部署用途隔離修正。
+7. 重新登入視窗應唯讀顯示原帳號；若另一分頁已切換帳號，舊分頁應保留現況並提示，不得覆寫新帳號 Token。登入、重新驗證、SSO、密碼變更與登出也必須和 Refresh 使用同一跨分頁互斥鎖。
+8. 在 API 與 PostgreSQL 可連線的環境執行 `pnpm --filter @oda-cyber/api test:auth-session-integration`；結果應顯示 `accessLifetimeSeconds=3600`、`refreshLifetimeSeconds=604800`、`refreshedAccessLifetimeSeconds=3600`、`refreshedRefreshLifetimeSeconds=604800`、`staleProtocolStatus=426`、平行狀態 `[200,401]`、`currentJtiRotated=true`、`refreshHashRotated=true` 與 `replayedSessionStatus=401`。
+
+**預期畫面**：
+
+| 狀況 | 使用者看到 | 資料處理 |
+|------|------------|----------|
+| Refresh 400／401 | 原頁重新登入視窗，可「稍後處理」或「重新登入」 | 清 Access／Refresh Token，保留使用者資料與頁面 |
+| Refresh 426 | 系統已更新提示 | 保留 Token、頁面與輸入；重新整理後使用新版認證協定 |
+| 網路／429／5xx | 頂部暫時性連線提示 | 保留 Token、頁面、草稿與對話 |
+| 重新登入成功 | 視窗關閉，停留原頁 | 寫入新的獨立 Session Token |
+| 選擇稍後處理後再次 401 | 保留頂部提示，不自行重開視窗 | 保留頁面；可由「重新登入」手動開啟 |
+
+### 3.5 SSE 串流中斷
 
 **症狀**：Chatbot 回覆中途停止，無 `done` 事件
 
@@ -185,7 +230,7 @@ proxy_read_timeout 120s;
 proxy_send_timeout 120s;
 ```
 
-### 3.5 清洗任務卡在 processing
+### 3.6 清洗任務卡在 processing
 
 **症狀**：任務進度不更新，一直在 processing 狀態
 
@@ -207,7 +252,7 @@ curl -X DELETE http://localhost:3051/api/v1/tasks/<task_id> \
   -H "Authorization: Bearer <token>"
 ```
 
-### 3.6 Qdrant 向量搜尋無結果
+### 3.7 Qdrant 向量搜尋無結果
 
 **症狀**：RAG 查詢無引用來源，LLM 回答為通用內容
 
@@ -225,6 +270,28 @@ curl -s http://localhost:6333/collections/cyberkonsult | python3 -m json.tool
 # 確認向量數量
 # 如果 vectors_count = 0，需要重新 ingest 資料
 ```
+
+### 3.8 回答沒有顯示網路參考來源
+
+**正常機制**：只有 RAG 結果未達後台門檻、網路搜尋已啟用且 SearXNG 有回傳結果時，回答才會包含 `source_type=web_search`。Chatbot 在回答下方顯示預設收合的「N 個引用來源」；沒有來源時不顯示此區塊。
+
+**排查步驟**：
+
+1. 在管理後台「系統設定」確認網路搜尋已啟用，且 SearXNG URL 是目前環境可連線的位址。
+2. 本機 Docker 通常為 `http://localhost:8080`；容器彼此連線通常為 `http://searxng:8080`。不要沿用舊版 `http://localhost:8888`。
+3. 直接測試 SearXNG：
+
+```bash
+curl -fsS 'http://localhost:8080/search?q=ISO+27001&format=json&language=zh-TW'
+```
+
+4. 確認 `0010_remove_websearch_url_default` 已套用：
+
+```bash
+./scripts/verify-migration-0010.sh
+```
+
+5. API 第一次讀取舊版 `localhost:8888` 設定時會依 `SEARXNG_URL` 校正；管理者自訂的其他 URL 不會被自動覆寫。若 SearXNG 正常但仍無網路來源，檢查 API 日誌中的搜尋／網頁擷取失敗與後台門檻設定。
 
 ---
 

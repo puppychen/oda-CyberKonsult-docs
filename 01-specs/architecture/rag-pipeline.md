@@ -1,3 +1,10 @@
+---
+audience: both
+purpose: reference
+status: approved
+owner: ODA Cyber Konsult
+---
+
 # RAG 管線架構
 
 ## 概述

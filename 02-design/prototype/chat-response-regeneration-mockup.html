@@ -1,0 +1,472 @@
+<!--
+---
+audience: human-primary
+purpose: decision
+status: review
+owner: Jake
+---
+-->
+<!doctype html>
+<html lang="zh-Hant-TW">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>對話回覆重新產出 Mockup</title>
+    <style>
+      :root {
+        --surface-0: #f4f7fb;
+        --surface-1: #fff;
+        --surface-2: #edf2f9;
+        --ink-1: #0f1e33;
+        --ink-2: #47536b;
+        --ink-3: #778197;
+        --border: #dce4f0;
+        --brand: #1e3a8a;
+        --accent: #0891b2;
+        --danger: #dc2626;
+        --danger-bg: #fef2f2;
+      }
+      * {
+        box-sizing: border-box;
+        letter-spacing: 0;
+      }
+      body {
+        margin: 0;
+        color: var(--ink-1);
+        background: #e6ebf2;
+        font-family: system-ui, 'Microsoft JhengHei', sans-serif;
+      }
+      button {
+        font: inherit;
+      }
+      .review-tools {
+        min-height: 52px;
+        padding: 8px 16px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border-bottom: 1px solid #c7d0dc;
+        background: #dde4ed;
+      }
+      .review-tools strong {
+        margin-right: 6px;
+        color: #475569;
+        font-size: 13px;
+      }
+      .review-tools button {
+        min-height: 36px;
+        padding: 0 12px;
+        border: 1px solid #aab6c5;
+        border-radius: 6px;
+        color: #475569;
+        background: #fff;
+        cursor: pointer;
+      }
+      .review-tools button.active {
+        color: #fff;
+        border-color: var(--brand);
+        background: var(--brand);
+      }
+      .app {
+        width: min(1180px, 100%);
+        min-height: calc(100vh - 52px);
+        margin: auto;
+        display: flex;
+        overflow: hidden;
+        background: var(--surface-0);
+        box-shadow: 0 10px 36px rgba(15, 30, 51, 0.14);
+      }
+      .sidebar {
+        width: 280px;
+        flex: 0 0 280px;
+        background: var(--surface-2);
+        border-right: 1px solid var(--border);
+      }
+      .sidebar-head {
+        height: 58px;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border);
+        color: var(--ink-2);
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .conversation {
+        margin: 8px;
+        padding: 12px;
+        border-radius: 6px;
+        background: #fff;
+        font-size: 14px;
+      }
+      .conversation small {
+        display: block;
+        margin-top: 4px;
+        color: var(--ink-3);
+      }
+      .main {
+        min-width: 0;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+      header {
+        height: 60px;
+        padding: 10px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border);
+        background: #fff;
+      }
+      header img {
+        width: 132px;
+        height: auto;
+      }
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--ink-2);
+        font-size: 13px;
+      }
+      .mode {
+        padding: 5px 9px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: #fff;
+      }
+      .chat {
+        flex: 1;
+        padding: 28px 24px 70px;
+        overflow: auto;
+      }
+      .messages {
+        width: min(760px, 100%);
+        margin: auto;
+      }
+      .turn {
+        margin-bottom: 22px;
+      }
+      .user {
+        max-width: 78%;
+        margin: 0 0 14px auto;
+        padding: 12px 15px;
+        border-radius: 16px 16px 4px 16px;
+        color: #fff;
+        background: linear-gradient(120deg, var(--brand), var(--accent));
+        line-height: 1.65;
+        overflow-wrap: anywhere;
+      }
+      .ai-wrap {
+        max-width: 86%;
+      }
+      .confidence {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 6px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        color: #047857;
+        background: #ecfdf5;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .confidence::before {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #059669;
+        content: '';
+      }
+      .ai {
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        border-radius: 16px 16px 16px 4px;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(15, 30, 51, 0.06);
+        line-height: 1.75;
+      }
+      .ai p {
+        margin: 0 0 9px;
+      }
+      .ai p:last-child {
+        margin-bottom: 0;
+      }
+      .ai.new {
+        border-color: #9bd8e4;
+        box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.08);
+      }
+      .actions {
+        min-height: 34px;
+        margin: 5px 0 0 4px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--ink-3);
+      }
+      .icon-action {
+        width: 30px;
+        height: 30px;
+        display: inline-grid;
+        place-items: center;
+        border: 0;
+        border-radius: 6px;
+        color: var(--ink-3);
+        background: transparent;
+        cursor: pointer;
+      }
+      .icon-action:hover {
+        color: var(--ink-1);
+        background: var(--surface-2);
+      }
+      .divider {
+        width: 1px;
+        height: 18px;
+        margin: 0 4px;
+        background: var(--border);
+      }
+      .regenerate {
+        width: 30px;
+        height: 30px;
+        display: inline-grid;
+        place-items: center;
+        border: 0;
+        border-radius: 6px;
+        color: var(--ink-2);
+        background: transparent;
+        cursor: pointer;
+      }
+      .regenerate:hover {
+        color: var(--accent);
+        background: rgba(8, 145, 178, 0.08);
+      }
+      .regenerate:disabled {
+        color: #a8b0bf;
+        background: transparent;
+        cursor: not-allowed;
+      }
+      .typing {
+        min-height: 24px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .typing span {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent);
+        animation: pulse 1.1s ease-in-out infinite;
+      }
+      .typing span:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+      .typing span:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+      .error {
+        margin-top: 8px;
+        padding: 9px 11px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid rgba(220, 38, 38, 0.35);
+        border-radius: 7px;
+        color: var(--danger);
+        background: var(--danger-bg);
+        font-size: 12px;
+      }
+      .error span {
+        flex: 1;
+      }
+      .retry {
+        min-height: 30px;
+        padding: 0 9px;
+        border: 1px solid var(--danger);
+        border-radius: 6px;
+        color: var(--danger);
+        background: transparent;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .quota-note {
+        margin: 4px 0 0 4px;
+        color: var(--danger);
+        font-size: 12px;
+      }
+      .review-note {
+        margin-top: 16px;
+        padding: 8px 10px;
+        border-left: 3px solid #64748b;
+        color: #475569;
+        background: #f8fafc;
+        font-size: 12px;
+        line-height: 1.55;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.35;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+      @media (max-width: 760px) {
+        .app {
+          min-height: 660px;
+        }
+        .sidebar {
+          display: none;
+        }
+        header img {
+          width: 112px;
+        }
+        .chat {
+          padding: 22px 12px 60px;
+        }
+        .user,
+        .ai-wrap {
+          max-width: 94%;
+        }
+        .icon-action,
+        .regenerate {
+          width: 44px;
+          height: 44px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="review-tools" aria-label="原型情境切換">
+      <strong>Mockup 情境（正式介面不顯示）</strong>
+      <button class="active" data-state="ready" type="button">可重新產出</button>
+      <button data-state="loading" type="button">重新產出中</button>
+      <button data-state="complete" type="button">新回覆完成</button>
+      <button data-state="quota" type="button">額度已用完</button>
+      <button data-state="failed" type="button">新回覆失敗</button>
+    </div>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="sidebar-head"><span>對話記錄</span><span>＋　‹</span></div>
+        <div class="conversation">公司資料外洩處理<small>今天</small></div>
+        <div class="conversation">ISO 27001 備份要求<small>昨天</small></div>
+      </aside>
+      <section class="main">
+        <header>
+          <img src="../../../apps/chatbot/src/assets/cyberkonsult-logo.png" alt="CyberKonsult" />
+          <div class="header-actions"><span class="mode">一般⌄</span><span>Jane⌄</span></div>
+        </header>
+        <main class="chat">
+          <div class="messages">
+            <div class="turn">
+              <div class="user">公司發生資料外洩時，第一時間應該怎麼處理？</div>
+              <div class="ai-wrap">
+                <div class="confidence">知識庫來源</div>
+                <div class="ai">
+                  <p>第一時間應先啟動事件應變流程，確認外洩範圍並保存相關紀錄。</p>
+                  <p>接著隔離受影響系統、評估通報義務，並由指定窗口協調技術、法務及管理單位。</p>
+                </div>
+                <div class="actions">
+                  <button class="icon-action" type="button" title="回答有幫助" aria-label="回答有幫助">♡</button>
+                  <button class="icon-action" type="button" title="回答需要改善" aria-label="回答需要改善">♧</button>
+                  <span class="divider" aria-hidden="true"></span>
+                  <button
+                    id="originalRegenerate"
+                    class="regenerate"
+                    type="button"
+                    title="重新產出"
+                    aria-label="重新產出最後一個問題的回覆"
+                  >
+                    <span aria-hidden="true">↻</span>
+                  </button>
+                </div>
+                <div id="quotaNote" class="quota-note" hidden>今日免費訊息額度已用完</div>
+              </div>
+            </div>
+
+            <div id="newTurn" class="turn" hidden>
+              <div class="user">公司發生資料外洩時，第一時間應該怎麼處理？</div>
+              <div class="ai-wrap">
+                <div id="newConfidence" class="confidence" hidden>知識庫來源</div>
+                <div id="newAi" class="ai new">
+                  <div id="typing" class="typing" aria-label="正在產生回覆">
+                    <span></span><span></span><span></span>
+                  </div>
+                  <div id="newContent" hidden>
+                    <p>可依「控制、確認、通報、復原」四個步驟處理：</p>
+                    <p>
+                      先停止持續外洩並保存證據，再確認資料類型與影響對象；符合通報條件時依時限通知主管機關或當事人，最後完成復原與改善追蹤。
+                    </p>
+                  </div>
+                </div>
+                <div id="newError" class="error" hidden role="alert">
+                  <span>連線失敗，請檢查網路或稍後再試。</span><button class="retry" type="button">↻ 重試</button>
+                </div>
+                <div id="newActions" class="actions" hidden>
+                  <button class="icon-action" type="button" title="回答有幫助" aria-label="回答有幫助">♡</button>
+                  <button class="icon-action" type="button" title="回答需要改善" aria-label="回答需要改善">♧</button>
+                  <span class="divider" aria-hidden="true"></span>
+                  <button class="regenerate" type="button" title="重新產出" aria-label="重新產出最後一個問題的回覆">
+                    <span aria-hidden="true">↻</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div id="reviewNote" class="review-note">
+              ← 讚／不讚維持現況，右側只新增 icon；滑鼠停留顯示「重新產出」。
+            </div>
+          </div>
+        </main>
+      </section>
+    </div>
+    <script>
+      const stateButtons = document.querySelectorAll('[data-state]');
+      const originalRegenerate = document.getElementById('originalRegenerate');
+      const quotaNote = document.getElementById('quotaNote');
+      const newTurn = document.getElementById('newTurn');
+      const newConfidence = document.getElementById('newConfidence');
+      const typing = document.getElementById('typing');
+      const newContent = document.getElementById('newContent');
+      const newActions = document.getElementById('newActions');
+      const newError = document.getElementById('newError');
+      const reviewNote = document.getElementById('reviewNote');
+
+      function setState(state) {
+        stateButtons.forEach((button) => button.classList.toggle('active', button.dataset.state === state));
+        const hasNewTurn = ['loading', 'complete', 'failed'].includes(state);
+        newTurn.hidden = !hasNewTurn;
+        newConfidence.hidden = state !== 'complete';
+        typing.hidden = state !== 'loading';
+        newContent.hidden = state !== 'complete';
+        newActions.hidden = state !== 'complete';
+        newError.hidden = state !== 'failed';
+        originalRegenerate.hidden = ['loading', 'complete', 'failed'].includes(state);
+        originalRegenerate.disabled = state === 'quota';
+        quotaNote.hidden = state !== 'quota';
+
+        const notes = {
+          ready: '← 讚／不讚維持現況，右側只新增 icon；滑鼠停留顯示「重新產出」。',
+          loading: '← 最新回覆仍在產出時不顯示重新產出 icon，並停用一般送出，避免建立多條串流。',
+          complete: '← icon 移到最新完成的回覆；原問題與原回覆完整保留，但舊回覆不再顯示 icon。',
+          quota: '← 新手剩餘額度為 0 時停用，重新產出視為一次新的 LLM 回覆並計入額度。',
+          failed: '← 最新回覆失敗時只顯示既有「重試」；舊回覆保留，但不重新顯示重新產出 icon。',
+        };
+        reviewNote.textContent = notes[state];
+      }
+
+      stateButtons.forEach((button) => button.addEventListener('click', () => setState(button.dataset.state)));
+      originalRegenerate.addEventListener('click', () => setState('loading'));
+      setState('ready');
+    </script>
+  </body>
+</html>

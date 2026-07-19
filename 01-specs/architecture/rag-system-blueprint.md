@@ -1,3 +1,10 @@
+---
+audience: ai-primary
+purpose: reference
+status: approved
+owner: ODA Cyber Konsult
+---
+
 # RAG 系統建構指南
 
 > AI-Readable Blueprint for Building Production-Ready RAG Systems

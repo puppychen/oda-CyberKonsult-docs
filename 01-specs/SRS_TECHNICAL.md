@@ -1,13 +1,16 @@
 ---
 audience: ai-primary
+purpose: spec
+status: approved
+owner: ODA Cyber Konsult
 ---
 
 # 軟體需求規格書 (SRS) - 完整技術規格
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**
 >
-> 文件版本：1.9.0
-> 最後更新：2026-03-23
+> 文件版本：2.7.3
+> 最後更新：2026-07-18
 > 文件類型：完整技術 SRS（面向開發人員、系統架構師、QA 工程師）
 
 ---
@@ -72,10 +75,10 @@ audience: ai-primary
 | **多會員** | 單一系統服務多個獨立組織（會員）的架構模式 |
 | **RBAC** | Role-Based Access Control，基於角色的存取控制 |
 | **SLA** | Service Level Agreement，服務水準協議 |
-| **三層式AI顧問模式** | 依使用者技術背景提供新手(beginner)、一般(standard)、顧問(expert)三種回應深度的機制 |
-| **新手模式** | 以白話文、故事化方式回應，適合非技術背景使用者 |
-| **一般模式** | 提供實務技術建議與操作步驟，適合 IT/MIS 工程師 |
-| **顧問模式** | 提供深入專業分析，含 ISO 標準引用與法規依據，適合資安顧問 |
+| **三層式 AI 回應機制** | 提供新手(beginner)、一般(standard)、顧問(expert)三種回應深度的機制 |
+| **新手回應層級** | 以白話文、故事化方式回應，適合非技術背景使用者 |
+| **一般回應層級** | 提供實務技術建議與操作步驟，適合 IT/MIS 工程師 |
+| **顧問回應層級** | 提供深入專業分析，含 ISO 標準引用與法規依據，適合資安顧問 |
 | **在地化法規知識庫** | 以台灣資通安全管理法、個資法及 ISO 27001/27701 等標準建構的 RAG 知識庫 |
 | **Cleaner App** | 獨立的清洗審核管理前端應用 (Port 5503)，提供完整的審核工作流 |
 | **審核工作流** | 查看 → 標籤 → 編輯 → 批准 → 送入 RAG 的完整清洗品質審核流程 |
@@ -99,7 +102,7 @@ audience: ai-primary
 
 建立一個 **企業級智慧型資安助手平台**，提供：
 1. **智慧問答**：基於 RAG 的資安知識查詢
-2. **三層式AI顧問**：依使用者背景提供新手/一般/顧問三種回應模式
+2. **三層式 AI 顧問**：提供新手／一般／顧問三種回應層級
 3. **在地化法規知識庫**：內建台灣資安法規與國際 ISO 標準
 4. **資料保護**：完整的 PII 偵測與去識別化能力
 5. **多會員服務**：支援多組織獨立運營 🔮
@@ -113,7 +116,7 @@ audience: ai-primary
 | BG-02 | 確保敏感資料安全 | PII 偵測準確率 > 95% |
 | BG-03 | 符合法規要求 | 支援台灣個資法規定的資料類型 |
 | BG-04 | 降低人工審查成本 | 自動化去識別化處理 |
-| BG-05 | 提供分層式資安諮詢 | 三層式AI顧問模式上線 |
+| BG-05 | 提供分層式資安諮詢 | 三層式 AI 回應機制上線 |
 | BG-06 | 建立在地化法規知識庫 | 法規覆蓋率 ≥ 90%（台灣資安相關法規） |
 
 ### 2.3 成功指標
@@ -262,18 +265,25 @@ audience: ai-primary
 
 | 角色 | 代碼 | 狀態 | 說明 |
 |------|------|------|------|
-| 初級使用者 | `basic_user` | ✅ | 透過 Chatbot 以新手模式查詢資安問題（beginner only） |
-| 一般使用者 | `user` | ✅ | 透過 Chatbot 查詢資安問題 |
+| 新手（Free） | `basic_user` | ✅ | 僅使用 beginner 回應層級；每日訊息額度由後台設定 |
+| 一般（Plus） | `user` | ✅ | IT/MIS 使用者；使用 beginner / standard 回應層級 |
 | 資安 ISO 顧問 | `consultant` | ✅ | 透過專業化 AI 對話進行深入資安諮詢 |
-| IT 工程師 | `it_user` | 🔄 | IT/MIS 工程師或 SI 技術人員，取得實務技術建議 |
 | 資料清洗人員 | `data_cleaner` | ✅ | 清洗資料審核，僅存取 Cleaner App |
 | 資料審核人員 | `data_reviewer` | ✅ | 清洗資料審批，僅存取 Cleaner App（Maker-Checker 審批者） |
 | 系統管理員 | `admin` | ✅ | 系統設定與維護，可存取 Admin Dashboard + Cleaner App + Chatbot |
-| 平台管理員 | `platform_admin` | 🔮 | 整體平台管理 |
+> **RFC-001 規範**：`it_user` 已移除並併入 `user`。本文件其他歷史範例若仍出現 `it_user`，僅供版本追溯，不得作為新資料或授權依據。
 
-> 會員管理機制預計於 Phase 3 由 Platform Admin 角色承擔，未來視需求評估是否拆分為獨立的會員管理員角色。
+### 4.1.1 現行角色與應用程式存取矩陣
 
-### 4.3 角色與應用程式存取矩陣
+| 應用程式 | basic_user | user | consultant | data_cleaner | data_reviewer | admin |
+|----------|:----------:|:----:|:----------:|:------------:|:-------------:|:-----:|
+| Chatbot UI | ✓ | ✓ | ✓ | ✗ | ✗ | ✓ |
+| Admin Dashboard | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Cleaner App | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+
+管理帳號、資料清理與 Maker-Checker 權限維持原規則；此次只調整客戶角色、回應層級、提示詞與免費額度。
+
+### 4.3 舊版角色與應用程式存取矩陣（僅供歷史追溯）
 
 | 應用程式 | `basic_user` | `user` | `it_user` | `consultant` | `data_cleaner` | `data_reviewer` | `admin` | `platform_admin` |
 |----------|:------------:|:------:|:---------:|:------------:|:--------------:|:---------------:|:-------:|:-----------------:|
@@ -281,7 +291,7 @@ audience: ai-primary
 | Admin Dashboard (5173) | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
 | Cleaner App (5175) | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ |
 
-### 4.2 詳細權限矩陣
+### 4.2 舊版詳細權限矩陣（僅供歷史追溯）
 
 | 功能 | basic_user | user | it_user | consultant | data_cleaner | data_reviewer | admin | platform_admin |
 |------|:----------:|:----:|:-------:|:----------:|:------------:|:-------------:|:-----:|:--------------:|
@@ -361,7 +371,7 @@ audience: ai-primary
 
 ---
 
-### 5.2 FR-01：使用者認證與授權 🔄
+### 5.2 FR-01：使用者認證與授權 ✅
 
 #### 5.2.1 功能描述
 
@@ -371,9 +381,9 @@ audience: ai-primary
 
 | US 編號 | 使用者故事 | 驗收標準 |
 |---------|------------|----------|
-| US-01-01 | 身為使用者，我希望能夠使用帳號密碼登入系統 | 1. 支援 Email + 密碼登入<br>2. 登入失敗顯示錯誤訊息<br>3. 密碼錯誤超過 5 次鎖定 15 分鐘 |
+| US-01-01 | 身為使用者，我希望能夠使用帳號密碼登入系統 | 1. 支援 Email + 密碼登入<br>2. 登入失敗顯示錯誤訊息<br>3. 密碼錯誤超過 5 次鎖定 15 分鐘<br>4. 每次登入建立獨立工作階段，最多 10 個有效工作階段<br>5. Access Token 60 分鐘、Refresh Token 7 天且單次輪替<br>6. Token 以 `tokenUse` 區分用途，Refresh Token 不可作為 Access Token |
 | US-01-02 | 身為系統管理員，我希望能夠管理使用者帳號 | 1. 可建立新使用者<br>2. 可停用/啟用帳號<br>3. 可指派角色 |
-| US-01-03 | 身為使用者，我希望能夠安全登出系統 | 1. 登出後 Token 失效<br>2. 重導向至登入頁 |
+| US-01-03 | 身為使用者，我希望能夠安全登出系統 | 1. 一般登出只撤銷目前工作階段<br>2. 可撤銷帳號全部工作階段<br>3. Refresh 無效時在原頁重新登入，不硬重載<br>4. 暫時性連線錯誤保留頁面與輸入<br>5. 重新登入只能使用原帳號，稍後處理後不因背景 401 自動重開 |
 
 #### 5.2.3 API 規格
 
@@ -385,6 +395,7 @@ Request:
   Body:
     email: string (required)
     password: string (required)
+    clientType: admin | cleaner | chatbot | api (optional, default: api)
 
 Response 200:
   {
@@ -392,7 +403,8 @@ Response 200:
     "data": {
       "accessToken": "eyJhbGciOiJIUzI1NiIs...",
       "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
-      "expiresIn": 3600,
+      "sessionId": "uuid",
+      "clientType": "chatbot",
       "user": {
         "id": "uuid",
         "email": "user@example.com",
@@ -435,6 +447,8 @@ Response 200:
   }
 ```
 
+此端點只撤銷 Bearer Token 內 `sid` 對應的目前工作階段。`POST /api/auth/logout-all` 會撤銷該帳號全部工作階段；`POST /api/auth/sso/exchange` 以目前 Admin Access Token 建立獨立的 Cleaner 工作階段，不傳遞 Admin Refresh Token。
+
 **POST /api/auth/refresh - 更新 Token**
 
 ```yaml
@@ -448,7 +462,9 @@ Response 200:
     "success": true,
     "data": {
       "accessToken": "eyJhbGciOiJIUzI1NiIs...",
-      "expiresIn": 3600
+      "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
+      "sessionId": "uuid",
+      "clientType": "chatbot"
     }
   }
 ```
@@ -472,6 +488,22 @@ CREATE TABLE users (
 
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_role ON users(role);
+
+CREATE TABLE auth_sessions (
+    id                 TEXT PRIMARY KEY,
+    user_id            UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    client_type        TEXT NOT NULL CHECK (client_type IN ('admin', 'cleaner', 'chatbot', 'api')),
+    refresh_token_hash TEXT NOT NULL,
+    current_jti        TEXT NOT NULL UNIQUE,
+    expires_at         TIMESTAMP NOT NULL,
+    revoked_at         TIMESTAMP,
+    last_used_at       TIMESTAMP NOT NULL DEFAULT NOW(),
+    created_at         TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at         TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX auth_sessions_user_id_revoked_at_idx ON auth_sessions(user_id, revoked_at);
+CREATE INDEX auth_sessions_expires_at_idx ON auth_sessions(expires_at);
 ```
 
 ---
@@ -489,8 +521,9 @@ CREATE INDEX idx_users_role ON users(role);
 | US-02-01 | 身為使用者，我希望能夠用自然語言詢問資安問題 | 1. 支援中英文提問<br>2. 回應時間 < 10 秒<br>3. 回應包含引用來源 |
 | US-02-02 | 身為使用者，我希望看到回答的來源出處 | 1. 顯示引用文件名稱<br>2. 顯示相關段落 |
 | US-02-03 | 身為使用者，我希望查看歷史對話記錄 | 1. 對話以時間序列展示<br>2. 可搜尋歷史對話 |
-| US-02-04 | 身為 IT 工程師，我希望選擇「一般模式」取得實務技術指引 | 1. 可選擇回應模式<br>2. 回應包含操作步驟<br>3. 用語適合技術人員 |
-| US-02-05 | 身為使用者，我希望預設以適合我角色的模式回應 | 1. 系統依角色自動選擇預設模式<br>2. 可手動切換模式 |
+| US-02-04 | 身為一般方案使用者，我希望選擇「一般」取得實務技術指引 | 1. 可選擇新手／一般回應層級<br>2. 回應包含操作步驟<br>3. 用語適合技術人員 |
+| US-02-05 | 身為使用者，我希望預設以適合我角色的回應層級回答 | 1. 系統依角色自動選擇預設層級<br>2. 僅顯示角色可用層級 |
+| US-02-07 | 身為使用者，我希望在不滿意最新回答時重新產出 | 1. 只在最後提示詞對應、已持久化且分類為資安／混合的最新完成回覆顯示 icon<br>2. 保留原問題與原回覆，在底部新增相同問題與新回覆<br>3. 使用目前選擇的回應層級；每次新操作計入一次額度，同一操作的斷線重試不得重複計費<br>4. 串流中、失敗、未持久化、分類未知、非資安固定回覆與非最新回覆不提供重新產出 |
 
 #### 5.3.3 檢索策略
 
@@ -513,6 +546,8 @@ Request:
   Body:
     message: string (required)
     conversationId: string (optional)
+    regenerateFromMessageId: UUID (optional; requires conversationId and must be its latest assistant message)
+    regenerationAttemptId: UUID (required when regenerateFromMessageId is provided; reused by retries)
     options:
       stream: boolean (default: true)
       temperature: number (default: 0.7)
@@ -555,6 +590,31 @@ Response 200 (串流 - SSE):
 ```
 
 > **信心度欄位**：回應中包含 `confidenceLevel: 'high' | 'medium' | 'low'`，非串流模式亦於 `data` 中回傳。
+
+#### 議題範圍分類
+
+每次聊天在 Query 改寫後、RAG 檢索前執行低輸出量分類，回傳 `topicScope`：
+
+| 值 | 後端行為 | 前端行為 |
+|----|----------|----------|
+| `cybersecurity` | 執行既有 RAG／網路補充／LLM 回答 | 不顯示提醒 |
+| `mixed` | 將原始問題改寫為只含資安需求的問句，再用於 RAG、網路搜尋、主回答與提示詞 `{query}`；建議追問不帶入原始非資安文字 | 顯示混合議題提醒 |
+| `non_cybersecurity` | 略過 RAG、網路搜尋與回答生成，回傳固定服務範圍引導 | 顯示非資安提醒 |
+| `unclear` | 略過後續生成，要求補充情境；不得誤標為非資安 | 不顯示非資安提醒 |
+
+`topicScope` 會寫入 `messages.metadata`，並出現在非串流 `answer.topicScope` 與 SSE `done.topicScope`。此欄使用既有 JSON metadata，不需資料庫 migration；舊訊息沒有此欄時維持原畫面。
+
+分類器同時接收 `originalQuestion` 與 `rewrittenQuestion`：原始問題保留完整需求，改寫查詢補足多輪脈絡。分類結果為 `mixed` 時，系統另以 `rewriteForCybersecurityScope()` 產生資安範圍問句；原文寫入對話紀錄，使用者訊息 metadata 保存 `historyTopicScope` 與 `scopedQuestion`。後續載入模型歷史時以 `scopedQuestion` 取代混合原文，並排除 `non_cybersecurity`／`unclear` 的固定回覆輪次；UI 仍顯示原始文字。模型行為由 `docs/02-testing/topic-classifier-eval.md` 的版本化實際模型評估驗證，涵蓋一般、混合、邊界與提示注入案例。
+
+#### 最新回覆重新產出
+
+Chatbot 只在最後一則使用者提示詞所對應、具有後端 UUID，且 `topicScope` 明確為 `cybersecurity` 或 `mixed` 的最新完成助理回覆顯示 `RefreshCw` icon；既有讚／不讚維持原位，icon 不顯示文字，滑鼠停留時以 `title` 顯示「重新產出」，並提供 `aria-label`。串流中、失敗、未持久化、分類未知、`non_cybersecurity`、`unclear`、沒有對應提示詞、唯讀狀態與非最新回覆不顯示；新手額度為 0 時顯示停用狀態及原因。
+
+點擊後以目前畫面選擇的 `mode`、相同 `question`、原 `conversationId`、`regenerateFromMessageId` 與前端產生的 `regenerationAttemptId` 呼叫既有發送端點。前端在對話底部追加相同使用者問題與新助理串流，不刪除或覆蓋原問答；同步 in-flight 鎖確保同一頁面同時只有一條串流。新回答有獨立的來源、信心度、建議問題與回饋狀態，完成後重新產出 icon 移至新回答；只有最新失敗氣泡可重試，且重試沿用相同 attempt ID。串流進行中收到重試操作時，必須先拒絕，不可先刪除 UI 訊息。
+
+API 以 PostgreSQL conversation row lock 串行化訊息寫入，並在同一資料庫交易內確認 `regenerateFromMessageId` 是目前最新 `assistant`、來源 `topicScope` 為 `cybersecurity`／`mixed`，且其前一則 user 訊息等於請求 `question`，再原子保留一次額度並建立待完成 user 訊息；任一步驟失敗時額度與 claim 一併回滾，任一條件不符即回 `400`。所有訊息建立時間在該 conversation 內至少比前一則晚 1ms，避免相同時間戳造成最新訊息判定不穩定。不同 attempt 的並發請求只有第一個可成立；相同 attempt 的 5 分鐘 lease 仍有效時回 `409`，禁止同時啟動第二次 LLM 生成。
+
+待完成 user 訊息與完成 assistant 訊息都在既有 JSON metadata 保存 `regeneratedFromMessageId` 與 `regenerationAttemptId`；待完成訊息另保存 `regenerationStatus`、`regenerationClaimedAt` 與 `regenerationLeaseId`。前置處理補寫主題 metadata 時使用 lease compare-and-set；SSE 中斷或伺服器錯誤也只可用當前 lease 把 claim 標為 `failed`，避免逾時接手後舊 worker 把舊 lease 寫回或釋放新 worker。程序未正常釋放時，相同 attempt 可在 lease 逾時後接手；每次接手都換發 lease ID，assistant 寫入前須在 conversation lock 內驗證 lease，舊 worker 不得寫入重複回答。claim／assistant 均依 conversation、來源與 attempt 精確定位，不依賴仍為最後一則訊息，因此其他分頁插入訊息後仍可安全釋放、完成與回放。這些重試不重複扣額度；新的重新產出操作才計為新用量。不新增資料表或 migration。
 
 #### 信心度判定邏輯
 
@@ -613,6 +673,10 @@ Response 200:
     }
   }
 ```
+
+管理後台使用 `GET /api/chat/admin/conversations` 取得跨使用者對話列表。其 `messageCount` 定義為該對話所有 `user` 與 `assistant` 訊息總和；列表中的 `messages` 只保留最新一則訊息作為摘要，兩者不可互相替代。正常完成一回合問答通常增加 2，生成失敗或串流中斷時可能只增加 1。
+
+管理者使用 `GET /api/chat/admin/conversations/{conversationId}` 取得完整對話詳情，回應必須包含建立該對話的使用者摘要（`id`、`email`、`name`）與完整訊息。一般使用者詳情端點不額外回傳使用者摘要。
 
 **GET /api/chat/conversations/{conversationId} - 取得對話詳情**
 
@@ -674,8 +738,8 @@ CREATE TABLE messages (
     created_at      TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_messages_conversation_id ON messages(conversation_id);
-CREATE INDEX idx_messages_created_at ON messages(created_at);
+CREATE INDEX messages_conversation_id_created_at_idx
+    ON messages(conversation_id, created_at);
 ```
 
 ---
@@ -684,16 +748,16 @@ CREATE INDEX idx_messages_created_at ON messages(created_at);
 
 #### 5.4.1 功能描述
 
-提供提示詞範本管理功能。
+提供 beginner / standard / expert 三個回應層級的提示詞管理。正式聊天只依 mode 查找提示詞，不再使用 role × mode 組合。
 
 #### 5.4.2 使用者故事
 
 | US 編號 | 使用者故事 | 驗收標準 |
 |---------|------------|----------|
-| US-03-01 | 身為系統管理員，我希望能夠建立不同角色的提示詞範本 | 1. 可建立多個範本<br>2. 可設定啟用/停用<br>3. 可指派給角色 |
-| US-03-02 | 身為資安顧問，我希望獲得更專業的回應 | 1. 顧問角色使用專業提示詞<br>2. 回應包含更多技術細節 |
+| US-03-01 | 身為系統管理員，我希望管理三個回應層級提示詞 | 1. 管理介面固定三筆<br>2. 可編輯與測試<br>3. 不顯示新增、刪除操作 |
+| US-03-02 | 身為顧問方案使用者，我希望獲得更專業的回應 | 1. expert 使用專業提示詞<br>2. 回應包含更多技術細節 |
 | US-03-03 | 身為系統管理員，我希望能夠預覽提示詞效果 | 1. 提供測試對話功能<br>2. 可比較不同提示詞效果 |
-| US-03-04 | 身為系統管理員，我希望能為每個角色的不同回應模式設定對應提示詞 | 1. 提示詞可同時綁定角色與模式<br>2. 不同模式有不同回應風格 |
+| US-03-04 | 身為系統管理員，我希望回應層級直接對應提示詞 | 1. mode 唯一決定提示詞<br>2. 每個 mode 只有一筆啟用版本 |
 
 #### 5.4.3 提示詞變數
 
@@ -793,7 +857,7 @@ Response 200:
 CREATE TABLE prompt_templates (
     id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name       VARCHAR(100) NOT NULL,
-    role       VARCHAR(50) NOT NULL,
+    role       VARCHAR(50), -- legacy only；執行期不參與查找
     mode       VARCHAR(50) DEFAULT 'standard',
     content    TEXT NOT NULL,
     variables  JSONB,
@@ -803,24 +867,18 @@ CREATE TABLE prompt_templates (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_prompt_templates_role ON prompt_templates(role);
-CREATE INDEX idx_prompt_templates_is_active ON prompt_templates(is_active);
-CREATE UNIQUE INDEX idx_prompt_templates_active_role_mode
-    ON prompt_templates(role, mode) WHERE is_active = TRUE;
+CREATE INDEX idx_prompt_templates_mode_active ON prompt_templates(mode, is_active);
+CREATE UNIQUE INDEX prompt_templates_one_active_per_mode
+    ON prompt_templates(mode) WHERE is_active = TRUE;
 ```
 
-#### 5.4.6 角色專屬提示詞說明
+#### 5.4.6 回應層級提示詞
 
-| 角色 | 提示詞策略 | 說明 |
-|------|-----------|------|
-| basic_user | 沿用 `user` 提示詞 | 僅限 beginner 模式，提示詞與 `user` 角色共用 |
-| user | 標準提示詞 | beginner / standard 模式各有對應提示詞 |
-| it_user | **專屬提示詞（偏技術風格）** | standard 模式使用獨立提示詞，強調實務操作步驟、技術指令、設定範例，回應風格偏向 CLI 指令與組態片段 |
-| consultant | 專業提示詞 | expert 模式引用 ISO 條款與法規依據 |
-| data_cleaner / data_reviewer | 沿用 standard | 僅在 Cleaner App 使用，無需獨立提示詞 |
-| admin | 沿用 standard | 可切換全部模式，使用各模式對應提示詞 |
-
-> `it_user` 角色的提示詞與 `user` 角色的 standard 模式不同——`it_user` 偏向實務技術操作（如防火牆規則、系統組態、指令範例），而 `user` 的 standard 模式偏向概念性技術建議。
+| mode | 介面名稱 | 用途 |
+|------|----------|------|
+| beginner | 新手 | 白話說明與下一步建議 |
+| standard | 一般 | IT/MIS 實務操作與注意事項 |
+| expert | 顧問 | 法規、標準、風險與專業建議 |
 
 ---
 
@@ -934,6 +992,7 @@ Request:
   Content-Type: application/json
   Body:
     file_ids: string[] (required)
+    task_name: string (required, trimmed length 1-100)
     profile_id: string (optional)
     rules: EntityRule[] (optional)
     session_id: string (optional)
@@ -1097,6 +1156,8 @@ CREATE INDEX idx_task_files_file_id ON task_files(file_id);
 
 提供檔案上傳與下載功能。
 
+Admin 在送出前檢查支援格式、每個檔案 50 MB 上限及整批原始檔案合計 50 MB 上限；NestJS 接收 51 MB multipart request，以保留約 1 MB 封裝空間。上傳失敗時必須保留已選檔案，並在上傳區顯示持續可見的中文原因。Refresh 端點回 400／401 時在原頁顯示重新登入視窗；Refresh 成功但上傳重試仍回 401 時視為暫時性驗證異常，保留登入資料、已選檔案與頁面。ZIP 完全未匯入時停留在上傳步驟；部分匯入成功時進入分類步驟，並顯示「部分檔案未匯入」及中文原因。知識庫儀表板的來源、切塊、標籤與入庫活動標題及狀態訊息使用中文，不顯示 `Unauthorized`、`Top`、`Chunks`、`RAG` 或未知內部 action code。
+
 #### 5.6.2 支援的檔案格式
 
 | 格式 | 副檔名 | MIME Type | 大小限制 |
@@ -1109,7 +1170,7 @@ CREATE INDEX idx_task_files_file_id ON task_files(file_id);
 | Markdown | .md | text/markdown | 50MB |
 | JSON | .json | application/json | 50MB |
 | HTML | .html, .htm | text/html | 50MB |
-| ZIP | .zip | application/zip | 200MB |
+| ZIP | .zip | application/zip | 上傳檔本身 50MB；解壓後總量依環境設定，預設 200MB |
 
 #### 5.6.3 API 規格
 
@@ -1151,7 +1212,7 @@ Request:
 ZIP 安全限制:
   - 壓縮比上限: ≤ 20:1（防止 Zip Bomb）
   - 單一 ZIP 內檔案數: ≤ 100
-  - 解壓後總大小: ≤ 200MB
+  - 解壓後總大小: 依 `max_zip_total_size_mb` 設定，預設 ≤ 200MB
   - 路徑穿越防護: 禁止包含 `../` 或絕對路徑的條目
   - 僅接受支援的內部檔案格式（PDF, DOCX, XLSX, CSV, TXT, MD, JSON, HTML）
 
@@ -1191,7 +1252,7 @@ Response 400 (路徑穿越):
   }
 ```
 
-> ZIP 上傳自動解壓後，各檔案獨立建立 `files` 記錄，並以 `source_zip` 欄位關聯原始 ZIP 檔名。不支援的內部檔案格式將被略過並記錄於回應的 `warnings` 欄位。
+> ZIP 上傳自動解壓後，各檔案獨立建立 `files` 記錄，並以 `source_zip` 欄位關聯原始 ZIP 檔名。不支援或無法處理的內部項目會略過並記錄於回應的 `errors` 欄位。`files` 為空時 Admin 不得前進；`files` 非空且 `errors` 有值時，Admin 顯示部分匯入警告後前進。
 
 **GET /api/v1/upload/{file_id} - 取得檔案資訊**
 
@@ -1213,14 +1274,18 @@ Response 200:
 **GET /api/v1/download/{task_id} - 下載清洗結果（ZIP）**
 
 ```yaml
+Authorization: Bearer token (admin | data_cleaner)
 Response 200:
   Content-Type: application/zip
-  Content-Disposition: attachment; filename="cleaned_{task_id}.zip"
+  Content-Disposition: attachment; filename="task_{task_id}.zip"
 ```
+
+Admin 不以一般 `<a href>` 導航下載；前端使用目前登入者的 Bearer Token 取得 Blob，再觸發檔案下載。「下載清洗結果」與「前往審核」是兩個獨立動作，前者不代表 Maker-Checker 審核完成。
 
 **GET /api/v1/download/{task_id}/{file_id} - 下載單一檔案**
 
 ```yaml
+Authorization: Bearer token (admin | data_cleaner)
 Response 200:
   Content-Type: (依原始檔案類型)
   Content-Disposition: attachment; filename="cleaned_{filename}"
@@ -1229,6 +1294,7 @@ Response 200:
 **GET /api/v1/download/{task_id}/report - 下載清洗報告**
 
 ```yaml
+Authorization: Bearer token (admin | data_cleaner)
 Response 200:
   Content-Type: application/json
   Content-Disposition: attachment; filename="report_{task_id}.json"
@@ -1489,7 +1555,7 @@ Response 200:
 
 #### 5.10.1 功能描述
 
-提供清洗任務的完整生命週期管理。
+提供清洗任務的完整生命週期、命名、快速改名與一致的台灣時間顯示。`tasks.created_at` 等既有無時區欄位視為 UTC；FastAPI 輸出含 offset 的 ISO 8601 字串，Admin 使用 `Asia/Taipei` 格式化，不直接對字串硬加 8 小時。
 
 #### 5.10.2 任務狀態機
 
@@ -1529,6 +1595,7 @@ Response 200:
       "tasks": [
         {
           "taskId": "task-uuid",
+          "taskName": "114 年度資訊資產盤點表清洗",
           "status": "completed",
           "progress": 100,
           "filesTotal": 3,
@@ -1547,6 +1614,22 @@ Response 200:
       "limit": 20
     }
   }
+```
+
+**PATCH /api/v1/tasks/{taskId}/name - 修改任務名稱（Admin）**
+
+```yaml
+Request:
+  Body:
+    task_name: string (required, trimmed length 1-100)
+Response 200:
+  task_id: UUID
+  task_name: string
+  created_at: ISO 8601 UTC offset
+Errors:
+  403: 非 Admin
+  404: 任務不存在
+  422: 名稱空白或超過 100 字
 ```
 
 **DELETE /api/v1/tasks/{taskId} - 取消任務**
@@ -1618,9 +1701,6 @@ roles:
     permissions:
       - { resource: "*", action: "*", scope: "tenant" }
 
-  - name: "platform_admin"
-    permissions:
-      - { resource: "*", action: "*", scope: "all" }
 ```
 
 #### 5.11.3 資料模型
@@ -1919,35 +1999,41 @@ alert_rules:
 
 #### 5.17.1 功能描述
 
-依使用者技術背景提供三種回應模式（beginner/standard/expert），各模式有不同的 system prompt、回應風格、引用深度。
+提供三種回應層級（beginner/standard/expert），各層級有不同的 system prompt、回應風格與引用深度。
 
-#### 5.17.2 模式定義
+#### 5.17.2 回應層級定義
 
-| 模式 | 代碼 | 目標使用者 | 回應風格 | 引用深度 |
+| 回應層級 | 代碼 | 目標使用者 | 回應風格 | 引用深度 |
 |------|------|-----------|---------|---------|
-| 新手模式 | beginner | 非技術人員 | 白話文、故事化、類比說明 | 僅結論，不引用法條編號 |
-| 一般模式 | standard | IT/MIS 工程師 | 實務技術建議、操作步驟 | 引用相關標準章節 |
-| 顧問模式 | expert | 資安顧問 | 專業分析、風險評估 | 完整引用 ISO 條款/法規依據 |
+| 新手 | beginner | 非技術人員 | 白話文、故事化、類比說明 | 僅結論，不引用法條編號 |
+| 一般 | standard | IT/MIS 工程師 | 實務技術建議、操作步驟 | 引用相關標準章節 |
+| 顧問 | expert | 資安顧問 | 專業分析、風險評估 | 完整引用 ISO 條款/法規依據 |
 
-#### 5.17.3 角色預設模式對應
+#### 5.17.3 角色預設回應層級對應
 
-| 角色 | 預設模式 | 可切換範圍 |
+| 角色 | 預設回應層級 | 可切換範圍 |
 |------|---------|-----------|
 | basic_user | beginner | beginner only |
-| user | beginner | beginner, standard |
-| it_user | standard | beginner, standard |
+| user | standard | beginner, standard |
 | consultant | expert | beginner, standard, expert |
 | data_cleaner | standard | standard only |
 | data_reviewer | standard | standard only |
 | admin | standard | beginner, standard, expert |
 
+#### 5.17.3.1 新手每日訊息額度
+
+- 僅 `basic_user` 受限，預設 20 次，可由 Admin 設定 1～1000。
+- 日界採 `Asia/Taipei` 每日 00:00；並行請求以資料庫原子條件更新計數。
+- 額度用完回 `429`，錯誤碼 `CHAT_DAILY_QUOTA_EXCEEDED`，並回傳 `limit`、`used`、`remaining`、`resetAt`。
+- `GET /api/chat/modes` 回應包含目前使用者的 `quota` 狀態。
+
 #### 5.17.4 使用者故事
 
 | US 編號 | 使用者故事 | 驗收標準 |
 |---------|------------|----------|
-| US-16-01 | 身為一般使用者，我希望系統自動以新手模式回應我 | 1. 預設新手模式<br>2. 白話文回應<br>3. 無法切換至其他模式 |
-| US-16-02 | 身為資安顧問，我希望切換到顧問模式取得含法規引用的專業回答 | 1. 可切換模式<br>2. 回應含 ISO 條款<br>3. 模式切換即時生效 |
-| US-16-03 | 身為系統管理員，我希望管理各模式的提示詞 | 1. 可編輯各模式提示詞<br>2. 可預覽不同模式回應差異 |
+| US-16-01 | 身為一般方案使用者，我希望系統預設以一般層級回應 | 1. 預設一般層級<br>2. 可切換新手／一般<br>3. 無法切換顧問 |
+| US-16-02 | 身為顧問方案使用者，我希望切換回應層級取得不同深度的回答 | 1. 可切換新手／一般／顧問<br>2. 顧問回答含 ISO 條款<br>3. 切換即時生效 |
+| US-16-03 | 身為系統管理員，我希望管理各回應層級的提示詞 | 1. 固定顯示三筆啟用提示詞<br>2. 可編輯與預覽各層級差異 |
 
 #### 5.17.5 API 規格
 
@@ -1967,9 +2053,9 @@ Request:
       temperature: number (default: 0.7)
 ```
 
-> 若未提供 `responseMode`，系統依使用者角色自動選擇預設模式。
+> 若未提供 `responseMode`，系統依使用者角色自動選擇預設回應層級；內部欄位名稱維持相容。
 
-**GET /api/chat/modes — 取得可用回應模式**
+**GET /api/chat/modes — 取得可用回應層級**
 
 ```yaml
 Request:
@@ -1985,12 +2071,12 @@ Response 200:
       "modes": [
         {
           "code": "beginner",
-          "name": "新手模式",
+          "name": "新手",
           "description": "以白話文、故事化方式回應，適合非技術背景使用者"
         },
         {
           "code": "standard",
-          "name": "一般模式",
+          "name": "一般",
           "description": "提供實務技術建議與操作步驟，適合 IT/MIS 工程師"
         }
       ]
@@ -2062,7 +2148,7 @@ ALTER TABLE conversations ADD COLUMN response_mode VARCHAR(50) DEFAULT 'standard
 | US-18-04 | 身為資料清洗人員，我希望為檔案標記分類標籤 | 1. 可新增/移除標籤<br>2. 支援自訂標籤名稱<br>3. 標籤用於後續知識庫分類 |
 | US-18-05 | 身為資料清洗人員，我希望批准或駁回清洗任務 | 1. 可批准已審核完成的任務<br>2. 可駁回品質不合格的任務<br>3. 記錄審核意見 |
 | US-18-06 | 身為系統管理員，我希望將批准的資料送入 RAG 知識庫 | 1. 僅 data_reviewer / admin 可執行送入操作<br>2. 顯示送入進度<br>3. 記錄送入結果 |
-| US-18-07 | 身為資料清洗人員，我希望瀏覽所有上傳的來源資料 | 1. 列出所有檔案<br>2. 支援類型篩選與關鍵字搜尋<br>3. 分頁顯示 |
+| US-18-07 | 身為資料清洗人員，我希望瀏覽所有上傳的來源資料 | 1. 列出所有檔案與審核狀態<br>2. 支援檔名、類型與審核狀態篩選<br>3. 篩選後的總數與分頁一致且穩定 |
 | US-18-08 | 身為資料清洗人員，我希望瀏覽知識庫中的向量化文件 | 1. 列出 Qdrant 中的文件<br>2. 依來源/標籤篩選<br>3. 顯示內容摘要 |
 | US-18-09 | 身為系統管理員，我希望按來源刪除知識庫文件 | 1. 選擇來源<br>2. 確認後刪除<br>3. 顯示刪除結果 |
 
@@ -2105,6 +2191,8 @@ ALTER TABLE conversations ADD COLUMN response_mode VARCHAR(50) DEFAULT 'standard
 
 註：rejected 狀態保留作為審核歷史軌跡，不會自動回到 pending。
    重送由 submit_for_review 處理：rejected → review_requested。
+   送入失敗會補償本次 Qdrant/BM25 資料並 rollback DB 版本異動，
+   任務維持 approved 且 ingested_at 為 NULL，可重新送入。
    並發保護：approve / reject / ingest / update_file_review_status
    均使用 SELECT ... FOR UPDATE 鎖定 task 列（PR-2 起）。
 ```
@@ -2301,7 +2389,7 @@ Response 400:
 
 **POST /api/v1/review/{task_id}/ingest - 送入 RAG 知識庫**
 
-> 僅 `admin` 角色可執行此操作。
+> 僅 `data_reviewer` 或 `admin` 角色可執行此操作。
 
 ```yaml
 Request:
@@ -2347,7 +2435,19 @@ Response 400:
       "message": "任務尚未批准，無法送入 RAG 知識庫"
     }
   }
+
+Response 503:
+  {
+    "success": false,
+    "error": {
+      "message": "送入 RAG 失敗，任務仍維持已批准，可重新嘗試",
+      "errors": ["file-uuid: qdrant unavailable"],
+      "compensation_errors": []
+    }
+  }
 ```
+
+送入流程採任務級補償：任一檔案或外部儲存失敗時，成功檔案也不會讓任務進入 `ingested`；Qdrant 使用來源 filter 刪除全部符合向量，並同步清除 BM25。法規版本以 `effective_from` 為主，依序備援 `effective_date`、`version_date` 與目前日期；完整 current／deprecated 歷程會重建為不重疊區間，僅較新的生效日可取代現行版。自動入庫與人工取代同步關閉 PostgreSQL／Qdrant 有效期間，失敗時反向還原；vector、hierarchical 與 hybrid BM25-only 結果都套用法規生命週期條件。
 
 #### 5.19.6 資料模型擴展
 
@@ -2580,6 +2680,94 @@ Response 200:
 
 ---
 
+### 5.21 FR-20：來源資料瀏覽 ✅
+
+#### 5.21.1 使用者故事與驗收規則
+
+| US 編號 | 使用者故事 | 驗收標準 |
+|---------|------------|----------|
+| US-20-01 | 身為資料清洗人員，我希望查看所有來源檔案、最新任務名稱及審核狀態 | 支援關鍵字、類型、審核狀態篩選；最新任務名稱、狀態與操作連結取自同一筆確定性最新任務；條件在計數與分頁前套用；預設排除已邏輯刪除資料，`pipeline_status=deleted` 則只回傳已刪除資料 |
+| US-20-02 | 身為系統管理員，我希望移除不應繼續審核的待審核來源資料 | 管理員限定；先取得完整影響，填寫原因並輸入「刪除」；交易內鎖定並重驗所有關聯、Qdrant 切塊及刪除資格 |
+
+#### 5.21.2 審核狀態與分頁契約
+
+| 邊界 | 必要行為 |
+|------|----------|
+| 最新任務 | 同一來源有多筆任務時，以 `tasks.created_at DESC, tasks.id DESC` 選出唯一最新任務。 |
+| 任務名稱 | `GET /api/v1/files` 由同一最新任務回傳 `latest_task_id` 與 `latest_task_name`；Cleaner 顯示名稱，空值／空白字串以「任務 {ID 前 8 碼}」備援，無任務顯示 `-`。長名稱省略並由 tooltip 顯示全文。 |
+| 狀態層級 | 來源狀態依最新任務的 `status`／`approval_status` 判定；逐檔 `task_files.review_status` 不得覆寫任務工作流狀態。 |
+| 未送審 | 最新任務 `status=completed` 且 `approval_status=pending` 時回傳 `pending_submission`，Cleaner 顯示「未送審」。 |
+| 篩選順序 | 有效／已刪除資料集、檔案類型、檔名與審核狀態都在 SQL 的 `COUNT`、排序與 `LIMIT/OFFSET` 前套用。 |
+| 穩定分頁 | 以 `files.uploaded_at DESC, files.id DESC` 排序；相同條件下每頁 `total` 相同，換頁不得遺漏或重複資料。 |
+| 無效狀態 | 不在支援列舉內的 `pipeline_status` 回傳 HTTP 422，不執行資料查詢。 |
+
+#### 5.21.3 刪除資格與資料保留
+
+| 邊界 | 必要行為 |
+|------|----------|
+| 最新狀態 | 最新關聯必須為「未送審」或「待審核」；沒有任務關聯、處理中、已退回、已批准或已入庫均禁止刪除。逐檔已標記「未通過」時須先由任務流程處理。 |
+| 全關聯檢查 | 不只檢查最新任務；任一歷史關聯已批准、已入庫或仍在處理即禁止。 |
+| 知識庫檢查 | 以來源路徑中的精確 File UUID 統計 Qdrant 切塊；有切塊或服務不可用時採失敗關閉。 |
+| 邏輯刪除 | 寫入 `files.deleted_at`、`deleted_by`、`deletion_reason`；不移除原始檔、清洗產物、TaskFile 或任務歷史。 |
+| 任務一致性 | 排除已刪除來源後，重新計算每一筆關聯任務的檔案數、完成數及實體數；有效檔案歸零時將任務設為 `cancelled`、進度 0、審核狀態 `pending`。 |
+| 歷史檢視 | 任務詳情保留已刪除來源並標示「來源已刪除」，但審核、送審、批准及入庫路徑皆不得處理該資料。 |
+| 來源清單 | 已刪除資料回傳 `pipeline_status=deleted`；有關聯任務時只提供最新任務歷史入口，無關聯任務時操作欄顯示 `-`。未處理有效資料的操作欄同樣顯示 `-`，tooltip 說明尚未建立任務。 |
+| 操作紀錄 | 以實際 JWT 管理員身分記錄 `source_file_soft_deleted`、原因、來源檔名、受影響任務及保留產物數。 |
+
+#### 5.21.4 時間顯示契約
+
+FastAPI 與 NestJS 持續使用 UTC 傳輸時間；Cleaner 共用格式函式將帶 `Z`／offset 的字串依其時區解析，舊資料若沒有 offset 則視為 UTC。來源資料、任務列表、任務詳情、檔案審核、首頁最近活動與知識庫匯入日期都明確以 `Asia/Taipei` 顯示，不依賴瀏覽器或作業系統時區。
+
+#### 5.21.5 併發與錯誤契約
+
+刪除端點於同一資料庫交易鎖定 File、Task 及 TaskFile 後重新執行資格判斷，不信任預檢結果。狀態衝突回 HTTP 409；Qdrant 無法驗證回 HTTP 503；理由或確認文字不符回 HTTP 400；非管理員由 NestJS RBAC 回 HTTP 403。此功能沿用既有 `files` 邏輯刪除欄位，不新增 migration。
+
+---
+
+### 5.22 FR-24：法規／知識分類治理 ✅
+
+#### 5.22.1 契約與處理規則
+
+跨 TypeScript、Python 的類型集合以 `contracts/enums.yml` 為唯一來源。完整集合包含 `general` 與相容用 `other`；新上傳可選集合排除 `other`；法規治理集合固定為 `law`、`regulation`、`iso_standard`、`nist`、`cis`。
+
+| 邊界 | 必要行為 |
+|---|---|
+| Admin | 一批選一種類型；逐檔 PATCH 全部成功後才 POST clean。 |
+| NestJS | DTO 以契約集合驗證 `regulation_type`，維持 JWT、RBAC 與代理責任。 |
+| FastAPI metadata／clean | PATCH 與建立任務鎖定同一 File row；任務建立後分類不可變。載入所有 file records 後先檢查分類；缺少時不得建立 Task／TaskFile 或提交 queue。 |
+| Review／Ingest | 直接依分類判斷法規治理，不再以 tags 推測。 |
+| Regulations／Analytics | 版本、刪除、關聯、影響分析與過期提醒只查法規治理集合；類型分佈顯示全部非空分類。 |
+
+#### 5.22.2 錯誤契約
+
+```json
+{
+  "detail": {
+    "code": "REGULATION_TYPE_REQUIRED",
+    "message": "Every file must have a regulation/knowledge type before cleaning",
+    "file_ids": ["<uuid>"]
+  }
+}
+```
+
+任務建立後再變更分類時回傳 HTTP 409：
+
+```json
+{
+  "detail": {
+    "code": "REGULATION_TYPE_LOCKED",
+    "message": "Regulation/knowledge type cannot change after cleaning has started",
+    "file_id": "<uuid>"
+  }
+}
+```
+
+#### 5.22.3 資料遷移
+
+Alembic `011` 建立 migration-owned ledger，記錄原本 `regulation_type IS NULL` 的 file IDs，再回填 `general`。資料欄位維持 nullable，因為檔案上傳與分類是兩個 API 步驟；完整性由建立清洗任務的服務邊界保證。
+
+---
+
 ## 6. 非功能需求 (NFR)
 
 ### 6.1 NFR-01：效能需求
@@ -2751,22 +2939,20 @@ Response 200:
 
 | 值 | 說明 | 階段 |
 |----|------|------|
-| basic_user | 基礎使用者（僅 beginner 模式） | ✅ |
-| user | 一般使用者 | ✅ |
-| it_user | IT 工程師 | ✅ |
-| consultant | 資安顧問 | ✅ |
+| basic_user | 新手方案（僅 beginner） | ✅ |
+| user | 一般方案（beginner、standard） | ✅ |
+| consultant | 顧問方案（beginner、standard、expert） | ✅ |
 | data_cleaner | 資料清洗人員（僅 Cleaner App） | ✅ |
 | data_reviewer | 資料審核人員（Maker-Checker 審批者） | ✅ |
 | admin | 系統管理員 | ✅ |
-| platform_admin | 平台管理員 | 🔮 |
 
-#### 回應模式 (ResponseMode)
+#### 回應層級 (ResponseMode)
 
 | 值 | 說明 | 階段 |
 |----|------|------|
-| beginner | 新手模式 | 🔄 |
-| standard | 一般模式 | 🔄 |
-| expert | 顧問模式 | 🔄 |
+| beginner | 新手 | ✅ |
+| standard | 一般 | ✅ |
+| expert | 顧問 | ✅ |
 
 #### 實體類型 (EntityType)
 
@@ -2834,18 +3020,21 @@ Response 200:
 | | POST | /api/auth/logout | 使用者登出 | 🔄 |
 | | POST | /api/auth/refresh | 更新 Token | 🔄 |
 | **對話** | POST | /api/chat | 發送對話訊息 | ✅ |
-| | GET | /api/chat/modes | 取得可用回應模式 | 🔄 |
+| | GET | /api/chat/modes | 取得可用回應層級與每日額度 | ✅ |
+| | GET/PUT | /api/chat/usage-config | 取得／更新新手每日訊息額度（Admin） | ✅ |
 | | GET | /api/chat/conversations | 取得對話列表 | ✅ |
 | | GET | /api/chat/conversations/{id} | 取得對話詳情 | ✅ |
 | | POST | /api/chat/messages/{messageId}/feedback | 回覆品質回饋 | ✅ |
-| **提示詞** | GET | /api/prompts | 取得提示詞列表 | 🔄 |
-| | POST | /api/prompts | 建立提示詞 | 🔄 |
-| | PUT | /api/prompts/{id} | 更新提示詞 | 🔄 |
-| | DELETE | /api/prompts/{id} | 刪除提示詞 | 🔄 |
-| | POST | /api/prompts/{id}/test | 測試提示詞 | 🔄 |
+| **提示詞** | GET | /api/prompts | 取得提示詞列表 | ✅ |
+| | POST | /api/prompts | 建立提示詞 | ✅ |
+| | PUT | /api/prompts/{id} | 更新提示詞 | ✅ |
+| | DELETE | /api/prompts/{id} | 刪除停用提示詞 | ✅ |
+| | POST | /api/prompts/{id}/test | 測試提示詞 | ✅ |
 | **上傳** | POST | /api/v1/upload | 上傳檔案 | ✅ |
 | | GET | /api/v1/upload/{id} | 取得檔案資訊 | ✅ |
 | | GET | /api/v1/files | 列出所有上傳檔案（支援 pipeline_status 篩選） | ✅ |
+| | GET | /api/v1/files/{id}/deletion-impact | 取得待審核來源刪除影響與阻擋原因（Admin） | ✅ |
+| | DELETE | /api/v1/files/{id} | 交易式邏輯刪除待審核來源資料（Admin） | ✅ |
 | **清洗** | POST | /api/v1/clean | 啟動清洗任務 | ✅ |
 | | POST | /api/v1/clean/preview | 預覽清洗結果 | ✅ |
 | | GET | /api/v1/clean/{id}/result | 取得清洗結果 | ✅ |
@@ -2939,7 +3128,7 @@ Response 200:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Header: Logo | 對話標題 | 模式切換（新手/一般/顧問）| 使用者選單 │
+│  Header: Logo | 對話標題 | 回應層級（新手/一般/顧問）| 使用者選單 │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │                                                      │   │
@@ -2993,9 +3182,10 @@ Response 200:
 │  ─────── │    - 最近活動 Timeline（操作類型 + 時間戳）            │
 │          │                                                      │
 │          │  ■ 來源資料 (Files)                                   │
-│          │    - 檔案列表 + 搜尋/類型篩選                         │
-│          │    - 管線狀態欄（7 種狀態）:                           │
-│          │      未處理/清洗中/清洗失敗/待審核/已批准/已入庫/已退回 │
+│          │    - 檔案列表 + 檔名/類型/審核狀態篩選                 │
+│          │    - 審核狀態欄:                                      │
+│          │      未處理/清洗中/清洗失敗/未送審/待審核/已批准/已入庫/已退回 │
+│          │    - Admin 可預檢並邏輯刪除未送審或待審核資料；其餘角色不顯示操作 │
 │          │                                                      │
 │          │  ■ 知識庫 (Knowledge Base) — 三 Tab                   │
 │          │    Tab 1: 文件管理 — 以「文件」為核心聚合瀏覽          │
@@ -3019,8 +3209,14 @@ Response 200:
 | 項目 | 規格 |
 |------|------|
 | 驗證方式 | JWT (JSON Web Token) |
-| Access Token 效期 | 1 小時 |
+| Access Token 效期 | 60 分鐘 |
 | Refresh Token 效期 | 7 天 |
+| 工作階段上限 | 每帳號 10 個有效工作階段；超出時撤銷最久未使用者 |
+| Refresh 輪替 | `sid` 維持不變、`jti` 單次使用，以條件更新原子輪替 |
+| Token 用途 | 新發 Token 具有 `tokenUse=access` 或 `tokenUse=refresh`；JWT Strategy 拒絕 Refresh Token 存取受保護端點 |
+| 前端失效判定 | 僅 Refresh 400／401 或缺少 Refresh Token 要求同頁重新登入；網路／429／5xx 保留狀態 |
+| 跨分頁協調 | 優先使用 Web Locks；fallback 採 Bakery-style 多鍵競爭者互斥，租約每 2 秒續期、5 秒到期，選出競爭者後須再次檢查舊版單鍵租約；執行前寫入 lease 並讀回確認 owner，失敗時移除 contender 後重新競爭；登入、重新驗證、SSO、密碼變更、登出與 Refresh 共用同一鎖；Refresh 帶認證協定版本 2，API 以 426 阻擋舊頁面輪替；HTTP 回應及 JSON 解析後均重驗 Access／Refresh／使用者快照，帳號主體不同時不清除或覆寫 Token |
+| 同頁重新登入 | 唯讀顯示原帳號，只接受相同使用者 ID；不同使用者 ID 時拒絕切換並撤銷該次新工作階段；稍後處理後保留手動重新登入入口 |
 | Token 演算法 | HS256 |
 | 密碼雜湊 | bcrypt (cost factor 12) |
 | 登入失敗鎖定 | 5 次失敗後鎖定 15 分鐘 |
@@ -3055,6 +3251,7 @@ Response 200:
 | TC-01-001 | 正常登入 | 輸入正確帳密並點擊登入 | 登入成功，跳轉至首頁 |
 | TC-01-002 | 登入失敗 | 輸入錯誤密碼並點擊登入 | 顯示錯誤訊息，保留在登入頁 |
 | TC-02-001 | RAG 查詢 | 輸入資安問題並送出 | 回應時間 < 10 秒，顯示引用來源 |
+| TC-02-002 | 重新產出最新回覆 | 完成一輪資安問答後點擊最新回覆的重新產出 icon；另測修改問題、雙 attempt 並發、processing 重送、failed 重試與落盤後斷線 | 原問答保留；底部追加相同問題與新回覆；舊回覆不再顯示 icon；修改問題與並發 loser 被拒絕；processing 重送回 409；failed／已完成的同 attempt 重試不重複扣額度 |
 | TC-03-001 | 檔案上傳 | 拖放 PDF 檔案 | 顯示上傳進度，成功後列表顯示 |
 | TC-04-001 | 清洗任務 | 選擇檔案與規則，開始清洗 | 任務建立成功，顯示即時進度 |
 | TC-05-001 | 清洗審核 | 查看清洗任務，檢視檔案內容 | 顯示清洗前後對比，標示 PII 實體 |
@@ -3066,6 +3263,9 @@ Response 200:
 | TC-05-007 | Maker-Checker 退回 | data_reviewer 登入 → 開啟已送審任務 → 退回（附理由）→ 確認狀態 | 任務狀態變更為 `rejected`（保留審核軌跡），檔案解除凍結，記錄 rejection_reason 與 review_note；cleaner 可重新編輯並再送審（rejected → review_requested） |
 | TC-06-001 | 清洗統計 | 查看 Analytics 清洗統計頁面 | 顯示任務完成率、PII 分佈 |
 | TC-06-002 | 時間軸統計 | 查看時間軸趨勢圖表 | 圖表正確顯示每日處理量 |
+| TC-20-001 | 刪除與查閱待審核來源資料 | 以 Admin 開啟待審核資料刪除預檢，確認影響、填寫原因並輸入「刪除」；另測非 Admin、已批准／已入庫／處理中、Qdrant 有切塊與 Qdrant 不可用，再切換「已刪除」篩選 | 只有完全符合資格的資料完成邏輯刪除；預設列表排除且「已刪除」篩選可查閱；有任務時只可查看歷史；原檔、清洗產物與歷史仍存在；所有阻擋情境不產生狀態變更 |
+| TC-20-002 | Cleaner 台北時間 | 以 UTC、無 offset UTC 與跨日時間載入來源、任務、審核及知識庫頁面 | 各頁固定顯示 `Asia/Taipei` 時間，結果不受執行測試或瀏覽器所在時區影響 |
+| TC-20-003 | 來源審核狀態與分頁 | 在真實 PostgreSQL 交易內建立 25 筆同狀態來源，查詢第 1／2 頁；另驗證 SQL 狀態矩陣、逐檔未通過與同時間多任務 | 兩頁 `total=25`、資料不重複且只含指定狀態；逐檔結果不覆寫來源的「未送審」；同時間任務以 `id DESC` 決勝；交易 rollback 後無 fixture 殘留 |
 
 ### 11.2 效能驗收指標
 
@@ -3145,6 +3345,25 @@ Q1 2026   Q2 2026   Q3 2026   Q4 2026   Q1 2027   Q2 2027
 
 | 版本 | 日期 | 變更說明 |
 |------|------|----------|
+| 2.7.3 | 2026-07-18 | 來源列表增加 `latest_task_name` 契約、舊任務 ID 備援、RWD 欄位與最新任務名稱／狀態／連結一致性驗證 |
+| 2.7.2 | 2026-07-17 | 補強來源資料狀態層級、未送審、先篩選後計數／穩定分頁、HTTP 422 與 PostgreSQL rollback 整合驗證 |
+| 2.7.1 | 2026-07-16 | 補強已刪除專用篩選、任務歷史入口、操作欄語意與 Cleaner 共用台北時區顯示契約 |
+| 2.7.0 | 2026-07-16 | 新增 US-20-02：管理員限定的待審核來源預檢與邏輯刪除、全關聯與 Qdrant 失敗關閉、交易鎖、任務統計重算及歷史保留 |
+| 2.6.5 | 2026-07-14 | 重新產出新增 metadata lease CAS、後端主題限制與真實額度回滾驗證 |
+| 2.6.4 | 2026-07-14 | 重新產出額度與 claim 改為同交易，失敗釋放加入 lease fencing |
+| 2.6.3 | 2026-07-14 | 重新產出加入 5 分鐘 lease、lease fencing、跨分頁 attempt 定位與 completed claim 狀態 |
+| 2.6.2 | 2026-07-14 | 重新產出加入 processing／failed claim 狀態、處理中 409 防重入與中斷後安全續跑 |
+| 2.6.1 | 2026-07-14 | 強化重新產出：相同問題驗證、conversation row lock、attempt 冪等、落盤後回放、單調訊息時間與重試鎖 |
+| 2.6.0 | 2026-07-14 | 新增 US-02-07 最新回覆重新產出、`regenerateFromMessageId` 驗證、訊息 metadata 關聯、額度與 UI 狀態契約 |
+| 2.5.0 | 2026-07-13 | Admin、Cleaner、Chatbot 共用的 Access Token 效期由 30 分鐘延長為 60 分鐘；Refresh Token 維持 7 天 |
+| 2.3.0 | 2026-07-13 | 認證工作階段穩定化：Prisma 0009 `auth_sessions`、30 分鐘 Access Token、Refresh 原子輪替、SSO 交換、目前／全部登出與三前端同頁復原 |
+| 2.4.0 | 2026-07-13 | 補 Token 用途隔離、同帳號重新登入、跨分頁租約續期與不同帳號切換保護 |
+| 2.2.2 | 2026-07-13 | 管理者對話詳情回傳使用者摘要，修正 Drawer 使用者欄位固定顯示「-」 |
+| 2.2.1 | 2026-07-13 | 對話列表新增實際訊息總數；計數限定 user/assistant，並以 Prisma 0008 建立 messages(conversation_id, created_at) 複合索引 |
+| 2.2.0 | 2026-07-12 | RFC-003：任務名稱必填、Admin 列表快速改名、Alembic 012 與 Asia/Taipei 時間契約 |
+| 2.1.2 | 2026-07-12 | 上傳失敗改為持續顯示中文原因；補上格式、單檔／整批 50 MB、登入失效、ZIP 完全失敗／部分成功流程，並將知識庫來源與入庫活動訊息中文化 |
+| 2.1.1 | 2026-07-12 | 補強 RFC-002 分類鎖定與競態規則；下載改為 Bearer fetch → Blob，並區分清洗產物與 Cleaner 審核 |
+| 2.1.0 | 2026-07-12 | RFC-002：新增 FR-24 法規／知識分類契約、Clean API 防線、治理集合與 Alembic 011 |
 | 1.8.0 | 2026-03-16 | ML-15 全面審查：PII 實體統一為 20 種（含 TW_ADDRESS）；API 路徑修正（Auth/Chat/Prompts 移除 /v1/）；partial_mask 參數名修正（keep_first/keep_last）；UserRole enum 補齊 7 角色；FR-08 Rules API 標記 deprecated；Ingest 權限修正（data_reviewer/admin）；審核狀態機 reviewing→review_requested；新增 Maker-Checker 驗收案例（TC-05-006/007）；新增回饋 API 規格；新增信心度判定邏輯；新增 it_user 專屬提示詞說明 |
 | 1.7.0 | 2026-03-11 | 新增 basic_user 角色（beginner only）與 data_reviewer 角色（Maker-Checker 審批者）；上傳格式新增 MD、JSON、HTML、ZIP；新增 ZIP 上傳 API 規格（安全限制：壓縮比≤20:1、檔案數≤100、總大小≤200MB、禁止路徑穿越）；新增 Maker-Checker 職責分離欄位（submitted_by/submitted_at）與四端點驗證規則（approve、reject、file_status、ingest）；更新三層模式角色對應表（7 角色） |
 | 1.6.0 | 2026-02-13 | 移除獨立 Cleaning Service :8001（已合併至 RAG Service :3502）；新增 5 支 API（analytics/pipeline、analytics/recent-activity、knowledge-base/documents/grouped、knowledge-base/documents/by-source、files pipeline_status 篩選）；重寫 Cleaner App 介面規格（管線漏斗、三 Tab 知識庫、檔案審核面板）；更新服務通訊矩陣與連線埠分配 |

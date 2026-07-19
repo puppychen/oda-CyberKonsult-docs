@@ -1,5 +1,8 @@
 ---
 audience: both
+purpose: decision
+status: approved
+owner: ODA Cyber Konsult
 ---
 
 # 架構決策紀錄 (ADR)
@@ -398,7 +401,7 @@ RAG 知識庫無法涵蓋所有資安知識（尤其是最新法規修正、新�
 
 1. **規格 SSoT**（root `contracts/*.yml`）
    - `contracts/thresholds.yml` 收 7 個 RAG 閾值（hybrid/cosine_filter_min、rrf_detect_max、web_search_score_min、rrf/cosine_high/low_confidence）
-   - `contracts/enums.yml` 收 user_roles 7 角色
+   - `contracts/enums.yml` 收現行 user_roles 6 角色
    - 開頭註解明列規格來源（PRD 行號）+ 實作對應位置 + 雙語意警告
 
 2. **TS workspace**（`packages/contracts/` 套件 `@oda-cyber/contracts`）
@@ -413,7 +416,7 @@ RAG 知識庫無法涵蓋所有資安知識（尤其是最新法規修正、新�
 
 下列已 SSoT 化的常數**不**收進 contracts/，避免反向劣化：
 - `chat.service.ts:18-31 MODE_CONFIG`（已 TS const，IDE jump 完整）
-- `prompts/dto/create-prompt.dto.ts PROMPT_ROLES` / `PROMPT_MODES`
+- `prompts/dto/create-prompt.dto.ts PROMPT_MODES`（提示詞直接依回應層級對應，不再區分角色）
 - `packages/shared-types/src/cleaning.ts` 全部 enum（StrategyType / TaskStatus / ApprovalStatus / PipelineStatus）
 - `audit-log.interceptor.ts AUDIT_ACTIONS`（已內聚於 `audit-actions.ts`）
 - `password-strength.validator.ts` 密碼政策

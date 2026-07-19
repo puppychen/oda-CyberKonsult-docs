@@ -1,3 +1,10 @@
+---
+audience: both
+purpose: runbook
+status: approved
+owner: ODA Cyber Konsult
+---
+
 # 部署與維運指南
 
 ## 部署架構
@@ -49,6 +56,8 @@ Python 無需預編譯，直接以 uv 或 pip 安裝相依後啟動。
 ```bash
 # 安全性
 JWT_SECRET=<至少 64 字元的隨機字串>
+JWT_ACCESS_EXPIRES_IN=60m
+JWT_REFRESH_EXPIRES_IN=7d
 RAG_DEBUG=false
 
 # 資料庫
@@ -152,7 +161,7 @@ pnpm install && pnpm build
 cd python && uv sync
 
 # 3. 資料庫遷移
-cd apps/api && npx prisma migrate deploy
+pnpm exec dotenv -e .env -- pnpm --filter @oda-cyber/api exec prisma migrate deploy
 cd python/rag-service && uv run alembic upgrade head
 
 # 4. 啟動服務（使用 PM2 或 systemd）
@@ -167,12 +176,115 @@ cd python && uv run gunicorn rag_service.api.main:app \
 
 ## 資料庫遷移（正式環境）
 
+資料庫 migration 應以單次 release job 執行，不要讓每個 API／RAG replica 在啟動時各自執行。先備份 PostgreSQL，再依序套用 Prisma 與 Alembic；應用程式部署後再驗證版本。
+
 ```bash
-# Prisma — 使用 deploy（不產生新遷移）
-cd apps/api && npx prisma migrate deploy
+# Prisma — 從 monorepo 根目錄執行 deploy（不產生新遷移）
+pnpm exec dotenv -e .env.production -- pnpm --filter @oda-cyber/api exec prisma migrate deploy
 
 # Alembic — 套用所有待套遷移
 cd python/rag-service && uv run alembic upgrade head
+```
+
+Docker Compose 環境使用映像內既有 CLI：
+
+```bash
+docker compose -f docker/docker-compose.prod.yml run --rm api ./node_modules/.bin/prisma migrate deploy
+docker compose -f docker/docker-compose.prod.yml run --rm rag-service alembic upgrade head
+```
+
+### Prisma 0010：移除 SearXNG 本機預設值
+
+`0010_remove_websearch_url_default` 只移除 `web_search_configs.searxng_url` 欄位的資料庫預設值，不刪除或改寫既有資料。部署前應在各環境明確設定 `SEARXNG_URL`；例如同一 Docker 網路使用 `http://searxng:8080`，直接映射到主機時才使用 `http://localhost:8080`。
+
+```bash
+# Staging
+pnpm exec dotenv -e .env.staging -- pnpm --filter @oda-cyber/api exec prisma migrate deploy
+ENV_FILE=.env.staging ./scripts/verify-migration-0010.sh
+
+# Production
+pnpm exec dotenv -e .env.production -- pnpm --filter @oda-cyber/api exec prisma migrate deploy
+ENV_FILE=.env.production ./scripts/verify-migration-0010.sh
+```
+
+驗證腳本預期輸出 `PASS: migration 0010 removed the environment-specific SearXNG URL default`。若舊資料仍為 `http://localhost:8888`，新版 API 第一次讀取時會改成該環境的 `SEARXNG_URL`；其他管理者自訂 URL 不會被覆寫。
+
+回退新版應用程式時可保留此 migration。只有必須回退到「建立設定時不會提供 `searxng_url`」的舊 API，才需先將欄位預設設為該環境可連線的 SearXNG URL；不得重新使用舊版 `localhost:8888`，除非該環境確實在該位址提供服務。
+
+### Prisma 0009：獨立認證工作階段
+
+`0009_add_auth_sessions` 新增 `auth_sessions`，供 Admin、Cleaner、Chatbot 與 API 用戶端各自保存 Refresh Token 雜湊、目前 `jti`、到期與撤銷時間。這是 expand-contract migration：既有 `users.refresh_token` 不刪除，舊 Refresh Token 會在第一次刷新時惰性轉換。
+
+各環境使用對應環境檔執行；不要使用 `prisma migrate dev`：
+
+```bash
+# Staging
+pnpm exec dotenv -e .env.staging -- pnpm --filter @oda-cyber/api exec prisma migrate deploy
+ENV_FILE=.env.staging ./scripts/verify-migration-0009.sh
+
+# Production
+pnpm exec dotenv -e .env.production -- pnpm --filter @oda-cyber/api exec prisma migrate deploy
+ENV_FILE=.env.production ./scripts/verify-migration-0009.sh
+```
+
+若部署平台由 Secret Manager 直接注入 `DATABASE_URL`，可不設定 `ENV_FILE`；在工作目錄沒有 `.env` 時，驗證腳本會直接使用目前環境變數。預期驗證訊息為 `PASS: migration 0009 auth_sessions schema verified`。
+
+手動唯讀檢查：
+
+```sql
+SELECT migration_name, finished_at
+FROM _prisma_migrations
+WHERE migration_name = '0009_add_auth_sessions';
+
+SELECT column_name, is_nullable
+FROM information_schema.columns
+WHERE table_schema = 'public' AND table_name = 'auth_sessions'
+ORDER BY ordinal_position;
+```
+
+若新版應用程式需回退，必須保留 `auth_sessions` 表。不要在緊急回退時 drop table，以免刪除仍有效的新版 Session；移除舊欄位應另立後續 contract migration。
+
+#### 認證協定 rollout fence
+
+本版 Refresh API 要求 `X-ODA-Auth-Session-Protocol: 2`。部署順序必須是：先套用 Prisma 0009，再部署新版 API、切換 100% 流量並確認舊 API replica 已排空，最後才發布 Admin、Cleaner、Chatbot。不得讓新舊 API revision 分流，否則缺少協定檢查的舊 API 仍可能接受舊頁面的 Refresh。新版 API 上線後，仍開啟的舊頁面 Refresh 會得到 426 且不輪替 Token；重新整理載入新版前端即可恢復。
+
+Protocol 2 前端發布後，API 只能 roll forward 修復，或回退到已回補相同 426 fence 的版本；禁止回退到未檢查 `X-ODA-Auth-Session-Protocol` 的 API。Admin、Cleaner、Chatbot 的回退版本也必須持續送出 protocol 2 header，否則會被目前 API 以 426 拒絕。建立 rollback candidate 時，必須先執行 Controller 的版本拒絕測試、三端 Refresh header 測試與 PostgreSQL 平行輪替整合測試，再允許切換流量。
+
+`011` 會將既有 `files.regulation_type IS NULL` 回填為 `general`。套用後驗證：
+
+```sql
+SELECT version_num FROM alembic_version;
+SELECT COUNT(*) FROM files WHERE regulation_type IS NULL;
+SELECT regulation_type, COUNT(*) FROM files GROUP BY regulation_type ORDER BY regulation_type;
+SELECT COUNT(*) FROM migration_011_regulation_type_backfill;
+SELECT column_name, data_type, character_maximum_length, is_nullable
+FROM information_schema.columns
+WHERE table_schema = 'public' AND table_name = 'tasks' AND column_name = 'task_name';
+```
+
+預期 Alembic 版本為 `012`、未分類數量為 `0`，且 `tasks.task_name` 為 nullable `character varying(100)`。只回復任務名稱功能時，先停止新版建立清洗任務，再執行 `uv run alembic downgrade 011`；此動作會刪除所有已填寫的任務名稱，必須先匯出或確認可捨棄。若要再回復分類 migration，才執行 `uv run alembic downgrade 010`；`011` 降版只還原 ledger 內且仍為 `general` 的檔案，已改成其他類型的值不會被覆寫。
+
+可在名稱以 `_migration_test` 結尾的拋棄式資料庫執行 upgrade／downgrade 行為驗證：
+
+```bash
+MIGRATION_TEST_DATABASE_URL='postgresql+asyncpg://.../oda_011_migration_test' \
+  ./scripts/verify-migration-011.sh
+```
+
+主機未安裝 `psql` 時，可改用一次性 PostgreSQL client 容器：
+
+```bash
+PSQL_DOCKER_IMAGE=postgres:17 \
+MIGRATION_TEST_DATABASE_URL='postgresql+asyncpg://.../oda_011_migration_test' \
+  ./scripts/verify-migration-011.sh
+```
+
+`012` 的 nullable 欄位、舊任務保留、寫入與降版移除欄位可用下列指令獨立驗證：
+
+```bash
+PSQL_DOCKER_IMAGE=postgres:17 \
+MIGRATION_TEST_DATABASE_URL='postgresql+asyncpg://.../oda_012_migration_test' \
+  ./scripts/verify-migration-012.sh
 ```
 
 ## Nginx 反向代理範例

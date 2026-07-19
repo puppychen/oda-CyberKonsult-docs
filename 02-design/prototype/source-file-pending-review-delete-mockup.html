@@ -1,0 +1,609 @@
+<!--
+---
+audience: human-primary
+purpose: decision
+status: approved
+owner: Jake
+---
+-->
+<!doctype html>
+<html lang="zh-Hant-TW">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>待審核來源資料刪除 Mockup</title>
+    <style>
+      :root {
+        --primary: #1677ff;
+        --danger: #ff4d4f;
+        --text: #000000e0;
+        --muted: #00000073;
+        --line: #f0f0f0;
+        --page: #f5f5f5;
+      }
+      * {
+        box-sizing: border-box;
+        letter-spacing: 0;
+      }
+      body {
+        margin: 0;
+        color: var(--text);
+        background: #dfe3e8;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+      }
+      button,
+      input,
+      textarea {
+        font: inherit;
+      }
+      .review {
+        min-height: 52px;
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border-bottom: 1px solid #cbd1d8;
+        background: #e8ebef;
+      }
+      .review span {
+        margin-right: 6px;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .review button {
+        min-height: 34px;
+        padding: 0 13px;
+        border: 1px solid #b7bec8;
+        border-radius: 6px;
+        background: #fff;
+        cursor: pointer;
+      }
+      .review button.active {
+        color: #fff;
+        border-color: var(--primary);
+        background: var(--primary);
+      }
+      .app {
+        width: min(1440px, 100%);
+        min-height: calc(100vh - 52px);
+        margin: auto;
+        display: grid;
+        grid-template-columns: 180px minmax(0, 1fr);
+        background: var(--page);
+        box-shadow: 0 10px 34px rgba(0, 0, 0, 0.13);
+      }
+      aside {
+        border-right: 1px solid var(--line);
+        background: #fff;
+      }
+      .logo {
+        min-height: 83px;
+        padding: 13px 18px 9px;
+        border-bottom: 1px solid var(--line);
+      }
+      .logo img {
+        width: 102px;
+        display: block;
+      }
+      .logo small {
+        display: block;
+        margin-top: 3px;
+        color: #555;
+        font-size: 12px;
+      }
+      nav {
+        padding: 8px 0;
+      }
+      nav div {
+        min-height: 42px;
+        padding: 11px 18px;
+        color: #333;
+        font-size: 14px;
+      }
+      nav .active {
+        color: var(--primary);
+        background: #e6f4ff;
+      }
+      .right {
+        min-width: 0;
+      }
+      header {
+        height: 64px;
+        padding: 0 24px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        border-bottom: 1px solid var(--line);
+        background: #fff;
+      }
+      main {
+        padding: 24px;
+      }
+      .page {
+        max-width: 1220px;
+        margin: auto;
+      }
+      .crumb {
+        margin-bottom: 14px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      h1 {
+        margin: 0 0 22px;
+        font-size: 24px;
+      }
+      .filters,
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #fff;
+      }
+      .filters {
+        margin-bottom: 16px;
+        padding: 18px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .control {
+        height: 34px;
+        padding: 0 11px;
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        background: #fff;
+        color: #555;
+      }
+      .search {
+        width: 280px;
+      }
+      .card {
+        overflow: hidden;
+      }
+      .table-wrap {
+        overflow: auto;
+      }
+      table {
+        width: 100%;
+        min-width: 850px;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 13px 14px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        font-size: 14px;
+      }
+      th {
+        background: #fafafa;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      td.name {
+        min-width: 260px;
+        overflow-wrap: anywhere;
+      }
+      .tag {
+        display: inline-block;
+        padding: 2px 8px;
+        border: 1px solid;
+        border-radius: 5px;
+        font-size: 12px;
+        white-space: nowrap;
+      }
+      .pending {
+        color: #d48806;
+        border-color: #ffe58f;
+        background: #fffbe6;
+      }
+      .approved {
+        color: #389e0d;
+        border-color: #b7eb8f;
+        background: #f6ffed;
+      }
+      .ingested {
+        color: #1677ff;
+        border-color: #91caff;
+        background: #e6f4ff;
+      }
+      .deleted {
+        color: #595959;
+        border-color: #d9d9d9;
+        background: #f5f5f5;
+      }
+      .actions {
+        display: flex;
+        justify-content: center;
+        gap: 4px;
+      }
+      .icon-btn {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border: 1px solid transparent;
+        border-radius: 5px;
+        background: transparent;
+        cursor: pointer;
+      }
+      .icon-btn.view {
+        color: var(--primary);
+      }
+      .icon-btn.delete {
+        color: var(--danger);
+      }
+      .icon-btn:hover {
+        border-color: #d9d9d9;
+        background: #fafafa;
+      }
+      .view {
+        display: none;
+      }
+      .view.active {
+        display: block;
+      }
+      .overlay {
+        position: fixed;
+        inset: 52px 0 0;
+        display: none;
+        place-items: center;
+        padding: 18px;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 10;
+      }
+      .overlay.active {
+        display: grid;
+      }
+      .modal {
+        width: min(560px, 100%);
+        max-height: calc(100vh - 90px);
+        overflow: auto;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 12px 45px rgba(0, 0, 0, 0.25);
+      }
+      .modal-head {
+        padding: 17px 22px;
+        border-bottom: 1px solid var(--line);
+        font-size: 17px;
+        font-weight: 600;
+      }
+      .modal-body {
+        padding: 20px 22px;
+      }
+      .warning {
+        margin-bottom: 16px;
+        padding: 12px 14px;
+        border: 1px solid #ffccc7;
+        border-radius: 6px;
+        background: #fff2f0;
+        color: #a8071a;
+      }
+      .filename {
+        margin: 0 0 14px;
+        padding: 10px 12px;
+        border-radius: 5px;
+        background: #fafafa;
+        overflow-wrap: anywhere;
+      }
+      .impact {
+        margin: 0 0 18px;
+        padding-left: 22px;
+        line-height: 1.8;
+      }
+      label {
+        display: block;
+        margin: 14px 0 7px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .required {
+        color: var(--danger);
+      }
+      textarea,
+      input.confirm {
+        width: 100%;
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+      }
+      textarea {
+        min-height: 76px;
+        padding: 9px 11px;
+        resize: vertical;
+      }
+      input.confirm {
+        height: 36px;
+        padding: 0 11px;
+      }
+      .hint {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .modal-actions {
+        padding: 13px 22px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        border-top: 1px solid var(--line);
+      }
+      .btn {
+        min-height: 34px;
+        padding: 0 14px;
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        background: #fff;
+        cursor: pointer;
+      }
+      .btn.danger {
+        color: #fff;
+        border-color: var(--danger);
+        background: var(--danger);
+      }
+      .btn.danger:disabled {
+        border-color: #ffccc7;
+        background: #ffccc7;
+        cursor: not-allowed;
+      }
+      .result {
+        margin-bottom: 16px;
+        padding: 12px 14px;
+        border: 1px solid #b7eb8f;
+        border-radius: 6px;
+        background: #f6ffed;
+        color: #237804;
+      }
+      @media (max-width: 760px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+        aside {
+          display: none;
+        }
+        header {
+          height: 52px;
+        }
+        main {
+          padding: 12px;
+        }
+        .review {
+          flex-wrap: wrap;
+        }
+        .overlay {
+          inset: 86px 0 0;
+          align-items: start;
+        }
+        .search {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="review">
+      <span>Mockup 畫面（正式介面不顯示）</span>
+      <button class="active" data-target="list">來源資料列表</button>
+      <button data-target="deleted-list">已刪除檢視</button>
+      <button data-target="confirm">刪除確認</button>
+      <button data-target="result">完成結果</button>
+    </div>
+    <div class="app">
+      <aside>
+        <div class="logo">
+          <img src="../../../apps/admin/src/assets/cyberkonsult-logo.png" alt="CyberKonsult" /><small>清洗管理</small>
+        </div>
+        <nav>
+          <div>⌂　總覽</div>
+          <div class="active">□　來源資料</div>
+          <div>☷　任務列表</div>
+          <div>▤　知識庫</div>
+          <div>◷　法規版本</div>
+        </nav>
+      </aside>
+      <section class="right">
+        <header>System Admin　⌄</header>
+        <main>
+          <div class="page">
+            <div class="crumb">首頁　/　來源資料</div>
+            <h1>□　來源資料</h1>
+            <section id="list" class="view active">
+              <div class="filters">
+                <input class="control search" placeholder="搜尋檔案名稱..." />
+                <button class="control">檔案類型　⌄</button>
+                <button class="control">審核狀態：待審核　⌄</button>
+              </div>
+              <div class="card">
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>檔案名稱</th>
+                        <th>類型</th>
+                        <th>大小</th>
+                        <th>審核狀態</th>
+                        <th>上傳時間</th>
+                        <th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr id="deletable-row">
+                        <td class="name">ISO27001 附錄 A 稽核要點整理表.xlsx</td>
+                        <td>XLSX</td>
+                        <td>37.8 KB</td>
+                        <td><span class="tag pending">待審核</span></td>
+                        <td>2026/07/16 13:20:00</td>
+                        <td>
+                          <div class="actions">
+                            <button class="icon-btn view" title="查看任務" aria-label="查看任務">◉</button
+                            ><button
+                              class="icon-btn delete open-delete"
+                              title="刪除待審核資料"
+                              aria-label="刪除待審核資料"
+                            >
+                              ⌫
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="name">資通安全管理法施行細則.pdf</td>
+                        <td>PDF</td>
+                        <td>178.5 KB</td>
+                        <td><span class="tag approved">已批准</span></td>
+                        <td>2026/07/15 10:10:00</td>
+                        <td>
+                          <div class="actions">
+                            <button class="icon-btn view" title="查看任務" aria-label="查看任務">◉</button>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="name">S-203 事件通報與應變管理程序.docx</td>
+                        <td>DOCX</td>
+                        <td>54.4 KB</td>
+                        <td><span class="tag ingested">已入庫</span></td>
+                        <td>2026/07/12 18:27:01</td>
+                        <td>
+                          <div class="actions">
+                            <button class="icon-btn view" title="查看任務" aria-label="查看任務">◉</button>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+            <section id="deleted-list" class="view">
+              <div class="filters">
+                <input class="control search" placeholder="搜尋檔案名稱..." />
+                <button class="control">檔案類型　⌄</button>
+                <button class="control">審核狀態：已刪除　⌄</button>
+              </div>
+              <div class="card">
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>檔案名稱</th>
+                        <th>類型</th>
+                        <th>大小</th>
+                        <th>審核狀態</th>
+                        <th>上傳時間</th>
+                        <th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="name">ISO27001 附錄 A 稽核要點整理表.xlsx</td>
+                        <td>XLSX</td>
+                        <td>37.8 KB</td>
+                        <td><span class="tag deleted">已刪除</span></td>
+                        <td>2026/07/16 13:20:00</td>
+                        <td>
+                          <div class="actions">
+                            <button class="icon-btn view" title="查看任務歷史" aria-label="查看任務歷史">◉</button>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+            <section id="result" class="view">
+              <div class="result">
+                <strong>刪除完成</strong><br />「ISO27001 附錄 A
+                稽核要點整理表.xlsx」已從預設來源列表與待審核流程移除；可由「審核狀態：已刪除」查閱，原始檔、清洗結果與操作紀錄仍保留。
+              </div>
+              <div class="card">
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>檔案名稱</th>
+                        <th>類型</th>
+                        <th>大小</th>
+                        <th>審核狀態</th>
+                        <th>上傳時間</th>
+                        <th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="name">資通安全管理法施行細則.pdf</td>
+                        <td>PDF</td>
+                        <td>178.5 KB</td>
+                        <td><span class="tag approved">已批准</span></td>
+                        <td>2026/07/15 10:10:00</td>
+                        <td>
+                          <div class="actions"><button class="icon-btn view">◉</button></div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          </div>
+        </main>
+      </section>
+    </div>
+    <div class="overlay" id="confirm">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-head" id="modal-title">刪除待審核來源資料</div>
+        <div class="modal-body">
+          <div class="warning">此操作會將資料移出來源資料與待審核流程；檔案內容仍保留於伺服器。</div>
+          <p class="filename"><strong>檔案：</strong>ISO27001 附錄 A 稽核要點整理表.xlsx</p>
+          <ul class="impact">
+            <li>原始上傳檔 1 份及清洗結果 1 份會保留，不會清除。</li>
+            <li>影響 1 筆清洗任務；任務保留歷史，該檔案不再參與後續審核與入庫。</li>
+            <li>此資料尚未入庫，知識庫向量不會異動。</li>
+            <li>刪除人員、時間、原因與影響範圍會保留於操作紀錄。</li>
+          </ul>
+          <label for="reason">刪除原因 <span class="required">*</span></label>
+          <textarea id="reason" maxlength="200" placeholder="請輸入刪除原因"></textarea>
+          <label for="confirm-word">請輸入「刪除」確認 <span class="required">*</span></label>
+          <input class="confirm" id="confirm-word" autocomplete="off" />
+          <div class="hint">若資料狀態已變更、曾入庫或正在處理，系統會阻擋刪除。</div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn close-modal">取消</button
+          ><button class="btn danger" id="confirm-delete" disabled>確認刪除</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      const overlay = document.getElementById('confirm');
+      const tabs = document.querySelectorAll('[data-target]');
+      const reason = document.getElementById('reason');
+      const confirmWord = document.getElementById('confirm-word');
+      const confirmDelete = document.getElementById('confirm-delete');
+      function showListView(target) {
+        document.querySelectorAll('.view').forEach((item) => item.classList.remove('active'));
+        tabs.forEach((item) => item.classList.toggle('active', item.dataset.target === target));
+        if (target === 'confirm') {
+          document.getElementById('list').classList.add('active');
+          overlay.classList.add('active');
+          return;
+        }
+        overlay.classList.remove('active');
+        document.getElementById(target).classList.add('active');
+      }
+      function validate() {
+        confirmDelete.disabled = !(reason.value.trim() && confirmWord.value.trim() === '刪除');
+      }
+      tabs.forEach((button) => button.addEventListener('click', () => showListView(button.dataset.target)));
+      document
+        .querySelectorAll('.open-delete')
+        .forEach((button) => button.addEventListener('click', () => showListView('confirm')));
+      document
+        .querySelectorAll('.close-modal')
+        .forEach((button) => button.addEventListener('click', () => showListView('list')));
+      reason.addEventListener('input', validate);
+      confirmWord.addEventListener('input', validate);
+      confirmDelete.addEventListener('click', () => showListView('result'));
+    </script>
+  </body>
+</html>

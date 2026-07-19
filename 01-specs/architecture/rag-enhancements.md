@@ -1,3 +1,10 @@
+---
+audience: both
+purpose: reference
+status: approved
+owner: ODA Cyber Konsult
+---
+
 # ODA Cyber Konsult — RAG 增強機制與標準 RAG 對比
 
 本文件系統性比較 ODA CyberKonsult 的 RAG 架構與一般「標準 RAG」實作的差異，涵蓋 14 個增強面向。

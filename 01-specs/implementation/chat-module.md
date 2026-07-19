@@ -1,7 +1,15 @@
+---
+audience: both
+---
+
 # Chat Module 實作摘要
 
+## TL;DR
+
+Chat 模組由 NestJS 協調知識庫檢索、必要時的 SearXNG 補充、LLM 回答與訊息持久化。知識庫與網路來源使用同一份 `sources` 契約，讓即時回答和歷史對話都能還原參考資料。
+
 ## 實作時間
-2026-02-09
+2026-02-09（最後更新：2026-07-13）
 
 ## 概述
 
@@ -92,6 +100,22 @@ Controller (HTTP) → Service (業務邏輯) → Repository (資料存取) → P
 - **串流模式**：使用 `responseType: 'stream'` + AsyncGenerator
 - **超時設定**：120 秒
 - **環境變數**：`FASTAPI_BASE_URL`（預設 `http://localhost:3502`）
+
+### 4. 議題範圍分類
+
+- `TopicClassifierService` 在 Query 改寫後輸出 `cybersecurity`、`mixed`、`non_cybersecurity` 或 `unclear`。
+- 分類器只接受完整固定值；模型回傳說明、標點或無效內容時降級為 `unclear`。
+- 非資安與不明確問題在 RAG 與網路搜尋前短路，回傳固定引導文字。
+- 混合問題會先由 `QueryPreprocessorService.rewriteForCybersecurityScope()` 抽取資安問句；RAG、網路搜尋、主回答與 `{query}` 使用抽取結果。原文保留於對話紀錄，使用者訊息 metadata 另存 `historyTopicScope`／`scopedQuestion`，後續模型歷史以資安問句取代混合原文，並排除非資安／不明確的固定回覆輪次；建議追問也不帶入原始非資安文字。
+- 分類寫入 `Message.metadata.topicScope`，串流 `done` 事件與歷史對話使用同一欄位。
+
+### 5. 網路搜尋與來源持久化
+
+- RAG 結果不足且後台已啟用網路搜尋時，`ChatService` 依 `WebSearchConfigService` 設定呼叫 SearXNG，再由 `WebFetcherService` 取得可供 LLM 引用的頁面內容。
+- 知識庫來源使用 `source_type=knowledge_base`；網路來源使用 `source_type=web_search`，並保留網頁 URL、標題與內容摘要。
+- 標準回應直接回傳 `answer.sources`；SSE 在 `done.sources` 回傳。助理訊息同時將來源寫入 `messages.sources`，因此歷史對話可還原。
+- `SEARXNG_URL` 是環境設定的預設值。本機預設為 `http://localhost:8080`；既有資料若仍是舊版 `http://localhost:8888`，讀取設定時會校正為目前環境值。管理者已設定的其他 URL 不會被覆寫。
+- Prisma `0010_remove_websearch_url_default` 移除資料庫欄位內綁定本機位址的預設值；建立設定的應用程式路徑必須明確提供 URL。
 
 ---
 

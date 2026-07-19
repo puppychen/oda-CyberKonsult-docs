@@ -1,3 +1,10 @@
+---
+audience: human-primary
+purpose: reference
+status: approved
+owner: ODA Cyber Konsult
+---
+
 # 運維與部署文件（Delivery Loop — QG-5）
 
 > ODA Cyber Konsult — 環境建置、部署指南、運維手冊、故障排除
@@ -12,7 +19,7 @@
 
 | 文件 | 說明 | 更新日期 |
 |------|------|---------|
-| [runbook.md](./runbook.md) | 運維手冊 — 服務拓撲、健康檢查端點、故障排除（7 種情境）、備份還原、安全事件應變 | 2026-03-01 |
+| [runbook.md](./runbook.md) | 運維手冊 — 服務拓撲、健康檢查、Token 用途／認證 Session 與故障排除 | 2026-07-13 |
 | [qg5-readiness.md](./qg5-readiness.md) | QG-5 交付準備檢核 — 部署、監控、安全、回滾、交接缺口 | 2026-04-29 |
 
 ### 環境建置
@@ -21,8 +28,9 @@
 |------|------|---------|---------|
 | [getting-started.md](./getting-started.md) | 快速開始 — 5 分鐘建立開發環境 | 新成員 | 2026-02-04 |
 | [development.md](./development.md) | 開發環境完整說明 — Node.js/Python/Docker 設定、環境變數、啟動指令 | 開發者 | 2026-02-11 |
-| [deployment.md](./deployment.md) | 部署與維運指南 — Docker Compose、GCP、VM 部署方式、Nginx 設定 | DevOps | 2026-02-11 |
-| [staging-setup.md](./staging-setup.md) | Staging 環境設置與驗證 | DevOps | 2026-04-29 |
+| [dev-environment-setup.md](./dev-environment-setup.md) | 本機測試環境 — 以 `.env` 為 PostgreSQL 連線單一來源、服務啟動與排錯 | 開發者／AI 代理 | 2026-07-17 |
+| [deployment.md](./deployment.md) | 部署與維運指南 — Docker Compose、GCP、VM、Prisma 0009 與 Alembic 011／012 驗證／回復 | DevOps | 2026-07-13 |
+| [staging-setup.md](./staging-setup.md) | Staging 環境設置、migration 備份與驗證 | DevOps | 2026-07-12 |
 | [backup-strategy.md](./backup-strategy.md) | 備份策略與保存規則 | DevOps | 2026-04-17 |
 | [dr-checklist.md](./dr-checklist.md) | Disaster Recovery 檢核表 | DevOps | 2026-04-17 |
 | [data-retention-policy.md](./data-retention-policy.md) | 資料保存與刪除政策 | DevOps / Compliance | 2026-04-17 |

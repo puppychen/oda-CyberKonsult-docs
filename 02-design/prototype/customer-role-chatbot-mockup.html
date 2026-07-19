@@ -1,0 +1,93 @@
+<!--
+---
+audience: human-primary
+purpose: decision
+status: superseded
+owner: Jake
+---
+-->
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chatbot 客戶角色與回應層級 Mockup</title>
+  <style>
+    :root { color-scheme: light; --ink:#172b4d; --muted:#5f6c7b; --line:#d8dee8; --surface:#fff; --canvas:#f4f7fa; --brand:#087f8c; --accent:#f59e0b; --success:#26734d; --purple:#6d4bd1; }
+    * { box-sizing:border-box; letter-spacing:0; }
+    body { margin:0; background:var(--canvas); color:var(--ink); font-family:"Microsoft JhengHei",system-ui,sans-serif; }
+    main { max-width:1240px; margin:0 auto; padding:28px 20px 48px; }
+    h1 { margin:0 0 8px; font-size:28px; }
+    .lead { margin:0 0 24px; color:var(--muted); line-height:1.65; }
+    .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+    .scenario { background:var(--surface); border:1px solid var(--line); border-radius:8px; overflow:hidden; box-shadow:0 8px 24px rgba(23,43,77,.08); }
+    .scenario-title { padding:14px 16px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .scenario-title strong { font-size:16px; }
+    .plan { font-size:12px; font-weight:700; padding:4px 8px; border-radius:4px; color:#fff; background:var(--brand); }
+    .chat { min-height:300px; background:#f9fbfc; }
+    .header { min-height:68px; padding:12px 14px; background:#fff; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .brand { display:flex; align-items:center; gap:8px; min-width:0; }
+    .logo { width:32px; height:32px; display:grid; place-items:center; color:#fff; background:var(--brand); border-radius:6px; font-weight:800; }
+    .brand-name { font-size:14px; font-weight:700; white-space:nowrap; }
+    .levels { display:flex; padding:3px; gap:3px; background:#edf2f6; border-radius:7px; min-width:0; }
+    .level { min-height:36px; padding:0 10px; border:0; border-radius:5px; color:#475569; background:transparent; font:700 12px inherit; white-space:nowrap; }
+    .level.active { color:#fff; background:var(--brand); }
+    .level.consultant.active { background:var(--purple); }
+    .quota { margin:12px 18px 0; color:var(--muted); font-size:12px; font-weight:700; }
+    .message { margin:18px 18px 0; padding:14px; max-width:86%; background:#fff; border:1px solid var(--line); border-radius:8px; line-height:1.6; font-size:13px; }
+    .message b { display:block; margin-bottom:4px; }
+    .annotation { margin:18px 16px 16px; padding:10px 12px; border-left:4px solid var(--accent); background:#fffbeb; color:#7c4a03; font-size:12px; line-height:1.55; }
+    code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px; }
+    .matrix { margin-top:22px; width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line); font-size:14px; }
+    .matrix th,.matrix td { padding:12px 14px; border-bottom:1px solid var(--line); text-align:left; }
+    .matrix th { background:#eef4f7; }
+    .yes { color:var(--success); font-weight:700; }
+    .no { color:#9b2c2c; }
+    .note { margin-top:16px; padding:14px 16px; border:1px solid #f3cf7a; border-radius:6px; background:#fffaf0; line-height:1.6; font-size:13px; }
+    @media (max-width:900px) { .grid { grid-template-columns:1fr; } .scenario { max-width:620px; width:100%; margin:0 auto; } }
+    @media (max-width:520px) { main { padding:20px 12px 36px; } h1 { font-size:22px; } .header { align-items:flex-start; flex-direction:column; } .levels { width:100%; } .level { flex:1; padding:0 6px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Chatbot 回應層級選擇器</h1>
+    <p class="lead">帳號角色只決定可選範圍；介面沿用「新手／一般／顧問」三個選項，預設值依方案自動帶入。</p>
+    <section class="grid" aria-label="三種客戶帳號情境">
+      <article class="scenario">
+        <div class="scenario-title"><strong>新手帳號</strong><span class="plan">Free</span></div>
+        <div class="chat">
+          <header class="header"><div class="brand"><span class="logo">CK</span><span class="brand-name">資安助手</span></div><div class="levels" aria-label="回應層級"><button class="level active">新手</button></div></header>
+          <div class="quota">今日剩餘 20 次 · 每日 00:00 重設</div>
+          <div class="message"><b>一句話摘要</b>系統會用白話、案例與具體下一步說明資安問題。</div>
+          <div class="annotation">命名確認：帳號角色 <code>basic_user</code>；可用層級 <code>beginner</code>；預設 <code>beginner</code>；每日額度由後台設定。</div>
+        </div>
+      </article>
+      <article class="scenario">
+        <div class="scenario-title"><strong>一般帳號</strong><span class="plan" style="background:#2563eb">Plus</span></div>
+        <div class="chat">
+          <header class="header"><div class="brand"><span class="logo">CK</span><span class="brand-name">資安助手</span></div><div class="levels" aria-label="回應層級"><button class="level">新手</button><button class="level active">一般</button></div></header>
+          <div class="message"><b>重點摘要</b>提供 IT／MIS 可直接執行的設定、操作步驟與注意事項。</div>
+          <div class="annotation">命名確認：帳號角色 <code>user</code>；可用層級 <code>beginner, standard</code>；預設 <code>standard</code>。</div>
+        </div>
+      </article>
+      <article class="scenario">
+        <div class="scenario-title"><strong>顧問帳號</strong><span class="plan" style="background:#6d4bd1">Pro</span></div>
+        <div class="chat">
+          <header class="header"><div class="brand"><span class="logo">CK</span><span class="brand-name">資安助手</span></div><div class="levels" aria-label="回應層級"><button class="level">新手</button><button class="level">一般</button><button class="level consultant active">顧問</button></div></header>
+          <div class="message"><b>結論</b>提供法規／標準依據、風險評估、顧問建議與參考文獻。</div>
+          <div class="annotation">命名確認：帳號角色 <code>consultant</code>；可用層級 <code>beginner, standard, expert</code>；預設 <code>expert</code>。</div>
+        </div>
+      </article>
+    </section>
+    <table class="matrix">
+      <thead><tr><th>帳號角色</th><th>新手</th><th>一般</th><th>顧問</th><th>預設</th></tr></thead>
+      <tbody>
+        <tr><td>新手／Free</td><td class="yes">可用</td><td class="no">不可用</td><td class="no">不可用</td><td>新手</td></tr>
+        <tr><td>一般／Plus</td><td class="yes">可用</td><td class="yes">可用</td><td class="no">不可用</td><td>一般</td></tr>
+        <tr><td>顧問／Pro</td><td class="yes">可用</td><td class="yes">可用</td><td class="yes">可用</td><td>顧問</td></tr>
+      </tbody>
+    </table>
+    <p class="note"><strong>錯誤狀態：</strong>若舊頁籤或竄改請求送出未授權層級，API 回傳 403；介面重新載入帳號可用層級並切回預設值。</p>
+  </main>
+</body>
+</html>

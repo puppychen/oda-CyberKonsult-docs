@@ -1,3 +1,7 @@
+---
+audience: human-primary
+---
+
 # CyberKonsult 系統展示操作指南
 
 > 最後更新：2026-03-24
@@ -57,8 +61,8 @@ cd ../../data/seed-knowledge && bash ingest.sh
 
 | 帳號 | 密碼 | 角色 | 展示用途 |
 |------|------|------|---------|
-| user@oda-cyber.com | OdaPoc2026! | user | 新手模式展示 |
-| ituser@oda-cyber.com | OdaPoc2026! | it_user | 一般模式（IT 工程師）展示 |
+| basic@oda-cyber.com | OdaPoc2026! | basic_user | 新手方案與每日額度展示 |
+| user@oda-cyber.com | OdaPoc2026! | user | 一般方案（IT/MIS）展示 |
 | consultant@oda-cyber.com | OdaPoc2026! | consultant | 顧問模式展示 |
 | admin@oda-cyber.com | OdaPoc2026! | admin | 管理後台展示 |
 | cleaner@oda-cyber.com | OdaPoc2026! | data_cleaner | 清洗審核展示（Maker） |
@@ -68,15 +72,15 @@ cd ../../data/seed-knowledge && bash ingest.sh
 
 ---
 
-## 三、三模式展示腳本
+## 三、三層回應展示腳本
 
-### 展示 1：新手模式（約 3 分鐘）
+### 展示 1：新手回應（約 3 分鐘）
 
 **操作步驟**：
 
 1. 開啟 Chatbot UI：http://localhost:5502
-2. 登入帳號：`user@oda-cyber.com`
-3. 確認左上角模式顯示「新手模式」（user 角色預設）
+2. 登入帳號：`basic@oda-cyber.com`
+3. 確認回應層級固定為「新手」，並顯示當日剩餘額度
 4. 輸入問題：
 
    > 什麼是釣魚信件？要怎麼判斷？
@@ -94,16 +98,16 @@ cd ../../data/seed-knowledge && bash ingest.sh
 
 **展示重點話術**：
 
-> 「新手模式針對非技術背景的使用者設計，系統自動用白話文和企業日常情境來說明，不使用專業術語。特別的是，回答中引用了台灣真實的釣魚案例和統計數據，而非通用的教科書內容。」
+> 「新手回應針對非技術背景的使用者設計，系統自動用白話文和企業日常情境來說明，不使用專業術語。特別的是，回答中引用了台灣真實的釣魚案例和統計數據，而非通用的教科書內容。」
 
 ---
 
-### 展示 2：一般模式 — IT 工程師（約 3 分鐘）
+### 展示 2：一般回應 — IT 工程師（約 3 分鐘）
 
 **操作步驟**：
 
-1. 登出，重新登入為：`ituser@oda-cyber.com`
-2. 點擊模式選擇器，切換至「標準模式」
+1. 登出，重新登入為：`user@oda-cyber.com`
+2. 確認預設為「一般」，並可切換「新手」
 3. 輸入問題：
 
    > 我被主管機關發文要出具個資安全維護計畫，我要怎麼寫？
@@ -245,4 +249,4 @@ curl -X DELETE "http://localhost:3502/api/v1/knowledge-base/documents/by-source"
 | 分塊策略 | 階層式（Parent 3500 字元 / Child 800 字元） |
 | PII 偵測 | Presidio + spaCy（20 種實體） |
 | 認證 | JWT + 資通安全「普」級密碼政策 |
-| 授權 | RBAC 7 角色 |
+| 授權 | RBAC 6 角色 |
