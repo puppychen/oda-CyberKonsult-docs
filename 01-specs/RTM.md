@@ -9,9 +9,9 @@ owner: ODA Cyber Konsult
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**
 >
-> 文件版本：1.14.3
+> 文件版本：1.15.1
 > 建立日期：2026-03-01
-> 最後更新：2026-07-18
+> 最後更新：2026-07-29
 > 文件類型：需求追溯矩陣（Requirements Traceability Matrix）
 
 ---
@@ -36,6 +36,8 @@ owner: ODA Cyber Konsult
 | v1.14.1 | 2026-07-16 | 補強 FR-20：已刪除專用查詢、來源清單歷史入口、操作欄語意與 Cleaner 台北時區測試追溯 |
 | v1.14.2 | 2026-07-17 | 新增 TC-20-003：來源未送審、最新任務狀態、先篩選後計數／穩定分頁與 PostgreSQL rollback 追溯 |
 | v1.14.3 | 2026-07-18 | US-20-01 增加來源檔案與最新任務名稱對照、舊任務 ID 備援及名稱／狀態／連結同源測試追溯 |
+| v1.15.0 | 2026-07-26 | 強化 US-02-06／新增 TC-02-003：全題 RAG 優先、嚴格證據門檻、縮寫限定網搜推測、單輪原子銜接、RAG 不可用分流、資安建議題與 SSRF／提示注入防線追溯 |
+| v1.15.1 | 2026-07-29 | 新增 TC-02-004：一般訊息 attempt 冪等、user row lock、原子額度、lease fencing、完成回放與 PostgreSQL 雙併發追溯 |
 | v1.0.0 | 2026-03-01 | 初版建立，FR-01~21 追溯矩陣 |
 | v1.1.0 | 2026-03-06 | 新增 FR-18 Maker-Checker 追溯、FR-19~21 追溯、驗收測試更新 |
 | v1.2.0 | 2026-03-11 | 新增 US-05-03 ZIP 追溯、更新角色定義為 7 角色、測試覆蓋統計更新（107 test files） |
@@ -115,8 +117,8 @@ User Story (PRD.md)
 | US-02-03 | 歷史對話管理 | `GET /api/chat/conversations` | chat/ | chat.service.spec | — | — | Chatbot 主畫面 | JWT, Input Validation, Rate Limit | ✅ |
 | US-02-04 | 多輪對話 + Query 改寫 | `POST /api/chat`（history injection） | chat/ | query-preprocessor.service.spec | test_prompts | — | Chatbot 主畫面 | JWT, Input Validation, Rate Limit | ✅ |
 | US-02-05 | 分數過濾與品質保障 | `POST /api/v1/rag/retrieve`（閾值） | chat/ + rag-service | rag-proxy.service.spec | test_retriever, test_rag_chain | — | Chatbot 主畫面 | JWT, Input Validation, Rate Limit | ✅ |
-| US-02-06 | 非資安議題辨識與提醒 | `POST /api/chat`, `POST /api/chat/stream`（`topicScope`） | chat/ | topic-classifier.service.spec, topic-classifier.live-eval.spec, chat.service.spec, chat.controller.spec | — | AC-02-06-01~05 | Chatbot `MessageBubble` | JWT, Prompt Injection Boundary, Input Validation | ✅ |
-| US-02-07 | 最新回覆重新產出 | `POST /api/chat/stream`（`regenerateFromMessageId`、`regenerationAttemptId`） | chat/ | chat.dto.spec、message.repository.spec、context-builder.service.spec、chat.service.spec、chat.controller.spec、Chatbot `useChat.test`／`MessageList.test` | `test:chat-regeneration-integration` | TC-02-002 | Chatbot 最新 `MessageBubble` | JWT、Input Validation、相同提示詞、conversation row lock、attempt 冪等、原子額度 | ✅ |
+| US-02-06 | 資安議題解析、提醒與延續脈絡 | `POST /api/chat`, `POST /api/chat/stream`（`topicScope`） | chat/ + prompts/ + websearch/ | topic-classifier.service.spec、topic-classifier.live-eval.spec、chat.dto.spec、query-preprocessor.service.spec、context-builder.service.spec、rag-proxy.service.spec、message.repository.spec、chat.service.spec、chat.controller.spec、prompts.service.spec、prompt-renderer.util.spec、public-url-safety.service.spec、web-fetcher.service.spec、Chatbot `MessageList.test` | `test:chat-topic-bridge-integration` | AC-02-06-01~08；TC-02-003 | Chatbot `MessageBubble`／建議問題按鈕；Admin 測試提示詞 | JWT、Input Validation、Prompt Injection Boundary、SSRF 防護、conversation row lock | ✅ |
+| US-02-07 | 最新回覆重新產出與可靠重試 | `POST /api/chat/stream`（`messageAttemptId`；重新產出另用 `regenerateFromMessageId`、`regenerationAttemptId`） | chat/ | chat.dto.spec、message.repository.spec、context-builder.service.spec、chat.service.spec、chat.controller.spec、Chatbot `useChat.test`／`MessageList.test` | `test:chat-regeneration-integration`、`test:chat-topic-bridge-integration` | TC-02-002、TC-02-004 | Chatbot 最新 `MessageBubble`、失敗重試 | JWT、Input Validation、user／conversation row lock、attempt 冪等、lease fencing、原子額度 | ✅ |
 | — | 網路搜尋補充 | `GET /api/websearch/config` | websearch/ | searxng.service.spec, websearch-config.service.spec, web-fetcher.service.spec | — | — | Chatbot 主畫面, Admin `/settings` | JWT, Input Validation, Rate Limit | ✅ |
 | — | 三層回應層級切換 | `GET /api/chat/modes` | chat/ | chat.dto.spec | — | — | Chatbot 主畫面, Admin `/settings` | JWT, Input Validation, Rate Limit | ✅ |
 
@@ -312,6 +314,8 @@ User Story (PRD.md)
 | TC-01-007 | FR-01 | US-01-01／US-01-03 | Refresh Token 不可作為 Access Token；併發輪替僅一個成功；舊認證協定 Refresh 回 426 且不消耗 Token；所有認證寫入共用跨分頁互斥鎖；請求或 JSON 解析途中跨帳號切換不得覆寫；末段插入舊版租約或 lease claim 未讀回自己 owner 時重新競爭；誤登入新工作階段撤銷、稍後處理與唯讀原帳號 | `token.service.spec`、`jwt.strategy.spec`、`auth.controller.spec`、三端 `client.test`／`crossTabMutex.test`／`useAuth.test`／`SessionRecovery.test` | `pnpm --filter @oda-cyber/api test:auth-session-integration` 查驗舊協定 426、PostgreSQL `current_jti`、hash、`revoked_at`；Chromium 禁用 Web Locks 的雙分頁互斥測試 | 桌面／375px 手機 Playwright 6 組情境 | `tokenUse`、協定 fencing、CAS 輪替、同帳號防護 | ✅ |
 | TC-02-001 | FR-02 | US-02-01 | RAG 查詢回應 | chat.service.spec, rag-proxy.service.spec | test_rag_chain, test_retriever | — | JWT, Input Validation | ✅ |
 | TC-02-002 | FR-02 | US-02-07 | 重新產出只作用於相同最後提示詞、資安／混合主題與最新完成回覆；雙 attempt 並發僅一個成功；有效 lease processing 回 409，逾時／failed／completed 重試不重複計費 | API chat DTO／repository／context／service／controller／usage specs；Chatbot `useChat.test`、`MessageList.test` | `pnpm --filter @oda-cyber/api test:chat-regeneration-integration` 實際驗證 PostgreSQL row lock、提示詞防竄改、`chat_daily_usages` 與 claim 同交易回滾、單調時間、並發 loser、lease 逾時接手、舊 worker metadata／寫入／失敗釋放 fencing、跨分頁 failed 釋放、claim completed 與完成回放 | icon-only、hover 提示、額度停用、最新失敗重試、UUID 正向驗證 | JWT、topicScope、相同提示詞、row lock、attempt 冪等、lease fencing、原子額度、in-flight lock | ✅ |
+| TC-02-003 | FR-02 | US-02-06 | 非資安／不明確初判先查 RAG；門檻等值可依知識庫回答、門檻減 ε 不可；`SGS`／`TUV`／`TAF` 可由知識庫或安全且非空的網搜內容恢復；網搜回答由 API 固定加推測前綴；`ODA` 後接「資安服務」只合併一輪且併發只消耗一次；帶一般訊息 attempt 時 bridge 必須在 user claim 建立前於同交易消耗並保存，failed／逾時重試沿用；無問號完整敘述不合併；RAG payload 異常與服務不可用都禁止網搜推測；已完成 SSE 回答先落盤再更新建議題，`done` 遺失時復原伺服器回答且不可重送；建議題失敗時仍回資安預設題；執行期資料不進 system message | `chat.service.spec`、`chat.controller.spec`、`chat.dto.spec`、`rag-proxy.service.spec`、`message.repository.spec`、`query-preprocessor.service.spec`、`context-builder.service.spec`、`prompts.service.spec`、`prompt-renderer.util.spec`、`public-url-safety.service.spec`、`web-fetcher.service.spec`、`llm.service.spec`、Chatbot `useChat.test`、`MessageList.test` | `pnpm --filter @oda-cyber/api run test:chat-topic-bridge-integration` 建立隔離 fixture 並以 PostgreSQL blocker 確認兩個 consume 同時等待 row lock，釋放後僅一個成功並落盤 `topicBridgeConsumedAt`；一般訊息 claim 另驗證 bridge 於建立 user message 前消耗並保存；外部 LLM／SearXNG smoke 須明確啟用，不列入預設閘門 | 建議問題按鈕送出完整文字；SSE 缺少 `done` 時先復原伺服器回答，狀態查詢失敗時 fail-closed；既有版面不變；後台 `rendered`／`runtimeData` 等於正式 system／user data message | Input Validation、Prompt Injection Boundary、SSRF／DNS rebinding／redirect 防護、Node `all=true` lookup、row lock 單次消耗 | ✅ |
+| TC-02-004 | FR-02 | US-02-07 | 一般訊息帶 `messageAttemptId`；首次請求原子建立必要對話、消耗並保存 topic bridge、建立 user claim 與額度；相同 attempt 有效 lease 回 409，failed／逾時接手不重複扣額且沿用 bridge，completed 回放同一回答；舊 lease 不得寫入或釋放新 claim | `chat.dto.spec`、`message.repository.spec`、`chat.service.spec`、`chat.controller.spec`、Chatbot `useChat.test` | `pnpm --filter @oda-cyber/api run test:chat-topic-bridge-integration` 以隔離使用者、兩個 Prisma client 與 PostgreSQL blocker 驗證兩個 claim 同時等待 user row lock；釋放後僅一個在同交易消耗 bridge、建立訊息並寫入一次真實 `chat_daily_usages`，另一個回處理中衝突；強制 callback 失敗時驗證訊息與額度一併回滾 | 每次一般送出產生 UUID；重試與歷史復原依同一 UUID 配對，不以問題文字猜測；狀態查詢失敗時 fail-closed | JWT、Input Validation、user／conversation row lock、attempt 冪等、lease fencing、原子額度 | ✅ |
 | TC-03-001 | FR-05 | US-05-01 | 檔案上傳（含登入失效、批次容量、完全失敗、部分成功與中文原因） | upload.controller.spec、Admin `FileUploader.test`、`client.test`、`HomePage.test`、`LoginPage.test`、`useAuth.test`、`uploadFeedback.test` | test_upload_api | — | JWT, RBAC(admin), 50MB 檔案批次／51MB multipart 封裝限制 | ✅ |
 | TC-04-001 | FR-04 | US-04-01 | 清洗任務執行 | clean.controller.spec | test_clean_api, test_detector | — | JWT, RBAC(admin), X-Internal-Token | ✅ |
 | TC-05-001 | FR-18 | US-18-01 | 清洗審核瀏覽 | review.controller.spec | test_review_api | — | JWT, RBAC(admin/cleaner), X-Internal-Token | ✅ |
@@ -401,7 +405,7 @@ User Story (PRD.md)
 | 每個已實作 US 有對應 API 端點 | ✅ | 39/39 US 有明確端點（含 US-05-03、US-18-10/11/12） |
 | 每個 API 端點有 NestJS 測試 | ✅ | 43 spec 檔案覆蓋全部 Controller/Service |
 | 每個 FastAPI 路由有 Python 測試 | ✅ | 38 test 檔案覆蓋 API + 整合 |
-| SRS §11 驗收案例有對應測試 | ✅ | 14/14 TC 全數有測試覆蓋（含 TC-05-006/007 Maker-Checker） |
+| SRS §11 驗收案例有對應測試 | ✅ | 15/15 TC 全數有測試覆蓋（含 TC-02-004 一般訊息冪等、TC-05-006/007 Maker-Checker） |
 | 每個 ADR 有對應 FR 引用 | ✅ | 10/10 ADR 標注影響範圍 |
 
 ---

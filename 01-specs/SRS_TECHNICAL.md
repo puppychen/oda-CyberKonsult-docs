@@ -9,8 +9,8 @@ owner: ODA Cyber Konsult
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**
 >
-> 文件版本：2.7.3
-> 最後更新：2026-07-18
+> 文件版本：2.8.1
+> 最後更新：2026-07-29
 > 文件類型：完整技術 SRS（面向開發人員、系統架構師、QA 工程師）
 
 ---
@@ -523,6 +523,7 @@ CREATE INDEX auth_sessions_expires_at_idx ON auth_sessions(expires_at);
 | US-02-03 | 身為使用者，我希望查看歷史對話記錄 | 1. 對話以時間序列展示<br>2. 可搜尋歷史對話 |
 | US-02-04 | 身為一般方案使用者，我希望選擇「一般」取得實務技術指引 | 1. 可選擇新手／一般回應層級<br>2. 回應包含操作步驟<br>3. 用語適合技術人員 |
 | US-02-05 | 身為使用者，我希望預設以適合我角色的回應層級回答 | 1. 系統依角色自動選擇預設層級<br>2. 僅顯示角色可用層級 |
+| US-02-06 | 身為使用者，我希望簡短縮寫或延續語句仍能在資安脈絡中得到合理處理 | 1. 非資安／不明確初判仍先檢索知識庫<br>2. 有達門檻證據時依知識庫回答<br>3. 縮寫／機構片段無知識庫證據時可執行限定資安網搜並以低信心推測語句回答<br>4. 無證據片段可保留一輪，下一則資安限定詞合併查詢<br>5. 建議問題必須屬於資安範圍且可回覆 |
 | US-02-07 | 身為使用者，我希望在不滿意最新回答時重新產出 | 1. 只在最後提示詞對應、已持久化且分類為資安／混合的最新完成回覆顯示 icon<br>2. 保留原問題與原回覆，在底部新增相同問題與新回覆<br>3. 使用目前選擇的回應層級；每次新操作計入一次額度，同一操作的斷線重試不得重複計費<br>4. 串流中、失敗、未持久化、分類未知、非資安固定回覆與非最新回覆不提供重新產出 |
 
 #### 5.3.3 檢索策略
@@ -546,6 +547,7 @@ Request:
   Body:
     message: string (required)
     conversationId: string (optional)
+    messageAttemptId: UUID (optional for legacy clients; Chatbot always sends and reuses it for the same retry)
     regenerateFromMessageId: UUID (optional; requires conversationId and must be its latest assistant message)
     regenerationAttemptId: UUID (required when regenerateFromMessageId is provided; reused by retries)
     options:
@@ -593,18 +595,35 @@ Response 200 (串流 - SSE):
 
 #### 議題範圍分類
 
-每次聊天在 Query 改寫後、RAG 檢索前執行低輸出量分類，回傳 `topicScope`：
+每次聊天在 Query 改寫後執行低輸出量分類。分類結果只作為 `initialTopicScope` 初判，不得直接把 `non_cybersecurity` 或 `unclear` 當成停止條件；所有初判都先向 RAG `/retrieve` 查詢：
 
-| 值 | 後端行為 | 前端行為 |
-|----|----------|----------|
-| `cybersecurity` | 執行既有 RAG／網路補充／LLM 回答 | 不顯示提醒 |
-| `mixed` | 將原始問題改寫為只含資安需求的問句，再用於 RAG、網路搜尋、主回答與提示詞 `{query}`；建議追問不帶入原始非資安文字 | 顯示混合議題提醒 |
-| `non_cybersecurity` | 略過 RAG、網路搜尋與回答生成，回傳固定服務範圍引導 | 顯示非資安提醒 |
-| `unclear` | 略過後續生成，要求補充情境；不得誤標為非資安 | 不顯示非資安提醒 |
+| 初判／資料狀態 | 後端處理 | 最終 `topicScope`／前端行為 |
+|---------------|----------|-----------------------------|
+| `cybersecurity` | 執行既有 RAG、必要的網路補充與 LLM 回答 | `cybersecurity`；不顯示提醒 |
+| `mixed` | 抽取資安問句後用於 RAG、網路搜尋、主回答與 `{query}` | `mixed`；顯示混合議題提醒 |
+| `non_cybersecurity`／`unclear` 且有達門檻知識庫證據 | 依知識庫證據生成回答；top 1 fallback 不算有效證據 | `cybersecurity`；不顯示非資安阻擋 |
+| `non_cybersecurity`／`unclear`、無知識庫證據，但本輪屬縮寫／機構片段，或上一輪待銜接片段後接明確短資安限定詞 | 在查詢補上資安、隱私、法遵與資訊風險詞後執行限定網搜 | 有安全且非空來源時為 `cybersecurity`、`low` 信心；API 固定在回答前加上「若您指的是…」推測性前綴 |
+| `unclear`／候選片段且所有來源皆無證據 | 要求補充情境，候選片段保留一輪 | `unclear`；顯示補充提示 |
+| 明確一般內容且無證據 | 回傳固定服務範圍引導，不回答一般內容 | `non_cybersecurity`；顯示非資安提醒 |
+| RAG 服務不可用 | 明確告知知識庫暫時無法確認，禁止改用網搜推測 | `unclear`；顯示暫時無法確認提示 |
 
-`topicScope` 會寫入 `messages.metadata`，並出現在非串流 `answer.topicScope` 與 SSE `done.topicScope`。此欄使用既有 JSON metadata，不需資料庫 migration；舊訊息沒有此欄時維持原畫面。
+知識庫證據門檻沿用 `RAG_THRESHOLDS.hybrid_filter_min`／`cosine_filter_min`；一般檢索為避免空回答而保留的 top 1 fallback，不得將非資安／不明確初判恢復為資安回答。RAG 回應的每筆來源、分數、metadata 與 temporal context 都必須通過結構及有限數值驗證，否則視為 `rag_unavailable`。網搜來源 URL 在搜尋結果列入引用與實際抓取前都必須通過 HTTP(S)、DNS 與公開 IP 檢查；每次重新導向都重新驗證，HTTP agent 固定使用已驗證 IP，並正確支援 Node `lookup({ all: true })` 契約。
 
-分類器同時接收 `originalQuestion` 與 `rewrittenQuestion`：原始問題保留完整需求，改寫查詢補足多輪脈絡。分類結果為 `mixed` 時，系統另以 `rewriteForCybersecurityScope()` 產生資安範圍問句；原文寫入對話紀錄，使用者訊息 metadata 保存 `historyTopicScope` 與 `scopedQuestion`。後續載入模型歷史時以 `scopedQuestion` 取代混合原文，並排除 `non_cybersecurity`／`unclear` 的固定回覆輪次；UI 仍顯示原始文字。模型行為由 `docs/02-testing/topic-classifier-eval.md` 的版本化實際模型評估驗證，涵蓋一般、混合、邊界與提示注入案例。
+知識庫、網頁、使用者問題與顯示名稱不得展開到 system message。system message 只包含固定政策與資料位置標記；執行期內容以獨立 user data message 的 JSON 傳入，並標示為不可信資料。正式 Chat 與後台「測試提示詞」共用 `renderTrustedSystemPrompt()`／`buildUntrustedRuntimeData()`，後台分別顯示 `rendered` 與 `runtimeData`，兩者必須等於模型正式收到的 system 與 user data message。
+
+`topicScope` 代表最終處理結果，寫入 `messages.metadata`，並出現在非串流 `answer.topicScope` 與 SSE `done.topicScope`。內部 metadata 另存 `initialTopicScope`、`scopeResolution`、必要時的 `scopedQuestion`、`pendingTopicBridge`、`topicBridgeSourceMessageId`、`topicBridgeConsumedAt`、`messageAttemptTopicBridgeFragment` 與 `messageAttemptTopicBridgeSourceMessageId`，用來追蹤判定來源和單輪銜接；全部沿用既有 JSON metadata，不需資料庫 migration，舊訊息沒有欄位時維持原畫面。
+
+單輪銜接僅適用同一對話最新助理訊息保存的短縮寫／機構片段。下一則訊息必須完全符合短資安限定詞集合，例如「資安服務」「資訊安全措施」「隱私要求」；有主詞、動詞或完整敘述的「公司需要做資安風險評估」不得合併。完整新問句、含問號／句號的語句與重新產出也不合併。`MessageRepository` 在 PostgreSQL transaction 內鎖定 conversation row 並寫入 `topicBridgeConsumedAt`，確保併發請求只能消耗一次；帶 `messageAttemptId` 時，消耗必須發生在建立本輪 user claim 前，並將取得的 bridge 保存於 claim，讓 failed／逾時重試維持同一語意。不符合合併條件的下一則訊息仍會使片段失效。`test:chat-topic-bridge-integration` 必須以真實 PostgreSQL 驗證獨立 consume 的併發單次消耗，以及一般訊息 claim 的消耗、保存與重試契約。
+
+分類器同時接收 `originalQuestion` 與 `rewrittenQuestion`：原始問題保留完整需求，改寫查詢補足多輪脈絡。原文寫入對話紀錄，使用者訊息 metadata 保存最終 `historyTopicScope` 與必要的 `scopedQuestion`。後續載入模型歷史時以 `scopedQuestion` 取代原文，並排除 `non_cybersecurity`、`unclear` 與 `rag_unavailable` 的固定回覆輪次；UI 仍顯示原始文字。
+
+建議問題由 LLM 生成後逐題再經議題分類驗證，只保留資安範圍題目；生成或驗證失敗、逾時、數量不足時，以固定的資安風險盤點與控制有效性問題補足。按下建議問題按鈕會完整送出該文字，仍經相同 RAG 優先解析流程，因此提示本身必須可回覆，不得成為固定「非資安議題」回應。模型分類與解析行為由 `docs/02-testing/topic-classifier-eval.md` 的版本化案例及決定性單元測試驗證。
+
+#### 一般訊息 attempt 冪等與復原
+
+Chatbot 每次一般訊息送出都產生 `messageAttemptId`，同一次失敗重試沿用相同 UUID；該欄不得與 `regenerateFromMessageId`／`regenerationAttemptId` 併用。API 在 PostgreSQL transaction 內鎖定使用者與 conversation 資料列，依「使用者 + attempt」尋找既有 claim：首次請求原子建立必要的 conversation、消耗並保存 topic bridge、建立待完成 user 訊息與保留額度；相同 attempt 不得建立第二組對話或再次扣額。這項流程以既有 JSON metadata 保存 `messageAttemptId`、`messageAttemptStatus`、`messageAttemptClaimedAt`、`messageAttemptLeaseId` 與 bridge 識別，不新增資料表或 migration。
+
+相同 attempt 的 5 分鐘處理租約有效時回 `409`；`failed` 或逾時 claim 可換發 lease 並沿用原 user 訊息。assistant 落盤前在 conversation row lock 內核對 lease，成功後將 user claim 標為 `completed`；舊 worker 不得寫入或釋放新 lease。已完成 attempt 直接回放相同 assistant、來源與 message ID。SSE 缺少 `done` 時，前端以 metadata 的 attempt ID 配對 user／assistant，不以相同問題文字猜測；狀態查詢失敗時採 fail-closed。
 
 #### 最新回覆重新產出
 
@@ -615,6 +634,8 @@ Chatbot 只在最後一則使用者提示詞所對應、具有後端 UUID，且 
 API 以 PostgreSQL conversation row lock 串行化訊息寫入，並在同一資料庫交易內確認 `regenerateFromMessageId` 是目前最新 `assistant`、來源 `topicScope` 為 `cybersecurity`／`mixed`，且其前一則 user 訊息等於請求 `question`，再原子保留一次額度並建立待完成 user 訊息；任一步驟失敗時額度與 claim 一併回滾，任一條件不符即回 `400`。所有訊息建立時間在該 conversation 內至少比前一則晚 1ms，避免相同時間戳造成最新訊息判定不穩定。不同 attempt 的並發請求只有第一個可成立；相同 attempt 的 5 分鐘 lease 仍有效時回 `409`，禁止同時啟動第二次 LLM 生成。
 
 待完成 user 訊息與完成 assistant 訊息都在既有 JSON metadata 保存 `regeneratedFromMessageId` 與 `regenerationAttemptId`；待完成訊息另保存 `regenerationStatus`、`regenerationClaimedAt` 與 `regenerationLeaseId`。前置處理補寫主題 metadata 時使用 lease compare-and-set；SSE 中斷或伺服器錯誤也只可用當前 lease 把 claim 標為 `failed`，避免逾時接手後舊 worker 把舊 lease 寫回或釋放新 worker。程序未正常釋放時，相同 attempt 可在 lease 逾時後接手；每次接手都換發 lease ID，assistant 寫入前須在 conversation lock 內驗證 lease，舊 worker 不得寫入重複回答。claim／assistant 均依 conversation、來源與 attempt 精確定位，不依賴仍為最後一則訊息，因此其他分頁插入訊息後仍可安全釋放、完成與回放。這些重試不重複扣額度；新的重新產出操作才計為新用量。不新增資料表或 migration。
+
+SSE 在模型尚未完成時斷線，可中止該次生成並釋放目前 claim；模型完整生成後必須先將 assistant 回答與基礎 metadata 落盤，再生成及更新建議問題。客戶端缺少 `done` 時，重試前先依 attempt ID 讀取目前對話：已有對應完成回答即復原，不送出第二次請求；無法讀取時採 fail-closed 並保留重試狀態，不得把未確認的請求重送。已完成 claim 不得標為失敗。
 
 #### 信心度判定邏輯
 
@@ -837,19 +858,24 @@ Request:
     Authorization: Bearer <accessToken>
   Content-Type: application/json
   Body:
-    query: string (required)
+    variables:
+      user_name: string (optional)
+      query: string (optional)
+      context: string (optional)
 
 Response 200:
   {
     "success": true,
     "data": {
-      "prompt": "完整展開後的提示詞...",
-      "response": "助手回應內容...",
-      "sources": [...],
-      "processingTime": 2.5
+      "original": "原始提示詞範本...",
+      "rendered": "模型正式收到的靜態 system message...",
+      "runtimeData": "承載 query、context 與 user_name 的獨立 user JSON data message...",
+      "variables": { "query": "如何防範釣魚攻擊？" }
     }
   }
 ```
+
+`rendered` 不得包含執行期的知識庫、網頁、問題或顯示名稱；這些值只出現在 `runtimeData`。此輸出與正式 Chat 呼叫 LLM 的兩則訊息完全相同。
 
 #### 5.4.5 資料模型
 
@@ -3345,6 +3371,7 @@ Q1 2026   Q2 2026   Q3 2026   Q4 2026   Q1 2027   Q2 2027
 
 | 版本 | 日期 | 變更說明 |
 |------|------|----------|
+| 2.8.0 | 2026-07-26 | 議題分類改為初判；新增全題 RAG 優先、嚴格證據恢復、縮寫限定網搜推測、單輪原子銜接、RAG 不可用分流、資安建議題驗證與網頁來源安全邊界 |
 | 2.7.3 | 2026-07-18 | 來源列表增加 `latest_task_name` 契約、舊任務 ID 備援、RWD 欄位與最新任務名稱／狀態／連結一致性驗證 |
 | 2.7.2 | 2026-07-17 | 補強來源資料狀態層級、未送審、先篩選後計數／穩定分頁、HTTP 422 與 PostgreSQL rollback 整合驗證 |
 | 2.7.1 | 2026-07-16 | 補強已刪除專用篩選、任務歷史入口、操作欄語意與 Cleaner 共用台北時區顯示契約 |

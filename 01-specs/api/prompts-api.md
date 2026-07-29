@@ -98,4 +98,4 @@ audience: ai-primary
 }
 ```
 
-回應包含 `original`、`rendered`、`variables`。
+回應包含 `original`、`rendered`、`runtimeData`、`variables`。`rendered` 是模型正式收到的靜態 system message；`runtimeData` 是承載 `user_name`、`query`、`context` 的獨立 user JSON data message。執行期值不會展開到 `rendered`，避免知識庫或網頁內容取得 system 權限。

@@ -111,6 +111,7 @@ Authorization: Bearer <your_jwt_token>
   "topK": 5,
   "hybrid": true,
   "stream": false,
+  "messageAttemptId": "message-attempt-uuid",
   "regenerateFromMessageId": "assistant-message-uuid-optional",
   "regenerationAttemptId": "attempt-uuid-required-for-regeneration"
 }
@@ -118,13 +119,14 @@ Authorization: Bearer <your_jwt_token>
 
 | 欄位 | 型別 | 必填 | 說明 |
 |------|------|------|------|
-| question | string | ✅ | 使用者問題 |
+| question | string | ✅ | 使用者問題；送出前移除零寬字元並 `trim`，結果不可為空白 |
 | conversationId | string | ❌ | 對話 ID（若無則建立新對話） |
 | responseMode | string | ❌ | 回應模式：beginner / standard / expert（優先使用） |
 | mode | string | ❌ | 回應模式別名（向後相容，建議使用 responseMode） |
 | topK | number | ❌ | 檢索文件數量（1-20，預設 5） |
 | hybrid | boolean | ❌ | 是否啟用混合搜尋（預設 true） |
 | stream | boolean | ❌ | 是否使用串流模式（預設 false） |
+| messageAttemptId | UUID | ❌ | 一般訊息的冪等識別碼；Chatbot 每次送出都提供，同一次斷線重試必須沿用，且不可與重新產出欄位併用 |
 | regenerateFromMessageId | UUID | ❌ | 重新產出的原助理回覆 ID；必須同時提供既有 `conversationId`，且該 ID 必須是對話最後一則訊息 |
 | regenerationAttemptId | UUID | 條件必填 | 提供 `regenerateFromMessageId` 時必填；同一次斷線重試必須沿用相同 UUID |
 
@@ -144,6 +146,11 @@ Authorization: Bearer <your_jwt_token>
       "role": "assistant",
       "content": "PDPA 全名為 Personal Data Protection Act...",
       "topicScope": "cybersecurity",
+      "confidenceLevel": "high",
+      "suggestedQuestions": [
+        "企業應如何開始盤點目前的資安風險？",
+        "如何驗證現有資安控制措施是否有效？"
+      ],
       "sources": [
         {
           "source": "pdpa-guide.pdf",
@@ -216,7 +223,7 @@ data: {"type":"chunk","content":"PDPA"}
 
 data: {"type":"chunk","content":" 全名為"}
 
-data: {"type":"done","messageId":"msg-uuid","conversationId":"conv-uuid","topicScope":"cybersecurity","sources":[{"source":"pdpa-guide.pdf","content_preview":"個人資料保護法...","score":0.92,"source_type":"knowledge_base"},{"source":"https://example.com/pdpa-article","title":"個資法最新修正解析","content_preview":"2024年個資法修正重點...","score":0,"source_type":"web_search"}]}
+data: {"type":"done","messageId":"msg-uuid","conversationId":"conv-uuid","topicScope":"cybersecurity","suggestedQuestions":["企業應如何開始盤點目前的資安風險？"],"sources":[{"source":"pdpa-guide.pdf","content_preview":"個人資料保護法...","score":0.92,"source_type":"knowledge_base"},{"source":"https://example.com/pdpa-article","title":"個資法最新修正解析","content_preview":"2024年個資法修正重點...","score":0,"source_type":"web_search"}]}
 ```
 
 | Event Type | 說明 |
@@ -227,7 +234,36 @@ data: {"type":"done","messageId":"msg-uuid","conversationId":"conv-uuid","topicS
 
 #### `topicScope` 議題範圍
 
-`topicScope` 可能為 `cybersecurity`、`mixed`、`non_cybersecurity` 或 `unclear`。非資安與不明確問題仍會先送出一個固定文字的 `chunk`，再送出 `done`；其 `sources` 為空陣列，且不包含信心度。
+`topicScope` 可能為 `cybersecurity`、`mixed`、`non_cybersecurity` 或 `unclear`，代表完成知識庫與必要網搜解析後的**最終結果**，不是分類器初判。所有初判都先查 RAG：
+
+| `scopeResolution` | 情況 | 回應契約 |
+|-------------------|------|----------|
+| `classified` | 初判為資安／混合，進入既有回答流程 | `topicScope` 保留 `cybersecurity`／`mixed` |
+| `knowledge_base` | 非資安／不明確初判，但找到達門檻的知識庫證據 | `topicScope=cybersecurity`，依證據回答 |
+| `web_inference` | 無知識庫證據的縮寫／機構片段，限定資安網搜找到安全且非空的正文或摘要 | `topicScope=cybersecurity`、`confidenceLevel=low`，API 固定先送出「若您指的是…」推測性 `chunk`，再串流模型內容並附來源 |
+| `clarification` | 不明確候選仍無證據 | `topicScope=unclear`，固定 `chunk` 要求補充；`sources=[]` |
+| `out_of_scope` | 明確一般內容且無證據 | `topicScope=non_cybersecurity`，固定 `chunk` 提醒服務範圍；`sources=[]` |
+| `rag_unavailable` | RAG 服務無法連線或回應異常 | `topicScope=unclear`，固定 `chunk` 告知暫時無法確認，禁止改用網搜推測 |
+
+`initialTopicScope` 與 `scopeResolution` 會寫入訊息 metadata，公開回應維持既有 `topicScope` 契約。候選縮寫可在 metadata 保存 `pendingTopicBridge`，只供同一對話下一則完全符合「資安服務」「資訊安全措施」等短限定詞使用。帶 `messageAttemptId` 的一般訊息會在同一資料庫交易內鎖定 conversation、消耗 bridge、建立 user claim 並保留額度；claim 另以 `messageAttemptTopicBridgeFragment` 與 `messageAttemptTopicBridgeSourceMessageId` 保存本次取得的 bridge，讓 failed／逾時重試沿用相同語意而不再次消耗。未帶 attempt ID 的相容路徑仍以 conversation row lock 原子寫入 `topicBridgeConsumedAt`。含主詞或動詞的完整敘述、完整新問題、重新產出與更後續輪次不會合併。
+
+LLM 的 system message 只包含靜態政策與資料位置標記。知識庫、網頁、問題與使用者顯示名稱會以獨立 user JSON data message 傳入，不會展開到 system message；後台「測試提示詞」會分別回傳 `rendered` 與 `runtimeData`，對應正式 system 與 user data message。
+
+模型完成前 SSE 中斷時不保存不完整回答；模型完成後會先落盤完整 assistant 訊息，再生成與更新建議問題。即使在建議問題階段中斷，也只停止後續 `done` write。客戶端按下重試時會先依 attempt ID 讀取對話記錄：已有完成回答即復原該回答，不再送出問題；無法確認伺服器狀態時採 fail-closed，不重送也不再次扣額。
+
+`suggestedQuestions` 最多三題。LLM 生成後由分類器再驗證，生成、驗證失敗或逾時時以固定資安問題補足；Chatbot 按鈕送出完整文字並重新走相同 RAG 優先流程。
+
+#### 一般訊息可靠重試
+
+一般訊息由 Chatbot 產生 `messageAttemptId`。首次請求在同一 PostgreSQL transaction 內鎖定使用者資料列，建立必要的 conversation、待完成 user 訊息並保留額度；user／assistant metadata 都保存 attempt ID，處理中的 user 另保存 `messageAttemptStatus`、`messageAttemptClaimedAt` 與 `messageAttemptLeaseId`。相同 attempt 的重試會定位原 conversation，因此即使首次回應尚未把 `X-Conversation-Id` 送到瀏覽器，也不會建立第二個對話。全程沿用 JSON metadata，不需資料庫 migration。
+
+| 狀況 | HTTP | 行為 |
+|------|------|------|
+| 相同 attempt 的問題文字或指定 conversation 不一致 | 400 | 拒絕請求，不扣額、不寫入新訊息 |
+| 一般與重新產出 attempt 欄位同時提供 | 400 | 拒絕請求，避免兩套狀態機混用 |
+| 相同 attempt 的 5 分鐘 lease 有效 | 409 | 回傳「訊息仍在處理中，請稍後再試」；不重複呼叫 LLM 或扣額 |
+| 相同 attempt 為 `failed` 或 lease 逾時 | 200 | 換發 lease 並沿用原 user 訊息，不重複扣額；舊 worker 寫入會被拒絕 |
+| 相同 attempt 的 assistant 已落盤 | 200 | 回放相同回答、來源與 message ID，不重新生成、不重複扣額 |
 
 #### 重新產出最新回覆
 
@@ -541,26 +577,32 @@ NestJS ChatService 呼叫 Python RAG `/api/v1/rag/retrieve` 端點時的請求�
 }
 ```
 
-### RAG Query Response (Internal)
+### RAG Retrieve Response (Internal)
 
 ```typescript
 {
-  answer: string;
-  sources: Array<{
-    source: string;             // 來源路徑或 URL
-    content_preview: string;    // 內容預覽
-    score: number;              // 相關性分數
-    source_type: 'knowledge_base' | 'web_search';  // 來源類型
-    title?: string;             // 網頁標題（僅 web_search 類型時包含）
+  availability: 'available' | 'unavailable';
+  results: Array<{
+    source: string;
+    content_preview: string;
+    score: number;
   }>;
-  usage?: {
-    total_tokens: number;
-    total_cost_usd: number;
+  metadata: {
+    count: number;
+    best_score: number;
   };
+  temporal_context?: {
+    reference_date: string;
+    source: string;
+  } | null;
 }
 ```
 
 > **檢索模式**：ChatService 預設使用 `hybrid: true, hierarchical: true`，即 Hybrid Hierarchical 模式（BM25 + 向量搜尋 child chunks → 回傳 parent chunks），兼顧法規條文編號的精確匹配與完整章節上下文。
+>
+> **可用性分流**：RAG 正常回傳零筆結果時為 `availability=available`；逾時、網路錯誤或無效回應為 `availability=unavailable`。後者不得觸發縮寫網搜推測。
+
+網路搜尋結果列入 LLM context 或 `sources` 前，URL 必須為無帳密的 HTTP(S)，DNS 所有解析位址都必須是公開 IP；抓取時綁定已驗證 IP，最多接受三次重新導向且每次重新驗證。私有、loopback、link-local、metadata、保留與混合公私解析均捨棄。
 
 #### source_type 說明
 

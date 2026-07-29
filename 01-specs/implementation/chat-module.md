@@ -6,10 +6,10 @@ audience: both
 
 ## TL;DR
 
-Chat 模組由 NestJS 協調知識庫檢索、必要時的 SearXNG 補充、LLM 回答與訊息持久化。知識庫與網路來源使用同一份 `sources` 契約，讓即時回答和歷史對話都能還原參考資料。
+Chat 模組由 NestJS 協調議題初判、知識庫檢索、必要時的限定 SearXNG 補充、LLM 回答與訊息持久化。非資安／不明確初判不再直接中止，必須先以知識庫證據解析；縮寫與延續語句另有受限且可追蹤的恢復流程。
 
 ## 實作時間
-2026-02-09（最後更新：2026-07-13）
+2026-02-09（最後更新：2026-07-29）
 
 ## 概述
 
@@ -100,20 +100,31 @@ Controller (HTTP) → Service (業務邏輯) → Repository (資料存取) → P
 - **串流模式**：使用 `responseType: 'stream'` + AsyncGenerator
 - **超時設定**：120 秒
 - **環境變數**：`FASTAPI_BASE_URL`（預設 `http://localhost:3502`）
+- **可用性分流**：正常零筆結果回傳 `availability=available`；逾時、網路或回應錯誤回傳 `availability=unavailable`，供 ChatService 禁止不可靠的網搜推測
 
 ### 4. 議題範圍分類
 
 - `TopicClassifierService` 在 Query 改寫後輸出 `cybersecurity`、`mixed`、`non_cybersecurity` 或 `unclear`。
 - 分類器只接受完整固定值；模型回傳說明、標點或無效內容時降級為 `unclear`。
-- 非資安與不明確問題在 RAG 與網路搜尋前短路，回傳固定引導文字。
+- 分類結果只作為 `initialTopicScope`；所有分類都先查 RAG。非資安／不明確初判若找到達正式過濾門檻的知識庫證據，最終改以 `topicScope=cybersecurity` 回答。一般流程保留的低分 top 1 fallback 不算恢復證據。
+- 無知識庫證據的縮寫／機構片段，或上一輪待銜接片段後接明確短資安限定詞時，會以 `buildCybersecurityDiscoveryQuery()` 補上資安、隱私、法遵與資訊風險詞後執行限定網搜。只有安全且正文或摘要非空的來源可標記 `scopeResolution=web_inference`；API 固定加上推測性前綴並強制低信心。完全無證據時回補充提示或服務範圍提醒。
+- RAG 不可用時標記 `scopeResolution=rag_unavailable`，直接告知暫時無法可靠確認，不觸發網搜推測。
 - 混合問題會先由 `QueryPreprocessorService.rewriteForCybersecurityScope()` 抽取資安問句；RAG、網路搜尋、主回答與 `{query}` 使用抽取結果。原文保留於對話紀錄，使用者訊息 metadata 另存 `historyTopicScope`／`scopedQuestion`，後續模型歷史以資安問句取代混合原文，並排除非資安／不明確的固定回覆輪次；建議追問也不帶入原始非資安文字。
-- 分類寫入 `Message.metadata.topicScope`，串流 `done` 事件與歷史對話使用同一欄位。
+- 候選片段可在最新 assistant metadata 保存 `pendingTopicBridge`。下一則必須完全符合「資安服務」「資訊安全措施」等短限定詞才合併；含主詞或動詞的完整敘述、完整新問題與重新產出不合併。一般 Chatbot 訊息由 `MessageRepository.claimMessageAttempt()` 在同一 transaction 內鎖定 conversation row、消耗 bridge、建立 user claim 並保存 bridge；舊客戶端才由 `consumePendingTopicBridge()` 獨立消耗。`test:chat-topic-bridge-integration` 以真實 PostgreSQL 雙併發交易驗證只消耗一次。
+- 最終分類寫入 `Message.metadata.topicScope`，初判與處理路徑另存 `initialTopicScope`／`scopeResolution`；串流 `done` 與歷史對話使用相同最終欄位。
+- 建議問題先由 LLM 生成，再以 `TopicClassifierService` 驗證資安範圍；生成／驗證逾時或失敗時用固定可回覆的資安問題補足。
 
 ### 5. 網路搜尋與來源持久化
 
 - RAG 結果不足且後台已啟用網路搜尋時，`ChatService` 依 `WebSearchConfigService` 設定呼叫 SearXNG，再由 `WebFetcherService` 取得可供 LLM 引用的頁面內容。
+- `PublicUrlSafetyService` 僅允許無帳密的 HTTP(S) 公開 URL，解析所有 DNS 位址並拒絕任一非公開位址；`WebFetcherService` 關閉環境代理、綁定已驗證 IP、限制 1 MB 回應，最多追蹤三次重新導向且逐次重驗，防止 SSRF、DNS rebinding 與重新導向至內網。
+- Query 改寫與回答提示將歷史、知識庫與網頁內容標示為不可信資料，明確禁止遵循其中指令；網搜推測另要求揭露歧義、衝突與推測性質。
+- `ContextBuilderService` 的 system message 只保留靜態政策與資料位置標記；知識庫、網頁、問題及顯示名稱以 `buildUntrustedRuntimeData()` 建立獨立 user JSON data message。`PromptsService.testPrompt()` 同時回傳 `rendered` 與 `runtimeData`，分別等於正式路徑的 system 與 user data message。
+- RAG 回應會驗證每筆來源、有限數值分數、metadata 與 temporal context；任一異常都分流為 `rag_unavailable`。網頁抓取的 pinned lookup 同時支援單筆與 Node `all=true` 回呼格式。
 - 知識庫來源使用 `source_type=knowledge_base`；網路來源使用 `source_type=web_search`，並保留網頁 URL、標題與內容摘要。
 - 標準回應直接回傳 `answer.sources`；SSE 在 `done.sources` 回傳。助理訊息同時將來源寫入 `messages.sources`，因此歷史對話可還原。
+- Chatbot 的一般訊息皆帶 `messageAttemptId`。`MessageRepository.claimMessageAttempt()` 以 user row lock 序列化同一使用者的 claim，首次請求原子建立必要對話、消耗待銜接 bridge、建立 user 訊息與額度保留；bridge 以 `messageAttemptTopicBridgeFragment`／`messageAttemptTopicBridgeSourceMessageId` 保存，failed／逾時重試沿用原訊息與 bridge 並換發 lease，completed 直接回放。assistant 寫入以 lease fencing 防止舊 worker 覆寫；沿用 JSON metadata，不需 migration。
+- SSE 若在模型生成完成前中斷，該次生成不落盤並釋放目前 attempt lease；模型完成後先落盤回答，再生成及更新建議問題。客戶端缺少 `done` 時依 attempt ID 讀取對話並復原已完成回答；查詢失敗時不重送，避免重複訊息與額度。
 - `SEARXNG_URL` 是環境設定的預設值。本機預設為 `http://localhost:8080`；既有資料若仍是舊版 `http://localhost:8888`，讀取設定時會校正為目前環境值。管理者已設定的其他 URL 不會被覆寫。
 - Prisma `0010_remove_websearch_url_default` 移除資料庫欄位內綁定本機位址的預設值；建立設定的應用程式路徑必須明確提供 URL。
 
@@ -329,9 +340,9 @@ while (true) {
 
 ### 2. RAG 服務依賴
 
-- Chat API 完全依賴 FastAPI RAG 服務
-- 若 RAG 服務離線，訊息發送會失敗
-- 建議實作降級策略或錯誤通知機制
+- Chat API 依賴 FastAPI RAG 服務判斷知識庫證據與服務範圍
+- 若 RAG 服務離線，系統回傳可持久化的「暫時無法連線至知識庫」提示，並將 `scopeResolution` 設為 `rag_unavailable`
+- 此狀態刻意禁止改用網路推測，避免把基礎服務異常誤認成知識庫無資料
 
 ### 3. 串流模式錯誤處理
 
@@ -428,4 +439,6 @@ model SharedConversation {
 
 | 日期 | 版本 | 變更內容 |
 |------|------|----------|
+| 2026-07-26 | 1.1.0 | 議題初判改為 RAG 優先解析，新增縮寫限定網搜推測、單輪原子銜接、建議題驗證、RAG 可用性與網頁 URL 安全防線 |
+| 2026-07-29 | 1.1.1 | 一般訊息新增 attempt 冪等、user row lock、原子額度、lease fencing 與 SSE 完成回放 |
 | 2026-02-09 | 1.0.0 | 初始實作完成 |
