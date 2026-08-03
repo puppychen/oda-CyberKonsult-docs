@@ -7,7 +7,7 @@ owner: ODA Cyber Konsult
 
 # Auth API 文件
 
-> **版本**: v1.4
+> **版本**: v1.5
 > **基礎路徑**: `/api/auth`
 > **服務**: NestJS API (Port 3051)
 
@@ -78,7 +78,7 @@ Content-Type: application/json
 |------|------|------|------|----------|
 | `email` | string | 是 | 使用者電子郵件 | 有效的 Email 格式 |
 | `password` | string | 是 | 使用者密碼 | 至少 8 字元 + 3/4 複雜度 (大寫/小寫/數字/特殊字元) |
-| `name` | string | 否 | 使用者姓名 | - |
+| `name` | string | 否 | 使用者姓名 | 先移除前後空白，再以 Unicode 字元計算最多 30 個字元；超限回傳 400 |
 | `role` | string | 否 | 使用者角色 | 公開註冊固定為 `basic_user`；管理員可於後台指派六種角色 |
 
 #### 回應

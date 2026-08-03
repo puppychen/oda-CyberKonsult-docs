@@ -1,6 +1,13 @@
+---
+audience: both
+purpose: reference
+status: approved
+owner: ODA Cyber Konsult
+---
+
 # Audit & Users API Documentation
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Base URL:** `http://localhost:3051`
 
 ---
@@ -95,6 +102,26 @@
 ---
 
 ## Users Module (使用者管理模組)
+
+> **TL;DR**：`POST /api/users`、`PATCH /api/users/:id` 與 `PATCH /api/users/me` 的 `name` 均為選填，會先移除前後空白，再以 Unicode 字元計算最多 30 個字元。超限回傳 400，不自動截斷既有資料；空白姓名在更新時表示清除姓名。
+
+### 共用姓名寫入規則
+
+| 端點 | 操作者 | `name` 規則 |
+|------|--------|-------------|
+| `POST /api/users` | Admin | 選填；移除前後空白後，以 Unicode 字元計算最多 30 個字元 |
+| `PATCH /api/users/:id` | Admin | 選填；移除前後空白後，以 Unicode 字元計算最多 30 個字元；空白表示清除 |
+| `PATCH /api/users/me` | 已認證使用者 | 選填；移除前後空白後，以 Unicode 字元計算最多 30 個字元；空白表示清除 |
+
+超過限制時回應：
+
+```json
+{
+  "success": false,
+  "error": "姓名不可超過 30 個字元",
+  "statusCode": 400
+}
+```
 
 ### 3. GET /api/users
 

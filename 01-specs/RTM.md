@@ -9,9 +9,9 @@ owner: ODA Cyber Konsult
 
 > **ODA Cyber Konsult - 資安助手 RAG 系統**
 >
-> 文件版本：1.15.1
+> 文件版本：1.16.0
 > 建立日期：2026-03-01
-> 最後更新：2026-07-29
+> 最後更新：2026-07-31
 > 文件類型：需求追溯矩陣（Requirements Traceability Matrix）
 
 ---
@@ -38,6 +38,7 @@ owner: ODA Cyber Konsult
 | v1.14.3 | 2026-07-18 | US-20-01 增加來源檔案與最新任務名稱對照、舊任務 ID 備援及名稱／狀態／連結同源測試追溯 |
 | v1.15.0 | 2026-07-26 | 強化 US-02-06／新增 TC-02-003：全題 RAG 優先、嚴格證據門檻、縮寫限定網搜推測、單輪原子銜接、RAG 不可用分流、資安建議題與 SSRF／提示注入防線追溯 |
 | v1.15.1 | 2026-07-29 | 新增 TC-02-004：一般訊息 attempt 冪等、user row lock、原子額度、lease fencing、完成回放與 PostgreSQL 雙併發追溯 |
+| v1.16.0 | 2026-07-31 | 新增 TC-01-008：姓名 30 字元上限涵蓋註冊、管理員建立／編輯與 Admin／Cleaner／Chatbot 本人更新 |
 | v1.0.0 | 2026-03-01 | 初版建立，FR-01~21 追溯矩陣 |
 | v1.1.0 | 2026-03-06 | 新增 FR-18 Maker-Checker 追溯、FR-19~21 追溯、驗收測試更新 |
 | v1.2.0 | 2026-03-11 | 新增 US-05-03 ZIP 追溯、更新角色定義為 7 角色、測試覆蓋統計更新（107 test files） |
@@ -95,10 +96,10 @@ User Story (PRD.md)
 | US | 說明 | API 端點 | NestJS 模組 | NestJS 測試 | Python 測試 | TC | Screen | Security | 狀態 |
 |----|------|----------|------------|-------------|-------------|-----|--------|----------|------|
 | US-01-01 | 帳號密碼登入 | `POST /api/auth/login` | auth/ | auth.service.spec, token.service.spec, login.dto.spec, password-strength.validator.spec, password-change-required.guard.spec、`auth-login-lock-postgres.integration.ts` | — | TC-01-001, TC-01-002 | Admin `/login`, Cleaner `/login`, Chatbot `/login` | JWT, bcrypt, RBAC, Rate Limit, PostgreSQL 原子帳號鎖定, 密碼政策 | ✅ |
-| US-01-01 | 註冊 | `POST /api/auth/register` | auth/ | auth.service.spec, register.dto.spec | — | — | Chatbot `/login` | JWT, bcrypt, RBAC, Rate Limit, 帳號鎖定, 密碼政策 | ✅ |
+| US-01-01 | 註冊 | `POST /api/auth/register` | auth/ | auth.service.spec、register.dto.spec、user-name.validator.spec | — | TC-01-008 | Chatbot `/login` | JWT, bcrypt, RBAC, Rate Limit, 帳號鎖定, 密碼政策, 姓名長度驗證 | ✅ |
 | US-01-01 | Token 刷新與獨立工作階段 | `POST /api/auth/refresh` | auth/ | auth.service.spec、token.service.spec、auth-session.repository.spec、jwt.strategy.spec | `scripts/verify-migration-0009.sh`、`auth-session-postgres.integration.ts` | TC-01-003、TC-01-004、TC-01-007 | Admin／Cleaner／Chatbot 自動刷新；Web Locks／Bakery-style 競爭者租約協調 | JWT `sid`/`jti`/`tokenUse`、bcrypt refresh hash、原子輪替、最多 10 個 session | ✅ |
 | US-01-01 | 密碼變更 | `POST /api/auth/change-password` | auth/ | auth.service.spec, change-password.dto.spec | — | — | Admin `/change-password`, Cleaner `/change-password`, Chatbot `/change-password` | JWT, bcrypt, RBAC, Rate Limit, 帳號鎖定, 密碼政策 | ✅ |
-| US-01-02 | 帳號管理 | `GET/POST/PUT /api/users` | users/ | users.service.spec, update-role.dto.spec, update-status.dto.spec | — | — | Admin `/users` | JWT, bcrypt, RBAC, Rate Limit, 帳號鎖定, 密碼政策 | ✅ |
+| US-01-02 | 帳號管理與本人姓名更新 | `GET/POST/PATCH/PUT /api/users` | users/ | users.service.spec、update-role.dto.spec、update-status.dto.spec、user-name.validator.spec、Admin／Cleaner／Chatbot 姓名限制元件測試 | — | TC-01-008 | Admin `/users`、三端個人帳號 | JWT, bcrypt, RBAC, Rate Limit, 帳號鎖定, 密碼政策, 姓名長度驗證 | ✅ |
 | US-01-03 | 目前／全部登出 | `POST /api/auth/logout`、`POST /api/auth/logout-all` | auth/ | auth.service.spec、auth.controller.spec、jwt.strategy.spec | — | TC-01-003 | 全應用；一般登出不影響其他 session | JWT `sid`、`tokenVersion`、Session 撤銷 | ✅ |
 | US-01-03 | Cleaner SSO 獨立 Session | `POST /api/auth/sso/exchange` | auth/ | auth.service.spec、auth.controller.spec、Cleaner useAuth.test | — | TC-01-005 | Admin 開啟 Cleaner；只傳 Access Token | JWT、RBAC、獨立 Cleaner Refresh Token | ✅ |
 | US-01-03 | 前端不中斷復原 | 自動 Refresh／同頁重新登入 | Admin／Cleaner／Chatbot | 三端 client.test、useAuth.test、SessionRecovery.test；Chatbot ChatInput.test、useChat.test | — | TC-01-004、TC-01-006、TC-01-007 | 保留頁面、草稿、對話 ID；鎖定原帳號；不自動 reload | 僅 Refresh 400／401 失效；網路／429／5xx 保留憑證；跨帳號不覆寫 | ✅ |
@@ -312,6 +313,7 @@ User Story (PRD.md)
 | TC-01-005 | FR-01 | US-01-03 | Admin Access Token 交換為獨立 Cleaner Session | auth.service.spec、auth.controller.spec、Cleaner `useAuth.test` | — | — | SSO、RBAC、Refresh Token 不跨應用傳遞 | ✅ |
 | TC-01-006 | FR-01 | US-01-03 | Chatbot 草稿與目前對話 ID 在同頁重新登入期間保留 | `ChatInput.test`、`useChat.test`、`useAuth.test` | — | — | `sessionStorage`、寫入停用 | ✅ |
 | TC-01-007 | FR-01 | US-01-01／US-01-03 | Refresh Token 不可作為 Access Token；併發輪替僅一個成功；舊認證協定 Refresh 回 426 且不消耗 Token；所有認證寫入共用跨分頁互斥鎖；請求或 JSON 解析途中跨帳號切換不得覆寫；末段插入舊版租約或 lease claim 未讀回自己 owner 時重新競爭；誤登入新工作階段撤銷、稍後處理與唯讀原帳號 | `token.service.spec`、`jwt.strategy.spec`、`auth.controller.spec`、三端 `client.test`／`crossTabMutex.test`／`useAuth.test`／`SessionRecovery.test` | `pnpm --filter @oda-cyber/api test:auth-session-integration` 查驗舊協定 426、PostgreSQL `current_jti`、hash、`revoked_at`；Chromium 禁用 Web Locks 的雙分頁互斥測試 | 桌面／375px 手機 Playwright 6 組情境 | `tokenUse`、協定 fencing、CAS 輪替、同帳號防護 | ✅ |
+| TC-01-008 | FR-01 | US-01-01／US-01-02 | 姓名在 trim 後以 Unicode 字元計算，29、30 字元可通過，31 字元由四個 HTTP 寫入入口回 400；註冊、管理員建立／編輯與三端本人更新欄位皆阻止超限送出；既有超限值不自動截斷，PATCH 省略姓名時保留原值 | `user-name.validator.spec`、`user-name.http.spec`、`users.service.spec`、Admin `UserNameLimit.test`、Cleaner `ProfilePage.test`、Chatbot `UserNameLimit.test` | — | 既有版面不變，只增加輸入與送出驗證 | Input Validation、無資料截斷 | ✅ |
 | TC-02-001 | FR-02 | US-02-01 | RAG 查詢回應 | chat.service.spec, rag-proxy.service.spec | test_rag_chain, test_retriever | — | JWT, Input Validation | ✅ |
 | TC-02-002 | FR-02 | US-02-07 | 重新產出只作用於相同最後提示詞、資安／混合主題與最新完成回覆；雙 attempt 並發僅一個成功；有效 lease processing 回 409，逾時／failed／completed 重試不重複計費 | API chat DTO／repository／context／service／controller／usage specs；Chatbot `useChat.test`、`MessageList.test` | `pnpm --filter @oda-cyber/api test:chat-regeneration-integration` 實際驗證 PostgreSQL row lock、提示詞防竄改、`chat_daily_usages` 與 claim 同交易回滾、單調時間、並發 loser、lease 逾時接手、舊 worker metadata／寫入／失敗釋放 fencing、跨分頁 failed 釋放、claim completed 與完成回放 | icon-only、hover 提示、額度停用、最新失敗重試、UUID 正向驗證 | JWT、topicScope、相同提示詞、row lock、attempt 冪等、lease fencing、原子額度、in-flight lock | ✅ |
 | TC-02-003 | FR-02 | US-02-06 | 非資安／不明確初判先查 RAG；門檻等值可依知識庫回答、門檻減 ε 不可；`SGS`／`TUV`／`TAF` 可由知識庫或安全且非空的網搜內容恢復；網搜回答由 API 固定加推測前綴；`ODA` 後接「資安服務」只合併一輪且併發只消耗一次；帶一般訊息 attempt 時 bridge 必須在 user claim 建立前於同交易消耗並保存，failed／逾時重試沿用；無問號完整敘述不合併；RAG payload 異常與服務不可用都禁止網搜推測；已完成 SSE 回答先落盤再更新建議題，`done` 遺失時復原伺服器回答且不可重送；建議題失敗時仍回資安預設題；執行期資料不進 system message | `chat.service.spec`、`chat.controller.spec`、`chat.dto.spec`、`rag-proxy.service.spec`、`message.repository.spec`、`query-preprocessor.service.spec`、`context-builder.service.spec`、`prompts.service.spec`、`prompt-renderer.util.spec`、`public-url-safety.service.spec`、`web-fetcher.service.spec`、`llm.service.spec`、Chatbot `useChat.test`、`MessageList.test` | `pnpm --filter @oda-cyber/api run test:chat-topic-bridge-integration` 建立隔離 fixture 並以 PostgreSQL blocker 確認兩個 consume 同時等待 row lock，釋放後僅一個成功並落盤 `topicBridgeConsumedAt`；一般訊息 claim 另驗證 bridge 於建立 user message 前消耗並保存；外部 LLM／SearXNG smoke 須明確啟用，不列入預設閘門 | 建議問題按鈕送出完整文字；SSE 缺少 `done` 時先復原伺服器回答，狀態查詢失敗時 fail-closed；既有版面不變；後台 `rendered`／`runtimeData` 等於正式 system／user data message | Input Validation、Prompt Injection Boundary、SSRF／DNS rebinding／redirect 防護、Node `all=true` lookup、row lock 單次消耗 | ✅ |
