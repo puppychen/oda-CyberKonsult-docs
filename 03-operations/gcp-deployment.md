@@ -3,7 +3,7 @@ audience: both
 purpose: runbook
 status: draft
 owner: ODA Cyber Konsult
-updated: 2026-08-03
+updated: 2026-08-04
 ---
 
 # GCP 部署設置指南（Console 操作版）
@@ -104,10 +104,13 @@ updated: 2026-08-03
 - [ ] 第 4 章：Qdrant 虛擬機
 - [ ] 第 5 章：儲存桶與機密
 - [ ] 第 6 章：程式碼調整（開發方）
-- [ ] 第 7 章：容器映像建置
+- [ ] 第 7 章 7-1～7-3：容器映像建置（首次手動）
 - [ ] 第 8 章：Cloud Run 部署
+- [ ] **第 7 章 7-4**：回頭設定自動化建置與部署 ← 順序不可提前
 - [ ] 第 9 章：前端部署
 - [ ] 第 10 章：驗證與維運
+
+> ⚠️ 第 7-4 章刻意排在第 8 章之後。自動化的最後一步是「更新既有服務的映像」，服務必須先存在才有意義。
 
 ---
 
@@ -229,25 +232,55 @@ updated: 2026-08-03
 
 Cloud SQL 使用私有 IP 時需要這一步。
 
-1. 左側 ☰ →「**VPC 網路**」→「**私人服務連線**（Private Service Connection）」
-2. 切到「**已分配的 IP 範圍**」分頁 → 點「**分配 IP 範圍**」
-3. 填寫：
+> ⚠️ **這個功能不在左側選單裡**。必須先點進 `oda-vpc` 這個網路的詳細頁，上方分頁列才會出現「私人服務連線」。停在網路清單頁是找不到的。
+
+1. 左側 ☰ →「**虛擬私有雲網路**」→「**虛擬私有雲網路**」（清單頁）
+2. **點網路名稱 `oda-vpc`** 進入詳細頁（不是勾選前面的核取方塊）
+3. 切到上方分頁列的「**私人服務連線**」
+4. 子分頁「**已分配給服務的 IP 範圍**」→ 點「**分配 IP 範圍**」
+5. 填寫：
 
 | 欄位 | 填入值 |
 |------|--------|
 | 名稱 | `google-managed-services-oda-vpc` |
-| 網路 | `oda-vpc` |
 | IP 範圍 | 選「**自動**」，前置長度填 `16` |
 
-4. 點「**分配**」
-5. 切到「**私人連線**」分頁 → 點「**建立連線**」
-6. 網路選 `oda-vpc`，已分配的範圍勾剛才建立的那筆 → 點「**連線**」
+6. 點「**分配**」
+7. 切到子分頁「**與服務的私人連線**」→ 點「**建立連線**」
+8. 「已指派的分配」勾選剛才建立的那筆 → 點「**連線**」（背景建立 VPC peering，需 1～3 分鐘）
+
+> 💡 **Console 介面若又改版，改用等價指令**（`gcloud` 參數比 UI 穩定得多）：
+>
+> ```bash
+> # 對應步驟 4~6：分配 IP 範圍
+> gcloud compute addresses create google-managed-services-oda-vpc \
+>   --global \
+>   --purpose=VPC_PEERING \
+>   --prefix-length=16 \
+>   --network=oda-vpc \
+>   --project=<你的專案 ID>
+>
+> # 對應步驟 7~8：建立私人連線
+> gcloud services vpc-peerings connect \
+>   --service=servicenetworking.googleapis.com \
+>   --ranges=google-managed-services-oda-vpc \
+>   --network=oda-vpc \
+>   --project=<你的專案 ID>
+> ```
+>
+> 前提是第 1-3 章的 **Service Networking API** 已啟用，否則第二道指令會直接失敗。
 
 ### 2-4 驗證
 
 - VPC 網路清單中有 `oda-vpc`，底下有 2 個子網路
 - 防火牆清單中有 `allow-internal-qdrant`
-- 私人服務連線狀態顯示為「**已連線**」
+- 進入 `oda-vpc` 詳細頁 →「私人服務連線」分頁 →「與服務的私人連線」子分頁，狀態顯示為「**已連線**」
+
+  或用指令確認（有輸出 `servicenetworking-googleapis-com` 即成功）：
+
+  ```bash
+  gcloud services vpc-peerings list --network=oda-vpc --project=<你的專案 ID>
+  ```
 
 ---
 
@@ -606,16 +639,21 @@ Google 官方文件明載：Cloud Storage 掛載**不提供檔案鎖定機制**�
 
 3. 點「**建立**」
 
-### 7-2 用 Cloud Build 建置映像
+### 7-2 首次建置映像（手動）
+
+> **為什麼首次要手動**：第 8 章需要先有映像才能建立 Cloud Run 服務。自動化建置放在第 7-4 章，**必須等第 8 章的服務建好之後**才設定——順序顛倒會出問題，原因見 7-4 開頭說明。
 
 Console 沒有「上傳本機程式碼」的按鈕，最簡單的方式是用畫面右上角的 **Cloud Shell**（瀏覽器內建終端機，不需在本機安裝任何東西）。
 
 1. 點 Console 右上角的「**啟用 Cloud Shell**」圖示（`>_` 符號）
-2. 等待終端機開啟後，將專案程式碼上傳或複製進來：
-   - 若程式碼在 GitHub／GitLab：直接 `git clone` 您的儲存庫
-   - 若在本機：點 Cloud Shell 右上角「**⋮**」→「**上傳**」，上傳專案壓縮檔後解壓縮
+2. 等待終端機開啟後，將專案程式碼複製進來：
 
-3. 進入專案目錄後，執行下列 3 行（這是本文件唯一需要打字的地方）：
+```bash
+git clone https://github.com/puppychen/oda-CyberKonsult.git
+cd oda-CyberKonsult
+```
+
+3. 執行下列 3 行：
 
 ```bash
 gcloud builds submit --tag asia-east1-docker.pkg.dev/oda-cyber-prod/oda-images/oda-api:v1 --file apps/api/Dockerfile .
@@ -625,17 +663,84 @@ gcloud builds submit --tag asia-east1-docker.pkg.dev/oda-cyber-prod/oda-images/o
 gcloud builds submit --tag asia-east1-docker.pkg.dev/oda-cyber-prod/oda-images/oda-searxng:v1 docker/searxng/
 ```
 
-> ⚠️ 第 3 行需要 `docker/searxng/` 目錄含 `Dockerfile` 與設定檔——目前專案**缺少這個目錄**，需由開發方補齊（見第 10 章「已知待辦」）。
+> 💡 前兩行結尾的 `.` 是關鍵——它把**整個專案根目錄**當作建置來源。這兩個 Dockerfile 需要根目錄的 `pnpm-lock.yaml`、`packages/`、`contracts/` 等檔案，若只指定 Dockerfile 所在目錄會建置失敗。第 3 行的 SearXNG 則相反，只需要它自己的目錄。
 
 ### 7-3 驗證
 
 左側 ☰ →「Artifact Registry」→ 點 `oda-images`，應看到 3 個映像檔各有 `v1` 標籤。
+
+### 7-4 設定自動化建置與部署
+
+> ⚠️ **請先完成第 8 章，再回來執行本節。**
+>
+> 自動化流程的最後一步是「更新 Cloud Run 服務的映像」，它只會換映像、**不會建立服務設定**。若服務還不存在就啟用自動化，系統會建出一個沒有環境變數、沒有密鑰、沒有虛擬私有雲連線的空服務，等於白做一次還要砍掉重來。
+
+設定完成後，日常發版只需要打一個 git tag，系統就會自動建置並更新對應服務。
+
+#### 步驟一：授權 GitHub
+
+1. 左側 ☰ →「**Cloud Build**」→「**觸發條件**」
+2. 點「**連結存放區**」→ 來源選「**GitHub**」
+3. 依畫面完成 GitHub 授權（會安裝 Google Cloud Build 應用程式），選擇 `oda-CyberKonsult` 存放區
+
+#### 步驟二：授予部署權限
+
+自動部署需要讓 Cloud Build 有權更新 Cloud Run 服務。
+
+1. 左側 ☰ →「**IAM 與管理**」→「**IAM**」
+2. 找到 Cloud Build 使用的服務帳戶（名稱含 `cloudbuild` 或專案編號的預設帳戶）
+3. 點編輯（鉛筆圖示），新增以下兩個角色：
+
+| 角色 | 用途 |
+|------|------|
+| **Cloud Run Admin** | 更新 Cloud Run 服務的映像 |
+| **服務帳戶使用者**（Service Account User） | 以服務本身的身分執行部署 |
+
+#### 步驟三：建立三個觸發器
+
+「**觸發條件**」→「**建立觸發條件**」，依下表建立 3 個。三者的「事件」皆選「**推送新標記**」，「設定」皆選「**Cloud Build 設定檔**」：
+
+| 觸發器名稱 | 標記（正規表示式） | 設定檔位置 | 對應服務 |
+|-----------|------------------|-----------|---------|
+| `deploy-api` | `^api-v[0-9]+\.[0-9]+\.[0-9]+$` | `/cloudbuild.api.yaml` | `oda-api` |
+| `deploy-rag` | `^rag-v[0-9]+\.[0-9]+\.[0-9]+$` | `/cloudbuild.rag.yaml` | `oda-rag` |
+| `deploy-searxng` | `^searxng-v[0-9]+\.[0-9]+\.[0-9]+$` | `/cloudbuild.searxng.yaml` | `oda-searxng` |
+
+### 7-5 日常發版
+
+三個服務**各自獨立發版**，改了哪個就發哪個：
+
+```bash
+# 更新後端 API
+git tag api-v1.0.1
+git push origin api-v1.0.1
+
+# 更新 RAG 服務
+git tag rag-v1.0.1
+git push origin rag-v1.0.1
+
+# 更新 SearXNG
+git tag searxng-v1.0.1
+git push origin searxng-v1.0.1
+```
+
+推送後系統會自動完成三件事：**建置映像 → 存入 Artifact Registry → 更新對應的 Cloud Run 服務**。
+
+到「Cloud Build」→「記錄」可看到進度，約需 8～15 分鐘。
+
+> 💡 **版本號怎麼取**：tag 的 `api-v` 前綴會被自動去掉，所以 `api-v1.0.1` 產生的映像是 `oda-api:1.0.1`。前綴只是用來決定「這個 tag 要觸發哪一個服務」。
+
+> ⚠️ **標籤格式必須完全相符**。打成 `api-v1.0`（少一段數字）或 `apiv1.0.1`（少了連字號）都不會觸發任何動作，且不會有錯誤通知——推送後請到「Cloud Build」→「記錄」確認有新的建置出現。
+
+> 📌 **想要只建映像、不自動上線**：把設定檔中最後一個名為 `deploy` 的步驟整段刪除或註解掉即可。之後改為到 Cloud Run 手動選擇映像版本部署。
 
 ---
 
 ## 第 8 章：部署 Cloud Run 服務
 
 > **部署順序很重要**：先 RAG 服務 → 再 NestJS API（因為 API 需要填入 RAG 的網址）。
+
+> 📌 **本章只需要做一次**。這裡建立的環境變數、密鑰、虛擬私有雲連線、磁碟區掛接等設定會長期保留；日後改程式碼只是換一個新映像，這些設定不會被動到。設定完成後請回到第 7-4 章啟用自動化，之後就不必再進 Cloud Run 手動操作。
 
 ### 8-1 部署 RAG 服務
 
@@ -813,6 +918,23 @@ pnpm seed          # 建立預設帳號與提示詞範本
 | 資料庫連線 | Cloud SQL Studio 查 `users` 資料表 | 有 7 筆預設帳號 |
 | Qdrant 連線 | RAG 記錄檔 | 無連線逾時錯誤 |
 
+### 8-6 後續更新方式
+
+三個服務都建好並驗證通過後，**回到第 7-4 章設定自動化**。之後更新程式碼只需要打一個 git tag，不必再手動進 Cloud Run。
+
+兩種更新方式的差別：
+
+| 情境 | 做法 |
+|------|------|
+| **改了程式碼**（換新版本） | 打 tag（第 7-5 章），系統自動建置並更新映像 |
+| **改了設定**（環境變數、密鑰、記憶體、執行個體數量） | 進 Cloud Run →「編輯並部署新修訂版本」手動調整 |
+
+> 💡 自動部署只會更換映像，不會覆寫你在本章設定的環境變數與密鑰，兩者互不干擾。
+
+> ⚠️ **服務被誤刪時不能只靠 tag 救回**。自動部署預期服務已存在，若 Cloud Run 服務被刪除，重新打 tag 只會建出一個沒有任何設定的空服務——必須回到本章重新完整設定一次。
+
+**若新版本有問題需要退回**：進 Cloud Run → 該服務 →「修訂版本」分頁 → 選擇前一個正常的版本 →「管理流量」把 100% 流量切回去。這比重新建置快得多。
+
 ---
 
 ## 第 9 章：部署前端
@@ -838,57 +960,55 @@ firebase login --no-localhost     # 依畫面指示完成授權
 firebase use oda-cyber-prod
 ```
 
-3. 建立 `firebase.json`（在專案根目錄）：
+3. **設定檔已在專案裡，不需手動建立**：
 
-```json
-{
-  "hosting": [
-    {
-      "target": "chatbot",
-      "public": "apps/chatbot/dist",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-      "rewrites": [
-        { "source": "/api/**", "run": { "serviceId": "oda-api", "region": "asia-east1" } },
-        { "source": "**", "destination": "/index.html" }
-      ]
-    },
-    {
-      "target": "admin",
-      "public": "apps/admin/dist",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-      "rewrites": [
-        { "source": "/api/**", "run": { "serviceId": "oda-api", "region": "asia-east1" } },
-        { "source": "**", "destination": "/index.html" }
-      ]
-    },
-    {
-      "target": "cleaner",
-      "public": "apps/cleaner/dist",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-      "rewrites": [
-        { "source": "/api/**", "run": { "serviceId": "oda-api", "region": "asia-east1" } },
-        { "source": "**", "destination": "/index.html" }
-      ]
-    }
-  ]
-}
-```
+| 檔案 | 作用 |
+|------|------|
+| `firebase.json` | 三個站台的 Hosting 設定（public 目錄、rewrites、快取標頭） |
+| `apps/admin/.env.production` | Admin 正式環境變數 |
+| `apps/cleaner/.env.production` | Cleaner 正式環境變數 |
+| `apps/chatbot/.env.production` | Chatbot 正式環境變數 |
 
-> 💡 `/api/**` 轉送到 Cloud Run，讓前端與 API **同源**，不需處理跨來源請求（CORS）設定。
+> 💡 `firebase.json` 把 `/api/**` 轉送到 Cloud Run 的 `oda-api`，讓前端與 API **同源**，不需處理跨來源請求（CORS）設定。靜態資源（`assets/**`）設為長期快取、`index.html` 設為不快取，確保改版後使用者立即拿到新版。
+
+> ⚠️ **若前端網址與預設不同**，請先修改三個 `.env.production` 中的 `VITE_ADMIN_URL` / `VITE_CLEANER_URL`。這兩個值控制 Admin 與 Cleaner 之間的跳轉，填錯會導致跳轉連到錯誤位址。
 
 4. 在 Firebase Console →「Hosting」建立 3 個網站：`oda-chatbot`、`oda-admin`、`oda-cleaner`
-5. 在 Cloud Shell 綁定目標並部署：
+
+5. 在 Cloud Shell 綁定站台代號（**只需執行一次**）：
 
 ```bash
 firebase target:apply hosting chatbot oda-chatbot
-firebase target:apply hosting admin oda-admin
+firebase target:apply hosting admin   oda-admin
 firebase target:apply hosting cleaner oda-cleaner
+```
 
-# 建置前端（API 網址設為相對路徑，走 rewrites）
-VITE_API_BASE_URL="" pnpm build
+6. 建置與部署。**三個站台各自獨立**，可以只更新其中一個：
 
+```bash
+# ---- Chatbot ----
+pnpm --filter @oda-cyber/chatbot build
+firebase deploy --only hosting:chatbot
+
+# ---- Admin ----
+pnpm --filter @oda-cyber/admin build
+firebase deploy --only hosting:admin
+
+# ---- Cleaner ----
+pnpm --filter @oda-cyber/cleaner build
+firebase deploy --only hosting:cleaner
+```
+
+需要三個一次全部更新時：
+
+```bash
+pnpm --filter "@oda-cyber/chatbot" --filter "@oda-cyber/admin" --filter "@oda-cyber/cleaner" build
 firebase deploy --only hosting
 ```
+
+> 💡 建置指令**不需要**再手動帶 `VITE_API_BASE_URL=`。Vite 在 production 模式會自動讀取各應用的 `.env.production`。
+
+> 📌 **前端與後端部署互相獨立**：前端以上述指令部署，後端三個服務走各自的 Cloud Build 設定檔（專案根目錄的 `cloudbuild.api.yaml`、`cloudbuild.rag.yaml`、`cloudbuild.searxng.yaml`，設定方式見各檔開頭註解）。只改前端畫面時不需要動後端；只改後端時，前端也不必重新部署。
 
 ### 9-3 回填 CORS 設定
 
