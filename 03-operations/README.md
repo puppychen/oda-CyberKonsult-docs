@@ -30,7 +30,7 @@ owner: ODA Cyber Konsult
 | [development.md](./development.md) | 開發環境完整說明 — Node.js/Python/Docker 設定、環境變數、啟動指令 | 開發者 | 2026-02-11 |
 | [dev-environment-setup.md](./dev-environment-setup.md) | 本機測試環境 — 以 `.env` 為 PostgreSQL 連線單一來源、服務啟動與排錯 | 開發者／AI 代理 | 2026-07-17 |
 | [deployment.md](./deployment.md) | 部署與維運指南 — Docker Compose、GCP、VM、Prisma 0009 與 Alembic 011／012 驗證／回復 | DevOps | 2026-07-13 |
-| [gcp-deployment.md](./gcp-deployment.md) | **GCP 部署設置指南（Console 操作版）** — Cloud Run／Cloud SQL／Qdrant on GCE／Firebase Hosting 全圖形介面步驟 | DevOps／管理員 | 2026-08-03 |
+| [gcp-deployment.md](./gcp-deployment.md) | **GCP 部署設置指南（Console 操作版）** — Cloud Run／Cloud SQL／Qdrant on GCE／Firebase Hosting 全圖形介面步驟 | DevOps／管理員 | 2026-08-04 |
 | [staging-setup.md](./staging-setup.md) | Staging 環境設置、migration 備份與驗證 | DevOps | 2026-07-12 |
 | [backup-strategy.md](./backup-strategy.md) | 備份策略與保存規則 | DevOps | 2026-04-17 |
 | [dr-checklist.md](./dr-checklist.md) | Disaster Recovery 檢核表 | DevOps | 2026-04-17 |
@@ -45,6 +45,14 @@ owner: ODA Cyber Konsult
 | [gdrive-setup.md](./gdrive-setup.md) | Google Drive 整合設定 — OAuth 憑證、Webhook、同步設定 | 管理員 | 2026-02-13 |
 | [linting-setup.md](./linting-setup.md) | ESLint + Prettier + Husky 設定 — 程式碼品質工具鏈 | 開發者 | 2026-02-11 |
 
+### 合規與稽核
+
+| 文件 | 說明 | 適用對象 | 更新日期 |
+|------|------|---------|---------|
+| [software-components-licenses.xlsx](./software-components-licenses.xlsx) | **軟體元件與授權清單（SBOM）** — 正式環境部署之 549 個第三方元件、版本與授權條款，依 Node／Python 及直接／完整相依分頁列示 | 稽核／客戶／法務 | 2026-08-04 |
+
+> 📌 此為 Excel 檔，無法加註 YAML frontmatter，文件屬性記於檔內「文件資訊」分頁。依賴變更後需重新產製。
+
 ---
 
 ## 快速導引
@@ -56,6 +64,7 @@ owner: ODA Cyber Konsult
 | **部署到 GCP（Console 操作）** | [gcp-deployment.md](./gcp-deployment.md) |
 | 確認是否可進 QG-5 | [qg5-readiness.md](./qg5-readiness.md) |
 | 排除線上故障 | [runbook.md](./runbook.md) |
+| **回覆客戶或稽核的授權提問** | [software-components-licenses.xlsx](./software-components-licenses.xlsx) |
 | 設定 Google Drive 同步 | [gdrive-setup.md](./gdrive-setup.md) |
 | 設定程式碼品質工具 | [linting-setup.md](./linting-setup.md) |
 
