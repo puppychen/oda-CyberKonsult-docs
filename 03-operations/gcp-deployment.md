@@ -3,7 +3,7 @@ audience: both
 purpose: runbook
 status: draft
 owner: ODA Cyber Konsult
-updated: 2026-08-04
+updated: 2026-08-05
 ---
 
 # GCP 部署設置指南（Console 操作版）
@@ -28,15 +28,16 @@ updated: 2026-08-04
 
 ```
                         使用者瀏覽器
-                             │
-              ┌──────────────▼───────────────┐
-              │  Firebase Hosting（含 CDN）   │
-              │  ├ Admin 管理後台             │
-              │  ├ Chatbot 聊天介面           │
-              │  └ Cleaner 清洗審核           │
-              │  /api/** 轉送至 Cloud Run ────┼──┐
-              └──────────────────────────────┘  │
-                                                 ▼
+                     ┌───────┴────────┐
+                 取得畫面          呼叫 API
+                     │            （跨網域，需 CORS）
+      ┌──────────────▼───────────────┐      │
+      │  Firebase Hosting（含 CDN）   │      │
+      │  ├ Chatbot 聊天介面           │      │
+      │  ├ Admin 管理後台             │      │
+      │  └ Cleaner 清洗審核           │      │
+      └──────────────────────────────┘      │
+                                             ▼
 ┌─ 您的 GCP 專案（asia-east1）────────────────────────────────┐
 │                                                             │
 │  ┌── Cloud Run ─────────────────────────────────────────┐   │
@@ -83,7 +84,7 @@ updated: 2026-08-04
 
 | 資源 | 名稱 | 說明 |
 |------|------|------|
-| 專案 ID | `oda-cyber-prod` | 可自訂，全球唯一 |
+| 專案 ID | `cyberkonsult` | 可自訂，全球唯一 |
 | 區域 | `asia-east1` | 台灣彰化 |
 | 可用區 | `asia-east1-b` | 虛擬機所在 |
 | 虛擬私有雲 | `oda-vpc` | 內部網路 |
@@ -91,8 +92,8 @@ updated: 2026-08-04
 | 子網路（Cloud Run 用） | `oda-subnet-run` | `10.10.1.0/26` |
 | 資料庫執行個體 | `oda-cyber-db` | Cloud SQL |
 | 虛擬機 | `oda-qdrant` | 向量資料庫主機 |
-| 儲存桶 | `oda-cyber-prod-storage` | 需全球唯一 |
-| 映像檔倉庫 | `oda-images` | Artifact Registry |
+| 儲存桶 | `cyberkonsult-storage` | 需全球唯一 |
+| 映像檔倉庫 | `cyber-konsult` | Artifact Registry |
 
 ### 進度檢查表
 
@@ -126,7 +127,7 @@ updated: 2026-08-04
 | 欄位 | 填入值 |
 |------|--------|
 | 專案名稱 | `ODA Cyber Konsult` |
-| 專案 ID | `oda-cyber-prod`（記下來，後面會一直用到） |
+| 專案 ID | `cyberkonsult`（記下來，後面會一直用到） |
 | 位置 | 選您的組織，或「無機構」 |
 
 5. 建立後，**確認畫面頂端已切換到這個新專案**
@@ -488,7 +489,7 @@ curl http://localhost:6333/healthz
 
 | 欄位 | 填入值 |
 |------|--------|
-| 名稱 | `oda-cyber-prod-storage`（需全球唯一，可加後綴） |
+| 名稱 | `cyberkonsult-storage`（需全球唯一，可加後綴） |
 | 位置類型 | **地區**（Region） |
 | 位置 | `asia-east1` |
 | 儲存空間級別 | **Standard** |
@@ -631,7 +632,7 @@ Google 官方文件明載：Cloud Storage 掛載**不提供檔案鎖定機制**�
 
 | 欄位 | 填入值 |
 |------|--------|
-| 名稱 | `oda-images` |
+| 名稱 | `cyber-konsult` |
 | 格式 | **Docker** |
 | 模式 | **標準** |
 | 位置類型 | **地區** |
@@ -656,18 +657,18 @@ cd oda-CyberKonsult
 3. 執行下列 3 行：
 
 ```bash
-gcloud builds submit --tag asia-east1-docker.pkg.dev/oda-cyber-prod/oda-images/oda-api:v1 --file apps/api/Dockerfile .
+gcloud builds submit --tag asia-east1-docker.pkg.dev/cyberkonsult/cyber-konsult/oda-api:v1 --file apps/api/Dockerfile .
 
-gcloud builds submit --tag asia-east1-docker.pkg.dev/oda-cyber-prod/oda-images/oda-rag:v1 --file python/rag-service/Dockerfile .
+gcloud builds submit --tag asia-east1-docker.pkg.dev/cyberkonsult/cyber-konsult/oda-rag:v1 --file python/rag-service/Dockerfile .
 
-gcloud builds submit --tag asia-east1-docker.pkg.dev/oda-cyber-prod/oda-images/oda-searxng:v1 docker/searxng/
+gcloud builds submit --tag asia-east1-docker.pkg.dev/cyberkonsult/cyber-konsult/oda-searxng:v1 docker/searxng/
 ```
 
 > 💡 前兩行結尾的 `.` 是關鍵——它把**整個專案根目錄**當作建置來源。這兩個 Dockerfile 需要根目錄的 `pnpm-lock.yaml`、`packages/`、`contracts/` 等檔案，若只指定 Dockerfile 所在目錄會建置失敗。第 3 行的 SearXNG 則相反，只需要它自己的目錄。
 
 ### 7-3 驗證
 
-左側 ☰ →「Artifact Registry」→ 點 `oda-images`，應看到 3 個映像檔各有 `v1` 標籤。
+左側 ☰ →「Artifact Registry」→ 點 `cyber-konsult`，應看到 3 個映像檔各有 `v1` 標籤。
 
 ### 7-4 設定自動化建置與部署
 
@@ -803,7 +804,7 @@ git push origin searxng-v1.0.1
 | 欄位 | 填入值 |
 |------|--------|
 | 磁碟區名稱 | `storage` |
-| 值區 | `oda-cyber-prod-storage` |
+| 值區 | `cyberkonsult-storage` |
 | 唯讀 | **不勾**（需要寫入） |
 
 3. 切到「**容器**」分頁 →「**磁碟區掛接**」→ 點「**掛接磁碟區**」
@@ -941,11 +942,15 @@ pnpm seed          # 建立預設帳號與提示詞範本
 
 三個前端（Admin、Chatbot、Cleaner）部署到 Firebase Hosting。
 
-### 9-1 建立 Firebase 專案
+### 9-1 確認 Firebase 專案
+
+本專案的 Firebase 已啟用，專案 ID 為 `cyberkonsult`，可直接跳至 9-2。
+
+**若需在新環境重建**：
 
 1. 開啟 [Firebase Console](https://console.firebase.google.com)
 2. 點「**新增專案**」
-3. ⚠️ **重要**：在「輸入專案名稱」時，**選擇既有的 GCP 專案** `oda-cyber-prod`（下拉選單會列出）
+3. ⚠️ **重要**：在「輸入專案名稱」時，**選擇既有的 GCP 專案**（下拉選單會列出）。務必選既有專案，不要新建——Firebase 與 GCP 必須是同一個專案，Hosting 才能與其他 GCP 資源共用權限與帳單
 4. 依畫面指示完成（Google Analytics 可略過）
 5. 左側「**建構**」→「**Hosting**」→ 點「**開始使用**」
 
@@ -957,30 +962,35 @@ pnpm seed          # 建立預設帳號與提示詞範本
 ```bash
 npm install -g firebase-tools
 firebase login --no-localhost     # 依畫面指示完成授權
-firebase use oda-cyber-prod
+firebase use cyberkonsult
 ```
 
 3. **設定檔已在專案裡，不需手動建立**：
 
 | 檔案 | 作用 |
 |------|------|
-| `firebase.json` | 三個站台的 Hosting 設定（public 目錄、rewrites、快取標頭） |
-| `apps/admin/.env.production` | Admin 正式環境變數 |
-| `apps/cleaner/.env.production` | Cleaner 正式環境變數 |
-| `apps/chatbot/.env.production` | Chatbot 正式環境變數 |
+| `firebase.json` | 三個站台的 Hosting 設定（public 目錄、SPA 轉址、快取標頭） |
+| `.firebaserc` | 專案關聯與站台代號綁定 |
+| `.env.production`（專案根目錄） | **三個前端共用的正式環境變數** |
 
-> 💡 `firebase.json` 把 `/api/**` 轉送到 Cloud Run 的 `oda-api`，讓前端與 API **同源**，不需處理跨來源請求（CORS）設定。靜態資源（`assets/**`）設為長期快取、`index.html` 設為不快取，確保改版後使用者立即拿到新版。
+> 💡 **環境變數只有一個來源**。三個前端的 `vite.config.ts` 都設定 `envDir` 指向專案根目錄，因此建置時會讀取根目錄的 `.env.production`，各應用目錄下不放任何 `.env`。只有 `VITE_` 開頭的變數會被編譯進瀏覽器，其餘欄位不會外洩到前端。
 
-> ⚠️ **若前端網址與預設不同**，請先修改三個 `.env.production` 中的 `VITE_ADMIN_URL` / `VITE_CLEANER_URL`。這兩個值控制 Admin 與 Cleaner 之間的跳轉，填錯會導致跳轉連到錯誤位址。
+> ⚠️ **`.env.production` 必須列出全部 `VITE_` 變數**。Vite 會先載入 `.env`（開發用的 localhost 值）再以 `.env.production` 覆蓋，漏掉任何一個變數就會沿用開發值，而且不會有任何警告。
 
-4. 在 Firebase Console →「Hosting」建立 3 個網站：`oda-chatbot`、`oda-admin`、`oda-cleaner`
+> 💡 **前端直接呼叫後端網域**，不透過 Hosting 轉送。`firebase.json` 的轉址規則只負責單頁應用的路由（所有路徑都交給 `index.html`）。因此**後端必須將前端網址加入 CORS 白名單**，見第 9-3 章。靜態資源（`assets/**`）設為長期快取、其餘路徑設為不快取，確保改版後使用者立即拿到新版。
+
+> ⚠️ **若前端網址與預設不同**，請先修改 `.env.production` 中的 `VITE_ADMIN_URL` / `VITE_CLEANER_URL`。這兩個值控制 Admin 與 Cleaner 之間的跳轉，填錯會導致跳轉連到錯誤位址。
+
+4. 在 Firebase Console →「Hosting」**新增 2 個網站**：`cyberkonsult-admin`、`cyberkonsult-cleaner`
+
+> 💡 `cyberkonsult` 是專案的預設站台，建立專案時就自動存在，不需另外新增；本文件將它配置給 Chatbot（面向終端使用者，網址最簡潔）。
 
 5. 在 Cloud Shell 綁定站台代號（**只需執行一次**）：
 
 ```bash
-firebase target:apply hosting chatbot oda-chatbot
-firebase target:apply hosting admin   oda-admin
-firebase target:apply hosting cleaner oda-cleaner
+firebase target:apply hosting chatbot cyberkonsult
+firebase target:apply hosting admin   cyberkonsult-admin
+firebase target:apply hosting cleaner cyberkonsult-cleaner
 ```
 
 6. 建置與部署。**三個站台各自獨立**，可以只更新其中一個：
@@ -1006,16 +1016,44 @@ pnpm --filter "@oda-cyber/chatbot" --filter "@oda-cyber/admin" --filter "@oda-cy
 firebase deploy --only hosting
 ```
 
-> 💡 建置指令**不需要**再手動帶 `VITE_API_BASE_URL=`。Vite 在 production 模式會自動讀取各應用的 `.env.production`。
+> 💡 建置指令**不需要**再手動帶 `VITE_API_BASE_URL=`。Vite 在 production 模式會自動讀取專案根目錄的 `.env.production`。
 
 > 📌 **前端與後端部署互相獨立**：前端以上述指令部署，後端三個服務走各自的 Cloud Build 設定檔（專案根目錄的 `cloudbuild.api.yaml`、`cloudbuild.rag.yaml`、`cloudbuild.searxng.yaml`，設定方式見各檔開頭註解）。只改前端畫面時不需要動後端；只改後端時，前端也不必重新部署。
 
 ### 9-3 回填 CORS 設定
 
-1. 回到 Cloud Run → `oda-api` →「編輯並部署新修訂版本」
-2. `CORS_ORIGINS` 填入三個前端網址，以逗號分隔：
-   `https://oda-chatbot.web.app,https://oda-admin.web.app,https://oda-cleaner.web.app`
-3. 部署
+前端直接呼叫後端網域，因此**後端必須放行這三個前端網址**，否則瀏覽器會擋下所有 API 請求——畫面打得開，但登入與所有功能都會失敗。
+
+**設定兩個環境變數**（皆為逗號分隔，結尾不可有斜線）：
+
+```bash
+CORS_ORIGINS=https://cyberkonsult.web.app,https://cyberkonsult-admin.web.app,https://cyberkonsult-cleaner.web.app
+
+# WebSocket（清洗任務進度推播）。僅 Admin 與 Cleaner 使用，Chatbot 不需要。
+WS_CORS_ORIGINS=https://cyberkonsult-admin.web.app,https://cyberkonsult-cleaner.web.app
+```
+
+**設定位置依後端的部署方式而定：**
+
+| 後端部署方式 | 設定位置 | 生效方式 |
+|-------------|---------|---------|
+| Cloud Run | 服務 →「編輯並部署新修訂版本」→ 環境變數 | 部署新修訂版本 |
+| 以 `scripts/dev-start.sh` 啟動 | **該機器的 `.env`** | 重新啟動服務 |
+| Docker Compose | `docker-compose.prod.yml` 的 `environment` 或 `env_file` | `docker compose up -d` |
+
+> ⚠️ **`scripts/dev-start.sh` 只會載入 `.env`**（見其 `load_env_file()`），**不會讀 `.env.production`**。以該腳本啟動服務時，設定必須寫在 `.env`，寫在 `.env.production` 不會生效。
+
+> ⚠️ **改完必須重新啟動服務**。後端在程序啟動時讀取環境變數（`apps/api/src/config/cors.config.ts`），執行中修改設定檔不會生效。
+
+**驗證是否生效**（不需開瀏覽器）：
+
+```bash
+curl -sI -X OPTIONS https://<你的後端網域>/api/v1/auth/login \
+  -H "Origin: https://cyberkonsult-admin.web.app" \
+  -H "Access-Control-Request-Method: POST" | grep -i access-control-allow-origin
+```
+
+有回傳 `access-control-allow-origin` 那一行即表示放行成功；沒有任何輸出就是還沒生效。
 
 ### 9-4 驗證
 
@@ -1108,7 +1146,7 @@ cd python/rag-service
 | Cloud Run 顯示啟動失敗 | 環境變數缺漏、密鑰權限不足 | 看「記錄」分頁的錯誤訊息；確認服務帳戶有 Secret Manager 存取權 |
 | API 連不到資料庫 | Direct VPC egress 未設定 | 檢查「網路」分頁是否已選 `oda-vpc` / `oda-subnet-run` |
 | RAG 連不到 Qdrant | 防火牆或 IP 錯誤 | 確認防火牆規則的目標標記為 `qdrant`；確認填的是**內部** IP |
-| 前端呼叫 API 失敗 | rewrites 設定或 CORS | 檢查 `firebase.json` 的 serviceId 與 region；檢查 `CORS_ORIGINS` |
+| 前端呼叫 API 失敗 | CORS 未放行，或 API 網址錯誤 | 先用 9-3 章的 `curl` 驗證 CORS；再確認 `.env.production` 的 `VITE_API_BASE_URL` 與實際後端網域相符（改動後需重新建置前端） |
 | 檔案上傳失敗 | 儲存桶掛載或權限 | 確認「磁碟區」分頁掛載路徑為 `/mnt/storage`；確認服務帳戶有 Storage 物件使用者角色 |
 | 清洗任務卡住不動 | CPU 被節流 | 確認 `oda-rag` 的 CPU 分配為「**一律分配**」且執行個體下限為 `1` |
 

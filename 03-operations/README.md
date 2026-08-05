@@ -30,7 +30,7 @@ owner: ODA Cyber Konsult
 | [development.md](./development.md) | 開發環境完整說明 — Node.js/Python/Docker 設定、環境變數、啟動指令 | 開發者 | 2026-02-11 |
 | [dev-environment-setup.md](./dev-environment-setup.md) | 本機測試環境 — 以 `.env` 為 PostgreSQL 連線單一來源、服務啟動與排錯 | 開發者／AI 代理 | 2026-07-17 |
 | [deployment.md](./deployment.md) | 部署與維運指南 — Docker Compose、GCP、VM、Prisma 0009 與 Alembic 011／012 驗證／回復 | DevOps | 2026-07-13 |
-| [gcp-deployment.md](./gcp-deployment.md) | **GCP 部署設置指南（Console 操作版）** — Cloud Run／Cloud SQL／Qdrant on GCE／Firebase Hosting 全圖形介面步驟 | DevOps／管理員 | 2026-08-04 |
+| [gcp-deployment.md](./gcp-deployment.md) | **GCP 部署設置指南（Console 操作版）** — Cloud Run／Cloud SQL／Qdrant on GCE／Firebase Hosting 全圖形介面步驟 | DevOps／管理員 | 2026-08-05 |
 | [staging-setup.md](./staging-setup.md) | Staging 環境設置、migration 備份與驗證 | DevOps | 2026-07-12 |
 | [backup-strategy.md](./backup-strategy.md) | 備份策略與保存規則 | DevOps | 2026-04-17 |
 | [dr-checklist.md](./dr-checklist.md) | Disaster Recovery 檢核表 | DevOps | 2026-04-17 |
