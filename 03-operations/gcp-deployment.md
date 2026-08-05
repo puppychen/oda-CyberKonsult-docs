@@ -709,29 +709,44 @@ gcloud builds submit --tag asia-east1-docker.pkg.dev/cyberkonsult/cyber-konsult/
 
 ### 7-5 日常發版
 
-三個服務**各自獨立發版**，改了哪個就發哪個：
+三個服務**各自獨立發版**，改了哪個就發哪個。有兩種發版方式，依需不需要版本號選用。
+
+#### 方式一：日常建置（免版本號）
+
+固定使用服務名稱作為標籤，每次重新指向最新的 commit。**映像會以 commit 代碼標記**，例如 `oda-api:a1b2c3d`，可追溯到確切的原始碼版本，不需要自己維護版本號。
 
 ```bash
-# 更新後端 API
-git tag api-v1.0.1
-git push origin api-v1.0.1
-
-# 更新 RAG 服務
-git tag rag-v1.0.1
-git push origin rag-v1.0.1
-
-# 更新 SearXNG
-git tag searxng-v1.0.1
-git push origin searxng-v1.0.1
+# 以更新後端 API 為例（RAG 換成 oda-rag、SearXNG 換成 oda-searxng）
+git push origin :refs/tags/oda-api   # 1. 先刪除遠端的舊標籤
+git tag -d oda-api                   # 2. 刪除本機的舊標籤
+git tag oda-api                      # 3. 在目前的 commit 重新打標籤
+git push origin oda-api              # 4. 推送，隨即觸發建置
 ```
 
-推送後系統會自動完成三件事：**建置映像 → 存入 Artifact Registry → 更新對應的 Cloud Run 服務**。
+> ⚠️ **順序不可顛倒**。遠端的舊標籤還在時，推送同名標籤會被拒絕（Git 不允許標籤指向不同 commit）。第 1 步的 `:refs/tags/` 寫法就是「刪除遠端標籤」的意思。
 
-到「Cloud Build」→「記錄」可看到進度，約需 8～15 分鐘。
+> 💡 刪除標籤**不會**觸發建置，只有第 4 步的推送會。
 
-> 💡 **版本號怎麼取**：tag 的 `api-v` 前綴會被自動去掉，所以 `api-v1.0.1` 產生的映像是 `oda-api:1.0.1`。前綴只是用來決定「這個 tag 要觸發哪一個服務」。
+#### 方式二：正式發布（帶版本號）
 
-> ⚠️ **標籤格式必須完全相符**。打成 `api-v1.0`（少一段數字）或 `apiv1.0.1`（少了連字號）都不會觸發任何動作，且不會有錯誤通知——推送後請到「Cloud Build」→「記錄」確認有新的建置出現。
+需要對外標示版本時使用。**映像會以版本號標記**，例如 `oda-api:1.0.1`。
+
+```bash
+git tag api-v1.0.1
+git push origin api-v1.0.1
+```
+
+> 💡 前綴 `api-v` 會被自動去掉，所以 `api-v1.0.1` 產生的映像是 `oda-api:1.0.1`。前綴的作用是決定「這個標籤要觸發哪一個服務」。
+
+---
+
+兩種方式推送後，系統都會自動完成三件事：**建置映像 → 存入 Artifact Registry → 更新對應的 Cloud Run 服務**。到「Cloud Build」→「記錄」可看進度，約需 8～15 分鐘。
+
+每個映像除了上述主要標籤外，還會額外標記 `latest` 與 commit 代碼，方便回溯。
+
+> ⚠️ **標籤必須符合觸發器的規則**，否則不會有任何動作，也不會有錯誤通知。允許的寫法只有 `oda-api` 與 `api-v1.0.1` 這兩種格式；打成 `api-v1.0`（少一段數字）或 `apiv1.0.1`（少了連字號）都不會觸發。推送後請到「Cloud Build」→「記錄」確認有新的建置出現。
+
+> ⚠️ **標籤指向哪個 commit，就用那個版本的設定檔建置**。若剛修改過 `cloudbuild.*.yaml`，必須先把修改推送到主分支，再打標籤——否則系統讀到的仍是舊設定。
 
 > 📌 **想要只建映像、不自動上線**：把設定檔中最後一個名為 `deploy` 的步驟整段刪除或註解掉即可。之後改為到 Cloud Run 手動選擇映像版本部署。
 
